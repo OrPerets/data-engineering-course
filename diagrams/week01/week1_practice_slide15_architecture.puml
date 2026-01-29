@@ -1,6 +1,6 @@
 @startuml
 '=================================================
-' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+' CANONICAL DIAGRAM TEMPLATE - DATA ENGINEERING
 '=================================================
 
 top to bottom direction
@@ -14,7 +14,7 @@ skinparam ranksep 40
 '-------------------------
 ' FONT & GLOBAL STYLE
 '-------------------------
-skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
 skinparam defaultFontSize 16
 skinparam defaultFontColor #2C3E50
 
@@ -81,10 +81,57 @@ skinparam component<<Config>> {
     FontColor #E65100
 }
 
-'========================
-' NEWS PLATFORM ARCHITECTURE
-'========================
+skinparam component<<Bad>> {
+    BorderColor #C62828
+    BackgroundColor #FFEBEE
+    FontColor #B71C1C
+}
 
+skinparam component<<V1>> {
+    BorderColor #F57C00
+    BackgroundColor #FFF3E0
+    FontColor #E65100
+}
+
+skinparam component<<V2>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+skinparam component<<up>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+
+skinparam component<<down>> {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
+}
+
+skinparam database<<up>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+
+skinparam database<<down>> {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
+}
+
+skinparam component<<success>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+
+skinparam component<<failure>> {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
+}
+
+'=================================================
+
+' NEWS PLATFORM ARCHITECTURE
 package "DATA SOURCES" #F8F9FA {
     database "**News Sources**\n<size:10>1,000 sources</size>" as SOURCES
     database "**User Clicks**\n<size:10>500K/day</size>" as CLICKS
@@ -114,26 +161,6 @@ package "CONSUMPTION" #F8F9FA {
     component "**Analytics Dashboard**\n<size:10>Daily reports</size>" as DASHBOARD
     component "**News App**\n<size:10>Trending feed</size>" as APP
 }
-
-'========================
-' DATA FLOWS
-'========================
-
-SOURCES --> INGEST_ART : "Articles"
-CLICKS --> INGEST_CLICK : "Clicks"
-
-INGEST_ART --> RAW_ART : "Store raw"
-INGEST_CLICK --> RAW_CLICK : "Store raw"
-
-RAW_ART --> BATCH : "Daily batch"
-RAW_CLICK --> BATCH : "Daily batch"
-RAW_CLICK --> STREAM : "Real-time stream"
-
-BATCH --> WAREHOUSE : "Aggregated data"
-STREAM --> TRENDING : "Trending articles"
-
-WAREHOUSE --> DASHBOARD : "Query"
-TRENDING --> APP : "API calls"
 
 note right of BATCH
   **Cost**: $0.10/run

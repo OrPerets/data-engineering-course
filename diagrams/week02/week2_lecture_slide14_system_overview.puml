@@ -1,6 +1,6 @@
 @startuml
 '=================================================
-' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+' CANONICAL DIAGRAM TEMPLATE - DATA ENGINEERING
 '=================================================
 
 top to bottom direction
@@ -14,7 +14,7 @@ skinparam ranksep 40
 '-------------------------
 ' FONT & GLOBAL STYLE
 '-------------------------
-skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
 skinparam defaultFontSize 16
 skinparam defaultFontColor #2C3E50
 
@@ -81,16 +81,63 @@ skinparam component<<Config>> {
     FontColor #E65100
 }
 
-'========================
-' DISTRIBUTED DB SYSTEM OVERVIEW
-'========================
+skinparam component<<Bad>> {
+    BorderColor #C62828
+    BackgroundColor #FFEBEE
+    FontColor #B71C1C
+}
 
+skinparam component<<V1>> {
+    BorderColor #F57C00
+    BackgroundColor #FFF3E0
+    FontColor #E65100
+}
+
+skinparam component<<V2>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+skinparam component<<up>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+
+skinparam component<<down>> {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
+}
+
+skinparam database<<up>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+
+skinparam database<<down>> {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
+}
+
+skinparam component<<success>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+
+skinparam component<<failure>> {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
+}
+
+'=================================================
+
+' DISTRIBUTED DB SYSTEM OVERVIEW
 package "CLIENTS" #F8F9FA {
     component "**App / Query**\n<size:10>Read / Write</size>" as CLIENT
 }
 
 package "COORDINATION" #F8F9FA {
-    component "**Router / Coordinator**\n<size:10>Partition key → Node</size>" as ROUTER
+    component "**Router / Coordinator**\n<size:10>Partition key -> Node</size>" as ROUTER
 }
 
 package "DATA NODES" #F8F9FA {
@@ -113,7 +160,7 @@ N3 <-[#2E7D32]-> REPL
 
 note bottom of ROUTER
   **Partitioning**
-  hash(key) mod N → node
+  hash(key) mod N -> node
   Data split by key
 end note
 

@@ -1,20 +1,137 @@
 @startuml
 '=================================================
-' Week 9 Practice: N-gram pipeline reasoning
+' CANONICAL DIAGRAM TEMPLATE - DATA ENGINEERING
 '=================================================
 
 top to bottom direction
 skinparam linetype ortho
 skinparam shadowing false
 skinparam roundcorner 8
-skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+'-------------------------
+' FONT & GLOBAL STYLE
+'-------------------------
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
 skinparam defaultFontSize 16
 skinparam defaultFontColor #2C3E50
-skinparam rectangle { BackgroundColor #F8F9FA; BorderColor #90A4AE; BorderThickness 2 }
-skinparam component { BackgroundColor #FFFFFF; BorderColor #78909C; BorderThickness 1.5 }
-skinparam database { BackgroundColor #ECEFF1; BorderColor #546E7A }
-skinparam arrow { Color #607D8B; Thickness 1.5 }
 
+'-------------------------
+' GENERIC BOX STYLE
+'-------------------------
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontColor #263238
+    FontSize 14
+    FontStyle bold
+    Padding 20
+}
+
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+    FontColor #263238
+}
+
+skinparam arrow {
+    Color #607D8B
+    Thickness 1.5
+    FontSize 11
+    FontColor #546E7A
+}
+
+'-------------------------
+' SEMANTIC STEREOTYPES
+'-------------------------
+skinparam component<<UI>> {
+    BorderColor #8E24AA
+    BackgroundColor #F3E5F5
+    FontColor #4A148C
+}
+
+skinparam component<<Agent>> {
+    BorderColor #0288D1
+    BackgroundColor #E1F5FE
+    FontColor #01579B
+}
+
+skinparam component<<Tool>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+skinparam component<<Config>> {
+    BorderColor #F57C00
+    BackgroundColor #FFF3E0
+    FontColor #E65100
+}
+
+skinparam component<<Bad>> {
+    BorderColor #C62828
+    BackgroundColor #FFEBEE
+    FontColor #B71C1C
+}
+
+skinparam component<<V1>> {
+    BorderColor #F57C00
+    BackgroundColor #FFF3E0
+    FontColor #E65100
+}
+
+skinparam component<<V2>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+skinparam component<<up>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+
+skinparam component<<down>> {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
+}
+
+skinparam database<<up>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+
+skinparam database<<down>> {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
+}
+
+skinparam component<<success>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+
+skinparam component<<failure>> {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
+}
+
+'=================================================
+
+' PRACTICE: N-GRAM PIPELINE REASONING
 rectangle "Documents" #F8F9FA {
     database "**(doc_id, text)**" as DOCS
 }

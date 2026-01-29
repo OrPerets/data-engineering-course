@@ -1,6 +1,6 @@
 @startuml
 '=================================================
-' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+' CANONICAL DIAGRAM TEMPLATE - DATA ENGINEERING
 '=================================================
 
 top to bottom direction
@@ -14,7 +14,7 @@ skinparam ranksep 40
 '-------------------------
 ' FONT & GLOBAL STYLE
 '-------------------------
-skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
 skinparam defaultFontSize 16
 skinparam defaultFontColor #2C3E50
 
@@ -81,32 +81,62 @@ skinparam component<<Config>> {
     FontColor #E65100
 }
 
+skinparam component<<Bad>> {
+    BorderColor #C62828
+    BackgroundColor #FFEBEE
+    FontColor #B71C1C
+}
+
+skinparam component<<V1>> {
+    BorderColor #F57C00
+    BackgroundColor #FFF3E0
+    FontColor #E65100
+}
+
+skinparam component<<V2>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
 skinparam component<<up>> {
     BackgroundColor #E8F5E9
     BorderColor #2E7D32
 }
+
 skinparam component<<down>> {
     BackgroundColor #FFEBEE
     BorderColor #C62828
 }
+
 skinparam database<<up>> {
     BackgroundColor #E8F5E9
     BorderColor #2E7D32
 }
+
 skinparam database<<down>> {
     BackgroundColor #FFEBEE
     BorderColor #C62828
 }
 
-'========================
-' FAILURE: NETWORK PARTITION (SPLIT-BRAIN)
-'========================
+skinparam component<<success>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
 
-rectangle "**Datacenter A**" #E3F2FD {
+skinparam component<<failure>> {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
+}
+
+'=================================================
+
+' FAILURE: NETWORK PARTITION (SPLIT-BRAIN)
+package "**Datacenter A**" #E3F2FD {
     database "**Node A**\n<size:10>Accepts writes</size>" as NA <<up>>
 }
 
-rectangle "**Datacenter B**" #FFF3E0 {
+package "**Datacenter B**" #FFF3E0 {
     database "**Node B**\n<size:10>Accepts writes</size>" as NB <<up>>
     database "**Node C**\n<size:10>Accepts writes</size>" as NC <<up>>
 }

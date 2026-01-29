@@ -1,6 +1,6 @@
 @startuml
 '=================================================
-' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+' CANONICAL DIAGRAM TEMPLATE - DATA ENGINEERING
 '=================================================
 
 left to right direction
@@ -14,7 +14,7 @@ skinparam ranksep 40
 '-------------------------
 ' FONT & GLOBAL STYLE
 '-------------------------
-skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
 skinparam defaultFontSize 16
 skinparam defaultFontColor #2C3E50
 
@@ -81,10 +81,57 @@ skinparam component<<Config>> {
     FontColor #E65100
 }
 
-'========================
-' QUERY / REQUEST EXECUTION FLOW
-'========================
+skinparam component<<Bad>> {
+    BorderColor #C62828
+    BackgroundColor #FFEBEE
+    FontColor #B71C1C
+}
 
+skinparam component<<V1>> {
+    BorderColor #F57C00
+    BackgroundColor #FFF3E0
+    FontColor #E65100
+}
+
+skinparam component<<V2>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+skinparam component<<up>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+
+skinparam component<<down>> {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
+}
+
+skinparam database<<up>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+
+skinparam database<<down>> {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
+}
+
+skinparam component<<success>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+
+skinparam component<<failure>> {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
+}
+
+'=================================================
+
+' QUERY / REQUEST EXECUTION FLOW
 component "**Client**\n<size:10>Query by user_id</size>" as C
 
 component "**1. Route**\n<size:10>hash(user_id) mod N</size>" as R
@@ -93,7 +140,7 @@ database "**2a. Partition 0**\n<size:10>Users, Orders</size>" as P0
 database "**2b. Partition 1**\n<size:10>Users, Orders</size>" as P1
 database "**2c. Partition 2**\n<size:10>Users, Orders</size>" as P2
 
-component "**3. Merge**\n<size:10>Single partition → Result</size>" as M
+component "**3. Merge**\n<size:10>Single partition -> Result</size>" as M
 
 database "**Response**\n<size:10>User + Orders</size>" as OUT
 

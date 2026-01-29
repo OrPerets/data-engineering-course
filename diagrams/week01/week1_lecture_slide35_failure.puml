@@ -1,6 +1,6 @@
 @startuml
 '=================================================
-' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+' CANONICAL DIAGRAM TEMPLATE - DATA ENGINEERING
 '=================================================
 
 top to bottom direction
@@ -14,7 +14,7 @@ skinparam ranksep 40
 '-------------------------
 ' FONT & GLOBAL STYLE
 '-------------------------
-skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
 skinparam defaultFontSize 16
 skinparam defaultFontColor #2C3E50
 
@@ -81,6 +81,44 @@ skinparam component<<Config>> {
     FontColor #E65100
 }
 
+skinparam component<<Bad>> {
+    BorderColor #C62828
+    BackgroundColor #FFEBEE
+    FontColor #B71C1C
+}
+
+skinparam component<<V1>> {
+    BorderColor #F57C00
+    BackgroundColor #FFF3E0
+    FontColor #E65100
+}
+
+skinparam component<<V2>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+skinparam component<<up>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+
+skinparam component<<down>> {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
+}
+
+skinparam database<<up>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+
+skinparam database<<down>> {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
+}
+
 skinparam component<<success>> {
     BackgroundColor #E8F5E9
     BorderColor #2E7D32
@@ -91,10 +129,9 @@ skinparam component<<failure>> {
     BorderColor #C62828
 }
 
-'========================
-' FAILURE PROPAGATION
-'========================
+'=================================================
 
+' FAILURE PROPAGATION
 component "**Step 1: Ingestion**\n<size:10>10 minutes</size>" as STEP1 <<success>>
 
 component "**Step 2: Transform**\n<size:10>20 minutes</size>" as STEP2 <<failure>>
@@ -108,19 +145,6 @@ database "**Raw Storage**\n<size:10>5 GB stored</size>" as RAW
 database "**Intermediate**\n<size:10>Partial: 2.5 GB</size>" as INTERMEDIATE
 
 database "**Output**\n<size:10>Not created</size>" as OUTPUT
-
-'========================
-' FLOW WITH FAILURE
-'========================
-
-STEP1 --> RAW : "✓ Success"
-STEP1 --> STEP2 : "Proceed"
-
-STEP2 --> INTERMEDIATE : "✗ Fails at 50%"
-STEP2 ..> STEP3 : "Never reached"
-
-STEP3 ..> STEP4 : "Never reached"
-STEP4 ..> OUTPUT : "Never reached"
 
 note right of STEP2
   **Failure Point**

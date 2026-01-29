@@ -1,6 +1,6 @@
 @startuml
 '=================================================
-' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+' CANONICAL DIAGRAM TEMPLATE - DATA ENGINEERING
 '=================================================
 
 top to bottom direction
@@ -11,10 +11,16 @@ skinparam handwritten false
 skinparam nodesep 30
 skinparam ranksep 40
 
-skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+'-------------------------
+' FONT & GLOBAL STYLE
+'-------------------------
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
 skinparam defaultFontSize 16
 skinparam defaultFontColor #2C3E50
 
+'-------------------------
+' GENERIC BOX STYLE
+'-------------------------
 skinparam rectangle {
     BackgroundColor #F8F9FA
     BorderColor #90A4AE
@@ -24,6 +30,7 @@ skinparam rectangle {
     FontStyle bold
     Padding 20
 }
+
 skinparam component {
     BackgroundColor #FFFFFF
     BorderColor #78909C
@@ -31,6 +38,7 @@ skinparam component {
     FontSize 14
     Padding 12
 }
+
 skinparam database {
     BackgroundColor #ECEFF1
     BorderColor #546E7A
@@ -38,6 +46,7 @@ skinparam database {
     FontSize 14
     FontColor #263238
 }
+
 skinparam arrow {
     Color #607D8B
     Thickness 1.5
@@ -45,22 +54,85 @@ skinparam arrow {
     FontColor #546E7A
 }
 
+'-------------------------
+' SEMANTIC STEREOTYPES
+'-------------------------
+skinparam component<<UI>> {
+    BorderColor #8E24AA
+    BackgroundColor #F3E5F5
+    FontColor #4A148C
+}
+
+skinparam component<<Agent>> {
+    BorderColor #0288D1
+    BackgroundColor #E1F5FE
+    FontColor #01579B
+}
+
+skinparam component<<Tool>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+skinparam component<<Config>> {
+    BorderColor #F57C00
+    BackgroundColor #FFF3E0
+    FontColor #E65100
+}
+
+skinparam component<<Bad>> {
+    BorderColor #C62828
+    BackgroundColor #FFEBEE
+    FontColor #B71C1C
+}
+
 skinparam component<<V1>> {
     BorderColor #F57C00
     BackgroundColor #FFF3E0
     FontColor #E65100
 }
+
 skinparam component<<V2>> {
     BorderColor #2E7D32
     BackgroundColor #E8F5E9
     FontColor #1B5E20
 }
 
-'========================
-' EVOLUTION: v1 FULL REFRESH → v2 INCREMENTAL + IDEMPOTENT
-'========================
+skinparam component<<up>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
 
-rectangle "v1 — Full refresh (does not scale)" #FFF3E0 {
+skinparam component<<down>> {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
+}
+
+skinparam database<<up>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+
+skinparam database<<down>> {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
+}
+
+skinparam component<<success>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+
+skinparam component<<failure>> {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
+}
+
+'=================================================
+
+' EVOLUTION: v1 FULL REFRESH -> v2 INCREMENTAL + IDEMPOTENT
+rectangle "v1 - Full refresh (does not scale)" #FFF3E0 {
     database "**Source**" as S1
     component "**Read full**\n<size:10>No watermark</size>" as R1 <<V1>>
     component "**INSERT**\n<size:10>No MERGE</size>" as I1 <<V1>>
@@ -70,7 +142,7 @@ S1 --> R1
 R1 --> I1
 I1 --> T1
 
-rectangle "v2 — Incremental + idempotent" #E8F5E9 {
+rectangle "v2 - Incremental + idempotent" #E8F5E9 {
     database "**Source**" as S2
     component "**Read slice**\n<size:10>Watermark</size>" as R2 <<V2>>
     database "**Staging**\n<size:10>Dedup</size>" as ST2

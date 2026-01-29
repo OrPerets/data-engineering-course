@@ -1,11 +1,11 @@
 # PlantUML Diagrams Render Summary
 
-Generated on: Thu Jan 29 08:26:54 IST 2026
+Generated on: Thu Jan 29 10:46:56 IST 2026
 
 ## Summary
-- Total diagrams processed: 45
-- Successfully rendered: 26
-- Failed: 19
+- Total diagrams processed: 73
+- Successfully rendered: 61
+- Failed: 12
 
 ## Generated Files
 - diagrams/week01/week1_lecture_slide12_lifecycle.png
@@ -29,6 +29,25 @@ Generated on: Thu Jan 29 08:26:54 IST 2026
 - diagrams/week7/week7_lecture_slide12_system_overview.png
 - diagrams/week7/week7_lecture_slide13_system_overview.png
 - diagrams/week7/week7_lecture_slide19_example_shuffle.png
+- diagrams/week9/week9_lecture_slide20_advanced_text_pipeline_overview.png
+- diagrams/week9/week9_lecture_slide29_failure_regex_ngram.png
+- diagrams/week9/week9_practice_slide19_ngram_pipeline_reasoning.png
+- diagrams/week9/week9_lecture_slide26_mapreduce_ngram_flow.png
+- diagrams/week9/week9_lecture_slide16_advanced_text_pipeline_overview.png
+- diagrams/week9/week9_lecture_slide33_failure_regex_ngram.png
+- diagrams/week9/week9_practice_slide22_ngram_pipeline_reasoning.png
+- diagrams/week13/week13_lecture_slide38_failure_silent_regression.png
+- diagrams/week13/week13_lecture_slide12_dataops_pipeline_overview.png
+- diagrams/week13/week13_practice_slide20_quality_gate_flow.png
+- diagrams/week13/week13_lecture_slide22_test_execution_flow.png
+- diagrams/week14/week14_lecture_slide11_course_pipeline_overview.png
+- diagrams/week14/week14_lecture_slide21_exam_request_flow.png
+- diagrams/week14/week14_lecture_slide19_failure_rerun.png
+- diagrams/week14/week14_practice_slide18_reasoning_pipeline_choice.png
+- diagrams/week12/week12_lecture_slide17_failure_backfill_skew.png
+- diagrams/week12/week12_lecture_slide15_execution_flow.png
+- diagrams/week12/week12_lecture_slide09_advanced_pipeline_overview.png
+- diagrams/week12/week12_practice_slide22_backfill_reasoning.png
 - diagrams/week05/week5_lecture_slide38_failure_partition.png
 - diagrams/week05/week5_lecture_slide13_system_overview.png
 - diagrams/week05/week5_lecture_slide22_query_flow.png
@@ -52,7 +71,16 @@ Generated on: Thu Jan 29 08:26:54 IST 2026
 - diagrams/week04/week4_lecture_slide13_pipeline_overview.png
 - diagrams/week04/week4_practice_slide18_incremental_rerun.png
 - diagrams/week04/week4_lecture_evolution_v1_v2.png
+- diagrams/week10/week10_practice_slide18_window_late_reasoning.png
+- diagrams/week10/week10_lecture_slide38_failure_late_data.png
+- diagrams/week10/week10_lecture_slide13_system_overview.png
+- diagrams/week10/week10_lecture_slide18_window_example.png
+- diagrams/week10/week10_lecture_slide22_execution_flow.png
 - diagrams/template.png
+- diagrams/week11/week11_lecture_slide08_feature_pipeline_overview.png
+- diagrams/week11/week11_lecture_slide16_failure_leakage_rerun.png
+- diagrams/week11/week11_practice_slide20_reasoning_feature_flow.png
+- diagrams/week11/week11_lecture_slide12_execution_flow.png
 
 ## Source Files
 - diagrams/template.puml
@@ -77,6 +105,25 @@ Generated on: Thu Jan 29 08:26:54 IST 2026
 - diagrams/week7/week7_lecture_slide13_system_overview.puml
 - diagrams/week7/week7_practice_slide18_skew_salting.puml
 - diagrams/week7/week7_lecture_slide12_system_overview.puml
+- diagrams/week9/week9_lecture_slide20_advanced_text_pipeline_overview.puml
+- diagrams/week9/week9_practice_slide22_ngram_pipeline_reasoning.puml
+- diagrams/week9/week9_practice_slide19_ngram_pipeline_reasoning.puml
+- diagrams/week9/week9_lecture_slide26_mapreduce_ngram_flow.puml
+- diagrams/week9/week9_lecture_slide16_advanced_text_pipeline_overview.puml
+- diagrams/week9/week9_lecture_slide33_failure_regex_ngram.puml
+- diagrams/week9/week9_lecture_slide29_failure_regex_ngram.puml
+- diagrams/week13/week13_lecture_slide22_test_execution_flow.puml
+- diagrams/week13/week13_practice_slide20_quality_gate_flow.puml
+- diagrams/week13/week13_lecture_slide12_dataops_pipeline_overview.puml
+- diagrams/week13/week13_lecture_slide38_failure_silent_regression.puml
+- diagrams/week14/week14_lecture_slide21_exam_request_flow.puml
+- diagrams/week14/week14_practice_slide18_reasoning_pipeline_choice.puml
+- diagrams/week14/week14_lecture_slide19_failure_rerun.puml
+- diagrams/week14/week14_lecture_slide11_course_pipeline_overview.puml
+- diagrams/week12/week12_lecture_slide09_advanced_pipeline_overview.puml
+- diagrams/week12/week12_practice_slide22_backfill_reasoning.puml
+- diagrams/week12/week12_lecture_slide17_failure_backfill_skew.puml
+- diagrams/week12/week12_lecture_slide15_execution_flow.puml
 - diagrams/week05/week5_lecture_bad_architecture.puml
 - diagrams/week05/week5_practice_slide18_star_query_flow.puml
 - diagrams/week05/week5_lecture_slide22_query_flow.puml
@@ -100,3 +147,12 @@ Generated on: Thu Jan 29 08:26:54 IST 2026
 - diagrams/week04/week4_lecture_bad_architecture.puml
 - diagrams/week04/week4_practice_slide18_incremental_rerun.puml
 - diagrams/week04/week4_lecture_slide13_pipeline_overview.puml
+- diagrams/week10/week10_lecture_slide18_window_example.puml
+- diagrams/week10/week10_lecture_slide13_system_overview.puml
+- diagrams/week10/week10_lecture_slide38_failure_late_data.puml
+- diagrams/week10/week10_lecture_slide22_execution_flow.puml
+- diagrams/week10/week10_practice_slide18_window_late_reasoning.puml
+- diagrams/week11/week11_lecture_slide16_failure_leakage_rerun.puml
+- diagrams/week11/week11_practice_slide20_reasoning_feature_flow.puml
+- diagrams/week11/week11_lecture_slide08_feature_pipeline_overview.puml
+- diagrams/week11/week11_lecture_slide12_execution_flow.puml

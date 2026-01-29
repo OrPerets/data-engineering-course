@@ -1,6 +1,6 @@
 @startuml
 '=================================================
-' WEEK 12 — ADVANCED FEATURE PIPELINE OVERVIEW
+' CANONICAL DIAGRAM TEMPLATE - DATA ENGINEERING
 '=================================================
 
 top to bottom direction
@@ -11,31 +11,138 @@ skinparam handwritten false
 skinparam nodesep 30
 skinparam ranksep 40
 
-skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+'-------------------------
+' FONT & GLOBAL STYLE
+'-------------------------
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
 skinparam defaultFontSize 16
 skinparam defaultFontColor #2C3E50
-skinparam rectangle { BackgroundColor #F8F9FA; BorderColor #90A4AE; BorderThickness 2; FontColor #263238; FontSize 14; FontStyle bold; Padding 20 }
-skinparam component { BackgroundColor #FFFFFF; BorderColor #78909C; BorderThickness 1.5; FontSize 14; Padding 12 }
-skinparam database { BackgroundColor #ECEFF1; BorderColor #546E7A; BorderThickness 1.5; FontSize 14; FontColor #263238 }
-skinparam arrow { Color #607D8B; Thickness 1.5; FontSize 11; FontColor #546E7A }
-skinparam component<<Tool>> { BorderColor #2E7D32; BackgroundColor #E8F5E9; FontColor #1B5E20 }
-skinparam component<<Agent>> { BorderColor #0288D1; BackgroundColor #E1F5FE; FontColor #01579B }
 
-'========================
+'-------------------------
+' GENERIC BOX STYLE
+'-------------------------
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontColor #263238
+    FontSize 14
+    FontStyle bold
+    Padding 20
+}
+
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+    FontColor #263238
+}
+
+skinparam arrow {
+    Color #607D8B
+    Thickness 1.5
+    FontSize 11
+    FontColor #546E7A
+}
+
+'-------------------------
+' SEMANTIC STEREOTYPES
+'-------------------------
+skinparam component<<UI>> {
+    BorderColor #8E24AA
+    BackgroundColor #F3E5F5
+    FontColor #4A148C
+}
+
+skinparam component<<Agent>> {
+    BorderColor #0288D1
+    BackgroundColor #E1F5FE
+    FontColor #01579B
+}
+
+skinparam component<<Tool>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+skinparam component<<Config>> {
+    BorderColor #F57C00
+    BackgroundColor #FFF3E0
+    FontColor #E65100
+}
+
+skinparam component<<Bad>> {
+    BorderColor #C62828
+    BackgroundColor #FFEBEE
+    FontColor #B71C1C
+}
+
+skinparam component<<V1>> {
+    BorderColor #F57C00
+    BackgroundColor #FFF3E0
+    FontColor #E65100
+}
+
+skinparam component<<V2>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+skinparam component<<up>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+
+skinparam component<<down>> {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
+}
+
+skinparam database<<up>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+
+skinparam database<<down>> {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
+}
+
+skinparam component<<success>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+
+skinparam component<<failure>> {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
+}
+
+'=================================================
+
 ' ADVANCED FEATURE PIPELINE (MULTI-STEP DAG)
-'========================
-
 rectangle "RAW SOURCES" #F8F9FA {
     database "**Events**\n<size:10>user/item/ts</size>" as EVT
     database "**Dimensions**\n<size:10>users, items</size>" as DIM
 }
 
-rectangle "STEP 1 — ENTITY FEATURES" #F8F9FA {
+rectangle "STEP 1 - ENTITY FEATURES" #F8F9FA {
     component "**User features**\n<size:10>clicks_7d, views_7d</size>" as UFEAT <<Tool>>
     component "**Item features**\n<size:10>impressions_7d</size>" as IFEAT <<Tool>>
 }
 
-rectangle "STEP 2 — JOIN & DERIVED" #F8F9FA {
+rectangle "STEP 2 - JOIN & DERIVED" #F8F9FA {
     component "**Point-in-time join**\n<size:10>user + item + as_of_ts</size>" as JOIN <<Agent>>
     component "**Derived features**\n<size:10>ratio, cross-entity</size>" as DERIVED <<Tool>>
 }
