@@ -17,6 +17,8 @@
 ## Sources Used (Reference Only)
 - sources/Lecture 2.pptx
 - sources/Lecture 2.pdf
+- sources/new/SQL Optimization.pdf
+- sources/new/Introduction to BI.pdf
 
 ## Core Concepts (1/2)
 
@@ -104,6 +106,97 @@
 - Single node: 1 disk read per local op
 - 3 nodes: 3 disk reads + network; network ~10× slower than disk
 - Example: 1M queries/day; 1 ms vs 10 ms ⇒ 1,000 s vs 10,000 s
+
+## SQL Optimization Fundamentals
+
+## SQL DML and DDL
+- **DML (Data Manipulation Language):** SELECT, INSERT, UPDATE, DELETE — operate on data
+- **DDL (Data Definition Language):** CREATE, DROP, ALTER — operate on schema
+- **Key insight in distributed:** DML cost scales with data distribution; DDL requires schema coordination across nodes
+
+## JOIN Types and Semantics
+- **INNER JOIN:** Returns only rows where join condition matches in both tables; default when using just `JOIN`
+- **LEFT OUTER JOIN:** Returns all rows from left table plus matched rows from right; unmatched right columns are NULL
+- **RIGHT OUTER JOIN:** Returns all rows from right table plus matched rows from left; unmatched left columns are NULL
+- **FULL OUTER JOIN:** Returns all rows from both tables; unmatched columns are NULL on either side
+- **ON vs USING:** Use `ON` when column names differ; use `USING(column)` when column names are identical
+
+## JOIN vs Subquery — When to Use Which
+
+## Advantages of JOIN
+- Executes faster than subquery (retrieval time)
+- Can maximize calculations on the database (instead of multiple queries, use one join)
+- Multiple types available for different scenarios
+- Native support in optimizer
+
+## Disadvantages of JOIN
+- Not as easy to read as subqueries
+- More joins means more work for database server
+- Can be confusing which join type yields correct result
+- Cannot be avoided when retrieving from normalized database
+
+## Advantages of Subquery
+- Divide complex query into isolated parts for series of logical steps
+- Easy to understand and maintain
+- Use results of another query in outer query
+- Can replace complex joins and unions in some cases
+
+## Disadvantages of Subquery
+- Optimizer more mature for joins than subqueries (especially in MySQL)
+- Subquery often more efficient if rewritten as join
+- Cannot modify a table and select from same table within same statement
+
+## Handling NULL Values
+- **NULL is not a string:** `WHERE column = 'NULL'` is wrong; use `WHERE column IS NULL`
+- **NULL propagation:** NULL in arithmetic/comparison often yields NULL
+- **Common sources:** Result of OUTER JOIN; missing data on INSERT; explicit NULL assignment
+- **Detection:** `IS NULL`, `IS NOT NULL` predicates
+- **Engineering:** NULL handling differs by DB and affects distributed query correctness
+
+## Window Functions Overview
+
+## What are Window Functions?
+- Perform calculation on aggregate value based on a set of rows; return multiple rows for each group
+- Unlike GROUP BY, each row retains its distinct identity
+- The "window" represents the group of rows on which function operates
+- Combines aggregation with row-level detail in single query
+
+## Window Function Syntax
+```sql
+window_function_name([ALL] expression)
+OVER (
+  [PARTITION BY columns]
+  [ORDER BY columns]
+)
+```
+- **OVER:** Specifies window clauses for aggregate functions
+- **PARTITION BY:** Divides rows into partitions; function operates on each partition
+- **ORDER BY:** Specifies order of rows within each partition
+
+## Window Function Types
+
+## Aggregate Window Functions
+- Operate on multiple rows: SUM(), MAX(), MIN(), AVG(), COUNT()
+- Example: `SUM(Amount) OVER(PARTITION BY Country)` — sum per country while keeping all rows
+
+## Ranking Window Functions
+- Rank each row within partition: RANK(), DENSE_RANK(), ROW_NUMBER(), NTILE()
+- **RANK():** Same rank for ties; skips next rank (1,2,2,4)
+- **DENSE_RANK():** Same rank for ties; no skip (1,2,2,3)
+- **ROW_NUMBER():** Unique sequential number per partition
+- **NTILE(N):** Distribute rows into N approximately equal groups
+
+## Value Window Functions
+- Access values from other rows: LAG(), LEAD(), FIRST_VALUE(), LAST_VALUE()
+- **LAG(column, N):** Value from N rows before current row
+- **LEAD(column, N):** Value from N rows after current row
+- **FIRST_VALUE/LAST_VALUE:** First/last value in the window
+
+## Window Functions in Distributed Systems
+- **Local execution:** Window on partition key can execute locally per node
+- **Global execution:** Window across partition keys requires shuffle (all data to one node)
+- **Cost implication:** PARTITION BY partition_key keeps computation local; PARTITION BY non-partition-key forces data movement
+- **Best practice:** Design window queries to align with data distribution
 
 ## Why NoSQL Exists
 

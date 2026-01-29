@@ -17,6 +17,8 @@
 ## Sources Used (Reference Only)
 - sources/Lecture 1.pptx
 - sources/Introduction & Recap.pdf
+- sources/new/Introduction to BI.pdf
+- sources/new/KDD.pdf
 
 ## What is Data Engineering?
 
@@ -33,6 +35,32 @@
 - **Scale:** millions of records, terabytes daily — naïve “one script” design fails
 - **Time:** batch (hours) vs real-time (seconds) — choice drives architecture and cost
 - **Quality:** missing, duplicate, inconsistent data — pipelines must detect and handle, not assume
+
+## Business Intelligence Context
+
+## What is Business Intelligence?
+- **Definition:** BI is a set of ideas, methodologies, processes, architectures, and technologies that change raw data into significant and useful data for business purpose
+- **Benefits:** Handle large amounts of data; identify and evolve new opportunities; provide comparable market benefit and long-term stability
+- **Key insight:** Use the technology as a tool — BI enables decision-making, not replaces it
+
+## Data to Wisdom Pyramid
+- **Data:** Raw facts that describe characteristics of an event or object (e.g., 51, 77, 58, 82, 64, 70)
+- **Information:** Data converted into meaningful insights with context (e.g., "Test scores achieved by students; average is 67")
+- **Knowledge:** Skills and experience coupled with information that creates intellectual resources
+- **Wisdom:** Applied knowledge — knowing what to do with the information (e.g., "I better stop the car!" when seeing a red light)
+- **Engineering perspective:** Data engineering builds the pipeline from raw data to information; analytics and BI convert information to knowledge
+
+## Data Mining in Data Engineering
+- **Definition:** Computational process of discovering patterns in large data sets using AI, ML, statistics, and database systems
+- **Tasks in business:** Classification (categorize data), Estimation (response rates, probabilities), Prediction (customer behavior), Affinity Grouping (items purchased together), Description (finding patterns)
+- **Techniques:** Market basket analysis, Cluster analysis, PCA, Decision trees, Regression
+- **Role in DE:** Data engineering provides clean, accessible data that data mining consumes
+
+## Knowledge Discovery in Databases (KDD)
+- **Definition:** Automatic extraction of non-obvious, hidden knowledge from large volumes of data
+- **KDD Process:** Data Cleaning → Data Integration → Selection (task-relevant data) → Data Mining → Pattern Evaluation
+- **Main fields intersection:** Databases (store, access), Statistics (infer info), Machine Learning (algorithms that improve through experience)
+- **Data warehouse role:** Integrated data; OLAP (On-Line Analytical Processing) enables KDD at scale
 
 ## Data Engineering vs Data Science
 
@@ -382,6 +410,23 @@ Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 - **Version:** code (Git), schema (versioned), data (timestamped); enables rollback and debugging
 
 ## Best Practices (2/2)
+
+## CRISP-DM Methodology
+- **Cross-Industry Standard Process for Data Mining:** Most widely-used analytics model
+- **Six major phases:** Business Understanding → Data Understanding → Data Preparation → Modeling → Evaluation → Deployment
+- **Engineering relevance:** Data preparation (ETL) is often 60-80% of the work; data engineering enables all phases
+- **Iterative nature:** Phases cycle back; data pipelines must support reprocessing and iteration
+
+## Proof of Concept (POC)
+- **Definition:** Realization of a method or idea to demonstrate feasibility; small and may not be complete
+- **Purpose:** Test feasibility of business concepts; accelerate business innovation goals
+- **Tips for successful POC:**
+  - Use your own data — POC that doesn't use your data doesn't prove anything
+  - Limit scope of data sources; trim data down or use samples
+  - Don't get distracted by pretty visuals — vendors can fake graphics
+  - Address future and present requirements — BI requirements are dynamic
+  - Consult IT professionals even if not directly involved
+  - Demand one solid report running over your data before financial commitment
 
 ## Test & Design for Failure
 - **Test:** unit (functions), integration (full pipeline), data (outputs), failure (simulate errors)

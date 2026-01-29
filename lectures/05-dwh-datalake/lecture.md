@@ -34,6 +34,9 @@
 - sources/Lecture 5.pptx
 - exercises1.md (SQL joins/aggregations, e-commerce; ETL/ELT patterns)
 - exercises2.md (Module 1: Advanced Relational Modeling and Warehousing; star schema, SCD Type 2, window functions)
+- sources/new/Data Warehouse, ETL.pdf
+- sources/new/Introduction to BI.pdf
+- sources/new/Lecture 10.pdf (Dashboard/Tableau)
 
 ## Diagram Manifest
 - Slide 13 → week5_lecture_slide13_system_overview.puml → DWH and Lake in the analytics pipeline
@@ -51,6 +54,103 @@
 - **Star schema:** one fact table (measures, FKs) + dimension tables (attributes); denormalized for query speed
 - **Partitioning:** data split by key (e.g. date); partition pruning skips irrelevant partitions
 - **Guarantees:** DWH typically ACID on tables; Lake often eventual consistency; both scale with partitioning
+
+## Data Warehouse Definition (Formal)
+- **Bill Inmon's definition:** "A data warehouse is a subject-oriented, integrated, time-variant, and nonvolatile collection of data in support of management's decision-making process"
+- **Subject Oriented:** Organized around major subjects (customer, product, sales); focusing on modeling and analysis for decision makers
+- **Integrated:** Constructed by integrating multiple, heterogeneous data sources; data cleaning and integration techniques applied; ensures consistency in naming conventions, encoding structures, attribute measures
+- **Time Variant:** Provides information from historical perspective (e.g., past 5-10 years); unlike operational DB which holds current value data only
+- **Non-Volatile:** Physically separate store; transformed from operational environment; operational updates do not occur in DWH
+
+## Why Separate Data Warehouse?
+- **Missing data:** Decision support requires historical data which operational DBs do not typically maintain
+- **Data consolidation:** DS requires consolidation (aggregation, summarization) from heterogeneous sources
+- **Data quality:** Different sources use inconsistent data representations
+- **Performance:** Analytical queries should not impact operational system performance
+
+## DWH Back-End Tools and Utilities
+- **Data extraction:** Get data from multiple, heterogeneous, and external sources
+- **Data cleaning:** Detect errors in the data and rectify them when possible
+- **Data transformation:** Convert data from legacy or host format to warehouse format
+- **Load:** Sort, summarize, consolidate, compute views, check integrity, build indices and partitions
+- **Refresh:** Propagate updates from data sources to the warehouse
+
+## DWH Process Architectures
+- **Centralized:** Data collected into single centralized storage and processed by single machine with huge structure (memory, processor, storage)
+- **Distributed:** Information and processing allocated across data centers; processing localized with results grouped into centralized storage
+- **Trade-off:** Centralized simpler to manage; distributed better for scale and locality
+
+## Multidimensional Modeling
+
+## What is Multidimensional Modeling?
+- A technique for structuring data around business concepts
+- **ER models:** Describe entities and relationships (operational focus)
+- **Multi-dimensional models:** Describe measures and dimensions (analytical focus)
+- **Measures:** Numerical data being tracked in business; can be analyzed and examined (e.g., sales amount, quantity)
+- **Dimensions:** Business parameters that define a transaction (e.g., time, product, store, customer)
+
+## Dimensional Hierarchy
+- Dimensions are organized into hierarchies
+- **Time dimension example:** days → weeks → quarters → years
+- **Product dimension example:** product → product line → brand → category
+- Dimensions have attributes (e.g., Time: date, month, year; Store: id, city, state, country)
+- Hierarchies enable drill-down and roll-up operations in OLAP
+
+## DWH Schema Types
+
+## The Star Schema (Classic)
+- **Definition:** A relational model with one-to-many relationship between dimension tables and fact table
+- **Structure:** Single fact table with detail and summary data; fact table primary key has one key column per dimension; each dimension is a single table, highly denormalized
+- **Benefits:**
+  - Easy to understand
+  - Intuitive mapping between business entities
+  - Easy to define hierarchies
+  - Reduces number of joins
+- **Drawbacks:**
+  - Summary data in fact table yields poorer performance for summary level
+  - Huge dimension tables can be a problem
+
+## Star Schema Example
+```
+Sales Fact Table:           time Dimension:
+- time_key (FK)             - time_key (PK)
+- item_key (FK)             - day
+- branch_key (FK)           - day_of_the_week
+- location_key (FK)         - month
+- units_sold                - quarter
+- dollars_sold              - year
+- avg_sales (measures)
+                            item Dimension:
+branch Dimension:           - item_key (PK)
+- branch_key (PK)           - item_name
+- branch_name               - brand
+- branch_type               - type
+                            - supplier_type
+```
+
+## The Snowflake Schema
+- **Definition:** A schema where one or more dimension tables do not connect directly to the fact table but must join through other dimension tables
+- **Snowflaking:** Method of normalizing dimension tables in a star schema; attributes with low cardinality removed to form separate tables linked through artificial keys
+- **Suitable for:** Many-to-many and one-to-many relationships between dimension levels
+- **Result:** More complex queries and reduced query performance
+- **Advantages:**
+  - Small saving in storage space
+  - Normalized structures easier to update and maintain
+- **Disadvantages:**
+  - Schema less intuitive
+  - Difficult to browse through contents
+
+## The Galaxy Schema (Fact Constellation)
+- **Definition:** Two or more fact tables sharing one or more dimensions
+- **Use case:** When multiple business processes share common dimensions
+- **Example:** Sales fact table and Shipping fact table sharing time, item, and location dimensions
+- **Describes:** Logical structure of data warehouse or data mart with multiple subjects
+
+## Which Schema Design is Best?
+- **Performance benchmarking** can determine best design for your use case
+- **Snowflake:** Easier to maintain when dimension tables are very large (reduces overall space); not generally recommended in DWH environment
+- **Star:** More effective for data cube browsing (fewer joins); can significantly affect performance positively
+- **Engineering rule:** Start with star schema; snowflake only if dimension maintenance is a proven bottleneck
 
 ## Architectural Fork: Lake First vs DWH First
 - **Option A — Lake first:** Ingest raw to Lake; process in Lake (Spark, etc.); sync curated tables to DWH or query Lake with SQL engine
@@ -277,6 +377,50 @@ GROUP BY c.region ORDER BY total_revenue DESC;
 - **Detection:** monitor scan size, partition count read, join spill; alert on full scan
 - **Mitigation:** enforce partition filters; coalesce files; size partitions; pre-aggregate or mini dimensions
 - **Lake + DWH:** use Lake for raw and heavy ML; use DWH for governed BI; sync curated tables as needed
+
+## BI Consumers and Dashboards
+
+## What is a Dashboard?
+- **Stephen Few (2004):** "A dashboard is a visual display of the most important information needed to achieve one or more objectives; consolidated and arranged on a single screen so the information can be monitored at a glance"
+- **Big Book of Dashboards (2017):** "A dashboard is a visual display of data used to monitor conditions and/or facilitate understanding"
+- **Key insight:** Dashboards are the primary consumer of DWH data; design DWH for dashboard query patterns
+
+## What Makes a Good Dashboard?
+1. Answers a set of questions
+2. Follows a flow and invites interactivity
+3. Primarily in the form of summaries and exceptions
+4. Specific to and customized for the dashboard's audience and objectives
+5. Makes strategic use of color
+
+## UI/UX Design Principles for BI
+- **User familiarity:** Interface based on user-oriented terms
+- **Consistency:** Appropriate level of consistency in system display
+- **Minimal surprise:** Predictable operation of comparable commands
+- **User guidance:** Help systems, on-line manuals supplied
+- **User diversity:** Interaction facilities for different types of users (e.g., larger text for those with seeing difficulties)
+
+## Human Factors in Dashboard Design
+- **Limited short-term memory:** People can instantaneously remember about 7 items; presenting more increases mistakes
+- **People make mistakes:** Inappropriate alarms and messages can increase stress and likelihood of more mistakes
+- **Different interaction preferences:** Some like pictures, some like text
+
+## Color Use Guidelines
+- Limit the number of colors used and be conservative
+- Use color change to show change in system status
+- Use color coding to support the task users are trying to perform
+- Use color coding thoughtfully and consistently
+- Be careful about color pairings (accessibility)
+
+## Information Presentation Types
+- **Static information:** Initialized at beginning of session; does not change during session (numeric or textual)
+- **Dynamic information:** Changes during session; changes must be communicated to user (numeric or textual)
+- **Engineering implication:** DWH must support both periodic batch updates and near-real-time refresh based on dashboard requirements
+
+## BI Tools Connection to DWH
+- BI tools connect to DWH via SQL, stored procedures, or APIs
+- Common connections: SQL Server Management Studio, Excel Pivot Tables, Tableau, Power BI, Looker
+- **Architecture:** DWH → Stored Procedures → BI Tool → Reports/Dashboards
+- All these tools assume clean, well-modeled data in DWH (star schema, partitioned, indexed)
 
 ## Best Practices (1/2)
 - Model analytics with star schema; partition fact table by date (or time range)

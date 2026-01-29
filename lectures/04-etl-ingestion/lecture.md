@@ -35,6 +35,8 @@
 - sources/Lecture 4.pptx
 - exercises1.md (ETL/ELT, batch ingestion, incremental, failure/reprocessing)
 - exercises2.md (Module 3: Robust Data Ingestion, watermarking, DLQ, schema-on-read)
+- sources/new/Data Warehouse, ETL.pdf
+- sources/new/STTM.pdf
 
 ## Diagram Manifest
 - Slide 13 → week4_lecture_slide13_pipeline_overview.puml → ETL pipeline system overview
@@ -53,6 +55,38 @@
 - **Watermark:** last_loaded_at or max(id); next run reads only data after watermark
 - **CDC:** change data capture; apply inserts/updates/deletes from source log
 
+## Source to Target Mapping (STTM)
+
+## What is Source to Target Mapping?
+- **Definition:** Set of instructions that define how the structure and content in a source system would be transferred and stored in the target system
+- **Purpose:** Guidelines for ETL process; instructions on dealing with data types, unknown members, default values, FK relationships, metadata
+- **Key insight:** When moving data from one system to another, source and target almost never have the same schema
+
+## Why STTM is Essential
+- STTM assists in three key processes of the ETL pipeline:
+  - **Data Integration:** Moving data from operational DB to data warehouse; defines how sources relate to DWH; which record preferred if duplicates found
+  - **Data Migration:** One-time movement of data to ensure multiple systems have same data
+  - **Data Transformation:** Conversion of data format; includes type transformation, handling missing data, mapping, filtering, aggregating
+
+## Steps in Source to Target Mapping
+1. **Define Attributes:** Which tables and attributes to transfer; frequency of integration
+2. **Map Attributes:** Map according to destination system's attributes
+3. **Transform Data:** Convert data to form suitable for DWH storage
+4. **Test Mapping:** Test on sample data to ensure correct mapping
+5. **Deploy Mapping:** Schedule on live data per user requirements
+6. **Maintain Mapping:** Update periodically to handle large datasets and new sources
+
+## STTM Techniques
+- **Manual Mapping:**
+  - Manually code connection between source and destination
+  - Use when mapping few sources with limited data
+  - Advantages: Flexible, completely customizable
+  - Disadvantages: Time-consuming, resource-intensive, error-prone
+- **Automated Mapping:**
+  - Use when sources and volume increase with each round
+  - Advantages: Fast, easy to scale, eliminates human error
+  - Disadvantages: Training required, in-house solutions expensive to build
+
 ## Architectural Fork: ETL vs ELT
 - **Option A — ETL:** Transform in pipeline (Spark, Python); then load cleaned data
   - Pros: target sees only clean data; smaller load volume
@@ -61,6 +95,59 @@
   - Pros: one copy of raw; transform scales with DWH engine; schema-on-read flexibility
   - Cons: raw can be large; governance must control what is “curated”
 - **Decision rule:** Choose ETL when source is small and transform is complex outside SQL. Choose ELT when you have a powerful DWH/lake engine and want raw + curated in one place. In *this* system we use ETL with staging so that invalid rows never touch the target and dedup is explicit before MERGE
+
+## Detailed ETL vs ELT Comparison
+
+| Parameter | ETL | ELT |
+|-----------|-----|-----|
+| Process | Data transferred to staging server then to DWH | Data remains in the DB of the data warehouse |
+| Code Usage | Small amount of data | Huge data volumes |
+| Transformation Time | Needs time for transformation completion | Speed never depends on the size of the data |
+| Maintenance | High maintenance - select data to load and transform | Low maintenance - data available all the time |
+| Implementation | Easier to implement at early stage | Requires in-depth knowledge of expert skills and tools |
+| Cost | High for small and medium business | Low entry costs using SaaS |
+| Lookups | Dimensions and facts need to be available in staging | All data available because extract and load occur in single action |
+| Unstructured Data | Supports relational data | Supports unstructured data |
+
+## ETL Pipelining Concept
+- ETL uses pipelining: as soon as data is extracted, transformation begins
+- During transformation, new data can be obtained from source
+- When modified data is being loaded, already extracted data can be transformed
+- **Benefit:** Overlapping phases reduce total pipeline time
+
+## Building Batch ETL Pipeline — Detailed Steps
+
+## Step 1: Reference Data
+- Create a set of data that defines the set of permissible values
+- Example: In a country data field, define allowed country codes
+- Acts as validation and standardization reference
+
+## Step 2: Extract from Data Sources
+- Combine data from multiple source systems (relational DB, non-relational DB, XML, JSON, CSV)
+- After extraction, convert to single format for standardization
+- Choose extraction method based on source (date/time stamps, database log tables, hybrid)
+
+## Step 3: Data Validation
+- Automated process confirms whether pulled data has expected values
+- Example: Financial transaction dates should be within past 12 months
+- Rejected data analyzed regularly to identify issues
+- Correct source data or modify extracted data to resolve problems in next batches
+
+## Step 4: Transform Data
+- Remove extraneous or erroneous data
+- Apply business rules
+- Check data integrity (ensure data not corrupted by ETL)
+- Example: Summarize dollar amounts of invoices into daily or monthly totals
+
+## Step 5: Stage
+- Enter data into staging database first
+- Makes it easier to roll back if something goes wrong
+- Provides checkpoint for recovery
+
+## Step 6: Publish to Data Warehouse
+- Load data to target tables
+- Some DWH overwrites existing information; others append
+- ETL pipeline loads new batch daily, weekly, or monthly based on requirements
 
 ## Architectural Fork: MERGE vs Overwrite
 - **Option A — MERGE (upsert):** ON key match update/insert; rerun safe
