@@ -1,0 +1,102 @@
+# PlantUML Diagrams Render Summary
+
+Generated on: Thu Jan 29 08:26:54 IST 2026
+
+## Summary
+- Total diagrams processed: 45
+- Successfully rendered: 26
+- Failed: 19
+
+## Generated Files
+- diagrams/week01/week1_lecture_slide12_lifecycle.png
+- diagrams/week01/week1_lecture_slide20_ingestion.png
+- diagrams/week01/week1_lecture_slide35_failure.png
+- diagrams/week01/week1_practice_slide15_architecture.png
+- diagrams/week06/week6_lecture_slide20_execution_flow.png
+- diagrams/week06/week6_lecture_slide17_system_overview.png
+- diagrams/week06/week6_lecture_slide29_failure_skew.png
+- diagrams/week06/week6_practice_slide18_skew_mitigation.png
+- diagrams/week8/week8_lecture_slide26_failure_stopword_skew.png
+- diagrams/week8/week8_lecture_slide24_mapreduce_execution_flow.png
+- diagrams/week8/week8_lecture_slide14_tfidf_pipeline_overview.png
+- diagrams/week8/week8_practice_slide20_tfidf_mapreduce_skew.png
+- diagrams/week7/week7_practice_slide18_skew_salting.png
+- diagrams/week7/week7_lecture_slide28_failure_skew.png
+- diagrams/week7/week7_lecture_slide42_failure_skew.png
+- diagrams/week7/week7_lecture_slide20_example_shuffle.png
+- diagrams/week7/week7_lecture_slide28_execution_flow.png
+- diagrams/week7/week7_lecture_slide24_execution_flow.png
+- diagrams/week7/week7_lecture_slide12_system_overview.png
+- diagrams/week7/week7_lecture_slide13_system_overview.png
+- diagrams/week7/week7_lecture_slide19_example_shuffle.png
+- diagrams/week05/week5_lecture_slide38_failure_partition.png
+- diagrams/week05/week5_lecture_slide13_system_overview.png
+- diagrams/week05/week5_lecture_slide22_query_flow.png
+- diagrams/week05/week5_lecture_evolution_v1_v2.png
+- diagrams/week05/week5_practice_slide18_star_query_flow.png
+- diagrams/week05/week5_lecture_bad_architecture.png
+- diagrams/week02/week2_lecture_slide24_query_flow.png
+- diagrams/week02/week2_lecture_slide42_failure_partition.png
+- diagrams/week02/week2_lecture_slide35_query_flow.png
+- diagrams/week02/week2_practice_slide18_architecture.png
+- diagrams/week02/week2_lecture_slide14_system_overview.png
+- diagrams/week02/week2_lecture_slide13_system_overview.png
+- diagrams/week02/week2_lecture_slide45_failure_partition.png
+- diagrams/week03/week3_practice_slide18_skew_mitigation.png
+- diagrams/week03/week3_lecture_slide13_system_overview.png
+- diagrams/week03/week3_lecture_slide38_failure_skew.png
+- diagrams/week03/week3_lecture_slide22_execution_flow.png
+- diagrams/week04/week4_lecture_slide22_execution_flow.png
+- diagrams/week04/week4_lecture_bad_architecture.png
+- diagrams/week04/week4_lecture_slide38_failure_rerun.png
+- diagrams/week04/week4_lecture_slide13_pipeline_overview.png
+- diagrams/week04/week4_practice_slide18_incremental_rerun.png
+- diagrams/week04/week4_lecture_evolution_v1_v2.png
+- diagrams/template.png
+
+## Source Files
+- diagrams/template.puml
+- diagrams/week01/week1_practice_slide15_architecture.puml
+- diagrams/week01/week1_lecture_slide35_failure.puml
+- diagrams/week01/week1_lecture_slide20_ingestion.puml
+- diagrams/week01/week1_lecture_slide12_lifecycle.puml
+- diagrams/week06/week6_lecture_slide29_failure_skew.puml
+- diagrams/week06/week6_lecture_slide20_execution_flow.puml
+- diagrams/week06/week6_practice_slide18_skew_mitigation.puml
+- diagrams/week06/week6_lecture_slide17_system_overview.puml
+- diagrams/week8/week8_lecture_slide26_failure_stopword_skew.puml
+- diagrams/week8/week8_lecture_slide24_mapreduce_execution_flow.puml
+- diagrams/week8/week8_lecture_slide14_tfidf_pipeline_overview.puml
+- diagrams/week8/week8_practice_slide20_tfidf_mapreduce_skew.puml
+- diagrams/week7/week7_lecture_slide19_example_shuffle.puml
+- diagrams/week7/week7_lecture_slide24_execution_flow.puml
+- diagrams/week7/week7_lecture_slide20_example_shuffle.puml
+- diagrams/week7/week7_lecture_slide28_execution_flow.puml
+- diagrams/week7/week7_lecture_slide28_failure_skew.puml
+- diagrams/week7/week7_lecture_slide42_failure_skew.puml
+- diagrams/week7/week7_lecture_slide13_system_overview.puml
+- diagrams/week7/week7_practice_slide18_skew_salting.puml
+- diagrams/week7/week7_lecture_slide12_system_overview.puml
+- diagrams/week05/week5_lecture_bad_architecture.puml
+- diagrams/week05/week5_practice_slide18_star_query_flow.puml
+- diagrams/week05/week5_lecture_slide22_query_flow.puml
+- diagrams/week05/week5_lecture_slide13_system_overview.puml
+- diagrams/week05/week5_lecture_evolution_v1_v2.puml
+- diagrams/week05/week5_lecture_slide38_failure_partition.puml
+- diagrams/week02/week2_practice_slide18_architecture.puml
+- diagrams/week02/week2_lecture_slide13_system_overview.puml
+- diagrams/week02/week2_lecture_slide45_failure_partition.puml
+- diagrams/week02/week2_lecture_slide42_failure_partition.puml
+- diagrams/week02/week2_lecture_slide35_query_flow.puml
+- diagrams/week02/week2_lecture_slide24_query_flow.puml
+- diagrams/week02/week2_lecture_slide14_system_overview.puml
+- diagrams/week03/week3_lecture_slide38_failure_skew.puml
+- diagrams/week03/week3_lecture_slide13_system_overview.puml
+- diagrams/week03/week3_lecture_slide22_execution_flow.puml
+- diagrams/week03/week3_practice_slide18_skew_mitigation.puml
+- diagrams/week04/week4_lecture_slide22_execution_flow.puml
+- diagrams/week04/week4_lecture_slide38_failure_rerun.puml
+- diagrams/week04/week4_lecture_evolution_v1_v2.puml
+- diagrams/week04/week4_lecture_bad_architecture.puml
+- diagrams/week04/week4_practice_slide18_incremental_rerun.puml
+- diagrams/week04/week4_lecture_slide13_pipeline_overview.puml

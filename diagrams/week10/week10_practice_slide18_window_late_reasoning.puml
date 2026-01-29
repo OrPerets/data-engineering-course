@@ -1,0 +1,31 @@
+@startuml
+'=================================================
+' PRACTICE: WINDOW + LATE DATA REASONING
+'=================================================
+
+top to bottom direction
+skinparam defaultFontSize 14
+skinparam defaultFontColor #2C3E50
+
+rectangle "Stream: (user_id, event_time, amount)" #F8F9FA {
+    card "A, 10:00, 5" as a1
+    card "B, 10:02, 3" as a2
+    card "A, 10:04, 2" as a3
+    card "Late: A, 10:01, 1" as late
+}
+
+rectangle "Tumbling 5 min [10:00,10:05)" #F8F9FA {
+    component "**Without late**\n<size:10>sum = 5+3+2 = 10</size>" as w1 #E8F5E9
+    component "**With late (allowed)**\n<size:10>sum = 10+1 = 11</size>" as w1b #E1F5FE
+}
+
+a1 --> w1
+a2 --> w1
+a3 --> w1
+late --> w1b
+w1 --> w1b : retract + update or side output
+
+note bottom of w1 : **Idempotent sink:** key = (window, user). Upsert so late event updates same row.
+note bottom of w1b : **Trade-off:** allow Lateness → correct sum but delayed result and more state.
+
+@enduml

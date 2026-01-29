@@ -1,0 +1,92 @@
+@startuml
+'=================================================
+' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+'=================================================
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontColor #263238
+    FontSize 14
+    FontStyle bold
+    Padding 20
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+    FontColor #263238
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 1.5
+    FontSize 11
+    FontColor #546E7A
+}
+
+skinparam component<<UI>> {
+    BorderColor #8E24AA
+    BackgroundColor #F3E5F5
+    FontColor #4A148C
+}
+skinparam component<<Agent>> {
+    BorderColor #0288D1
+    BackgroundColor #E1F5FE
+    FontColor #01579B
+}
+skinparam component<<Tool>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+'========================
+' MAP-SHUFFLE-REDUCE EXECUTION FLOW
+'========================
+
+rectangle "MAP" #F8F9FA {
+    database "**Records**\n<size:10>r1, r2, r3...</size>" as RECS
+    component "**Map**\n<size:10>emit (k,v)</size>" as MAP <<Tool>>
+}
+
+rectangle "SHUFFLE" #F8F9FA {
+    component "**Sort & Transfer**\n<size:10>Group by key</size>" as SHUFFLE <<Agent>>
+    database "**Groups**\n<size:10>k1->[v1,v2,...]</size>" as GROUPS
+}
+
+rectangle "REDUCE" #F8F9FA {
+    component "**Reduce**\n<size:10>aggregate per key</size>" as REDUCE <<Tool>>
+    database "**Output**\n<size:10>(k, result)</size>" as OUT
+}
+
+RECS --> MAP : "read"
+MAP --> SHUFFLE : "(k,v) pairs"
+SHUFFLE --> GROUPS : "same key -> same node"
+GROUPS --> REDUCE : "iterator"
+REDUCE --> OUT : "write"
+
+note bottom of MAP : Pure function per record. No cross-record state.
+note bottom of SHUFFLE : **Bottleneck:** network I/O. Most expensive phase.
+
+@enduml

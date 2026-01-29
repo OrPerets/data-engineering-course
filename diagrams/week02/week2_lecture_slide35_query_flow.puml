@@ -1,0 +1,125 @@
+@startuml
+'=================================================
+' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+'=================================================
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+'-------------------------
+' FONT & GLOBAL STYLE
+'-------------------------
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+'-------------------------
+' GENERIC BOX STYLE
+'-------------------------
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontColor #263238
+    FontSize 14
+    FontStyle bold
+    Padding 20
+}
+
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+    FontColor #263238
+}
+
+skinparam arrow {
+    Color #607D8B
+    Thickness 1.5
+    FontSize 11
+    FontColor #546E7A
+}
+
+'-------------------------
+' SEMANTIC STEREOTYPES
+'-------------------------
+skinparam component<<UI>> {
+    BorderColor #8E24AA
+    BackgroundColor #F3E5F5
+    FontColor #4A148C
+}
+
+skinparam component<<Agent>> {
+    BorderColor #0288D1
+    BackgroundColor #E1F5FE
+    FontColor #01579B
+}
+
+skinparam component<<Tool>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+skinparam component<<Config>> {
+    BorderColor #F57C00
+    BackgroundColor #FFF3E0
+    FontColor #E65100
+}
+
+'========================
+' QUERY / REQUEST EXECUTION FLOW
+'========================
+
+component "**Client**\n<size:10>Query by user_id</size>" as C
+
+component "**1. Route**\n<size:10>hash(user_id) mod N</size>" as R
+
+database "**2a. Partition 0**\n<size:10>Users, Orders</size>" as P0
+database "**2b. Partition 1**\n<size:10>Users, Orders</size>" as P1
+database "**2c. Partition 2**\n<size:10>Users, Orders</size>" as P2
+
+component "**3. Merge**\n<size:10>Single partition → Result</size>" as M
+
+database "**Response**\n<size:10>User + Orders</size>" as OUT
+
+C --> R : "user_id=123"
+R --> P1 : "P1 (key 123)"
+R ..> P0 : "skip"
+R ..> P2 : "skip"
+P1 --> M : "Local read"
+M --> OUT : "JSON"
+
+note bottom of R
+  **Key-based routing**
+  O(1) lookup
+  No cross-partition
+end note
+
+note bottom of P1
+  **Co-location**
+  User + Orders same node
+  No network transfer
+end note
+
+note bottom of M
+  **NoSQL pattern**
+  Single partition read
+  ~1–5 ms typical
+end note
+
+@enduml

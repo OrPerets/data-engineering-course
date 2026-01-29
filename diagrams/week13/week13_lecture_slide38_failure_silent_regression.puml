@@ -1,0 +1,51 @@
+@startuml
+'=================================================
+' Week 13 — Failure: Silent Regression (test gap)
+' Based on diagrams/template.puml
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle { BackgroundColor #F8F9FA; BorderColor #90A4AE; BorderThickness 2; FontColor #263238; FontSize 14; FontStyle bold; Padding 20 }
+skinparam component { BackgroundColor #FFFFFF; BorderColor #78909C; BorderThickness 1.5; FontSize 14; Padding 12 }
+skinparam database { BackgroundColor #ECEFF1; BorderColor #546E7A; BorderThickness 1.5; FontSize 14; FontColor #263238 }
+skinparam arrow { Color #607D8B; Thickness 1.5; FontSize 11; FontColor #546E7A }
+
+skinparam component<<Tool>> { BorderColor #2E7D32; BackgroundColor #E8F5E9; FontColor #1B5E20 }
+
+rectangle "Source" #F8F9FA {
+    database "**Raw**\n<size:10>Bad row (type / null)</size>" as RAW
+}
+
+rectangle "Pipeline" #F8F9FA {
+    component "**Transform**\n<size:10>No check on X</size>" as T
+    component "**Load**\n<size:10>INSERT / MERGE</size>" as L
+}
+
+rectangle "Tests" #F8F9FA {
+    component "**Existing tests**\n<size:10>Count / PK only</size>" as TEST
+}
+
+rectangle "Target" #F8F9FA {
+    database "**Target**\n<size:10>Corrupt value in col X</size>" as TGT
+}
+
+RAW --> T
+T --> L
+L --> TGT
+TGT --> TEST
+
+note right of T : **Gap:** No assertion on column X;\nbad value passes through.
+note bottom of TGT : **Result:** Dashboard shows wrong X;\nno alert; silent regression.
+
+@enduml

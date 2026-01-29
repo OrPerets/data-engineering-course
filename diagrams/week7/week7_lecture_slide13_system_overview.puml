@@ -1,0 +1,59 @@
+@startuml
+'=================================================
+' Week 7: Advanced MapReduce — System/Pipeline Overview
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam rectangle { BackgroundColor #F8F9FA; BorderColor #90A4AE; BorderThickness 2 }
+skinparam component { BackgroundColor #FFFFFF; BorderColor #78909C; BorderThickness 1.5 }
+skinparam database { BackgroundColor #ECEFF1; BorderColor #546E7A }
+skinparam arrow { Color #607D8B; Thickness 1.5 }
+
+rectangle "INPUT" #F8F9FA {
+    database "**HDFS / Files**\n<size:10>Splits by block</size>" as INPUT
+}
+
+rectangle "MAP LAYER" #F8F9FA {
+    component "**Map**\n<size:10>Emit (k,v)</size>" as MAP1 <<Tool>>
+    component "**Map**\n<size:10>Emit (k,v)</size>" as MAP2 <<Tool>>
+    component "**Map**\n<size:10>Emit (k,v)</size>" as MAP3 <<Tool>>
+}
+
+rectangle "SHUFFLE" #F8F9FA {
+    component "**Partition**\n<size:10>hash(k) → reducer</size>" as PART <<Agent>>
+    component "**Sort / Transfer**\n<size:10>Network I/O</size>" as SHUFFLE <<Tool>>
+}
+
+rectangle "REDUCE LAYER" #F8F9FA {
+    component "**Reduce**\n<size:10>Group by k</size>" as R1 <<Tool>>
+    component "**Reduce**\n<size:10>Group by k</size>" as R2 <<Tool>>
+}
+
+rectangle "OUTPUT" #F8F9FA {
+    database "**HDFS / Sink**\n<size:10>Final (k,v')</size>" as OUT
+}
+
+INPUT --> MAP1
+INPUT --> MAP2
+INPUT --> MAP3
+MAP1 --> PART
+MAP2 --> PART
+MAP3 --> PART
+PART --> SHUFFLE
+SHUFFLE --> R1
+SHUFFLE --> R2
+R1 --> OUT
+R2 --> OUT
+
+note right of PART
+  **Skew mitigation:** Combiner,
+  custom partitioner, salting
+end note
+
+@enduml

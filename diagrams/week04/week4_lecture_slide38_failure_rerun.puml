@@ -1,0 +1,93 @@
+@startuml
+'=================================================
+' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontColor #263238
+    FontSize 14
+    FontStyle bold
+    Padding 20
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+    FontColor #263238
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 1.5
+    FontSize 11
+    FontColor #546E7A
+}
+
+skinparam component<<Agent>> {
+    BorderColor #0288D1
+    BackgroundColor #E1F5FE
+    FontColor #01579B
+}
+skinparam component<<Tool>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+'========================
+' FAILURE: PARTIAL RUN AND IDEMPOTENT RERUN
+'========================
+
+package "RUN 1" #F8F9FA {
+    component "**Process P1**\n<size:10>2025-12-01</size>" as P1 <<Tool>>
+    component "**Process P2**\n<size:10>2025-12-02</size>" as P2 <<Tool>>
+    component "**Process P3**\n<size:10>2025-12-03</size>" as P3 <<Tool>>
+}
+
+database "**Target**\n<size:10>P1, P2 written</size>" as TARGET
+
+package "RUN 2 (Rerun)" #F8F9FA {
+    component "**Skip P1, P2**\n<size:10>Already in target</size>" as SKIP <<Agent>>
+    component "**Process P3 only**\n<size:10>Idempotent write</size>" as P3B <<Tool>>
+}
+
+P1 --> TARGET : "OK"
+P2 --> TARGET : "OK"
+P3 --> TARGET : "FAIL"
+
+note bottom of P3
+  **Failure:** Job fails
+  before P3 written
+end note
+
+SKIP --> P3B : "Resume"
+P3B --> TARGET : "P3 written\n(no duplicate P1, P2)"
+
+note bottom of TARGET
+  **Idempotent:** MERGE / partition
+  Rerun does not duplicate
+end note
+
+@enduml

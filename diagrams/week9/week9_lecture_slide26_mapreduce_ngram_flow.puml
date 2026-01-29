@@ -1,0 +1,40 @@
+@startuml
+'=================================================
+' Week 9: MapReduce — N-gram extraction flow
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam rectangle { BackgroundColor #F8F9FA; BorderColor #90A4AE; BorderThickness 2 }
+skinparam component { BackgroundColor #FFFFFF; BorderColor #78909C; BorderThickness 1.5 }
+skinparam database { BackgroundColor #ECEFF1; BorderColor #546E7A }
+skinparam arrow { Color #607D8B; Thickness 1.5 }
+
+rectangle "MAP" #F8F9FA {
+    component "**Map**\n(doc_id, text) → tokenize\nemit ((doc_id, ngram), 1)" as MAP
+}
+
+rectangle "SHUFFLE" #F8F9FA {
+    component "**Partition**\nby (doc_id, ngram)" as PART
+}
+
+rectangle "REDUCE" #F8F9FA {
+    component "**Reduce**\n(doc_id, ngram), [1,1..] → sum\n(doc_id, ngram, count)" as RED
+}
+
+rectangle "OUTPUT" #F8F9FA {
+    database "**N-gram counts**\n(doc_id, ngram, count)" as OUT
+}
+
+MAP --> PART : "(doc_id, ngram), 1"
+PART --> RED : "group by key"
+RED --> OUT : "(doc_id, ngram, count)"
+
+note bottom of MAP : Combiner: sum 1s per (doc_id, ngram) before shuffle to cut network.
+
+@enduml

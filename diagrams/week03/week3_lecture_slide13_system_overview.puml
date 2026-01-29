@@ -1,0 +1,115 @@
+@startuml
+'=================================================
+' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontColor #263238
+    FontSize 14
+    FontStyle bold
+    Padding 20
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+    FontColor #263238
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 1.5
+    FontSize 11
+    FontColor #546E7A
+}
+
+skinparam component<<UI>> {
+    BorderColor #8E24AA
+    BackgroundColor #F3E5F5
+    FontColor #4A148C
+}
+skinparam component<<Agent>> {
+    BorderColor #0288D1
+    BackgroundColor #E1F5FE
+    FontColor #01579B
+}
+skinparam component<<Tool>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+skinparam component<<Config>> {
+    BorderColor #F57C00
+    BackgroundColor #FFF3E0
+    FontColor #E65100
+}
+
+'========================
+' PARALLEL PIPELINE OVERVIEW (Divide-and-Conquer)
+'========================
+
+rectangle "INPUT" #F8F9FA {
+    database "**Input Data**\n<size:10>Split into chunks</size>" as INPUT
+}
+
+rectangle "DIVIDE" #F8F9FA {
+    component "**Split / Partition**\n<size:10>By key or range</size>" as SPLIT
+}
+
+rectangle "PARALLEL WORKERS" #F8F9FA {
+    component "**Worker 1**\n<size:10>Map</size>" as W1 <<Tool>>
+    component "**Worker 2**\n<size:10>Map</size>" as W2 <<Tool>>
+    component "**Worker 3**\n<size:10>Map</size>" as W3 <<Tool>>
+}
+
+rectangle "COMBINE" #F8F9FA {
+    component "**Shuffle / Group**\n<size:10>Same key -> same reducer</size>" as SHUFFLE <<Agent>>
+}
+
+rectangle "REDUCE" #F8F9FA {
+    component "**Reducer 1**\n<size:10>Aggregate</size>" as R1 <<Tool>>
+    component "**Reducer 2**\n<size:10>Aggregate</size>" as R2 <<Tool>>
+}
+
+rectangle "OUTPUT" #F8F9FA {
+    database "**Result**\n<size:10>Aggregated output</size>" as OUTPUT
+}
+
+INPUT --> SPLIT
+SPLIT --> W1 : "chunk 1"
+SPLIT --> W2 : "chunk 2"
+SPLIT --> W3 : "chunk 3"
+W1 --> SHUFFLE
+W2 --> SHUFFLE
+W3 --> SHUFFLE
+SHUFFLE --> R1 : "key group A"
+SHUFFLE --> R2 : "key group B"
+R1 --> OUTPUT
+R2 --> OUTPUT
+
+note bottom of SPLIT : **Divide:** Independent chunks. No shared state.
+note bottom of SHUFFLE : **Conquer:** Group by key. Network cost.
+
+@enduml

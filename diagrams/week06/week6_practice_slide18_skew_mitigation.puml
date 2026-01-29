@@ -1,0 +1,99 @@
+@startuml
+'=================================================
+' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+'=================================================
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontColor #263238
+    FontSize 14
+    FontStyle bold
+    Padding 20
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+    FontColor #263238
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 1.5
+    FontSize 11
+    FontColor #546E7A
+}
+
+skinparam component<<Agent>> {
+    BorderColor #0288D1
+    BackgroundColor #E1F5FE
+    FontColor #01579B
+}
+skinparam component<<Tool>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+'========================
+' SKEW MITIGATION: SALTING FLOW (Reasoning)
+'========================
+
+package "BEFORE (Skew)" #F8F9FA {
+    component "**Large table**\n<size:10>key 888 → 1B rows</size>" as LARGE
+    component "**Shuffle**\n<size:10>all to one reducer</size>" as SHUFFLE1
+    component "**Reducer**\n<size:10>OOM / timeout</size>" as REDUCE1
+}
+
+package "SALTING" #F8F9FA {
+    component "**Map: append salt**\n<size:10>888→888-1..888-N</size>" as SALT
+    component "**Small table: replicate**\n<size:10>888→888-1..888-N</size>" as REPL
+}
+
+package "AFTER (Balanced)" #F8F9FA {
+    component "**Shuffle**\n<size:10>888-i → reducer i</size>" as SHUFFLE2
+    component "**N Reducers**\n<size:10>each ~1B/N rows</size>" as REDUCE2
+    component "**Second MR / merge**\n<size:10>sum per original key</size>" as MERGE
+}
+
+LARGE --> SHUFFLE1
+SHUFFLE1 --> REDUCE1
+
+LARGE --> SALT
+SALT --> SHUFFLE2
+REPL --> SHUFFLE2
+SHUFFLE2 --> REDUCE2
+REDUCE2 --> MERGE
+
+note bottom of SALT
+  Large table: emit (key-salt, value)
+  Small table: emit (key-i, value) for i=1..N
+end note
+
+note bottom of MERGE
+  Join correct; then aggregate
+  to get final result per key
+end note
+
+@enduml

@@ -1,0 +1,132 @@
+@startuml
+'=================================================
+' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+'-------------------------
+' FONT & GLOBAL STYLE
+'-------------------------
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+'-------------------------
+' GENERIC BOX STYLE
+'-------------------------
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontColor #263238
+    FontSize 14
+    FontStyle bold
+    Padding 20
+}
+
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+    FontColor #263238
+}
+
+skinparam arrow {
+    Color #607D8B
+    Thickness 1.5
+    FontSize 11
+    FontColor #546E7A
+}
+
+'-------------------------
+' SEMANTIC STEREOTYPES
+'-------------------------
+skinparam component<<UI>> {
+    BorderColor #8E24AA
+    BackgroundColor #F3E5F5
+    FontColor #4A148C
+}
+
+skinparam component<<Agent>> {
+    BorderColor #0288D1
+    BackgroundColor #E1F5FE
+    FontColor #01579B
+}
+
+skinparam component<<Tool>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+skinparam component<<Config>> {
+    BorderColor #F57C00
+    BackgroundColor #FFF3E0
+    FontColor #E65100
+}
+
+'========================
+' PRACTICE: SOCIAL MEDIA ARCHITECTURE OPTIONS
+'========================
+
+package "ACCESS PATTERNS" #F8F9FA {
+    component "**User profile**\n<size:10>user_id → KV</size>" as AP1
+    component "**Posts by user**\n<size:10>user_id → list</size>" as AP2
+    component "**Likes by post**\n<size:10>post_id → list</size>" as AP3
+    component "**Trending**\n<size:10>aggregation</size>" as AP4
+}
+
+package "SQL OPTION" #FFEBEE {
+    database "**Users**\n<size:10>Partition by user_id</size>" as USQL
+    database "**Posts**\n<size:10>Partition by user_id</size>" as PSQL
+    database "**Likes**\n<size:10>Partition by post_id</size>" as LSQL
+}
+
+package "NoSQL OPTION" #E8F5E9 {
+    database "**Users+Posts**\n<size:10>Co-locate, user_id PK</size>" as UNOSQL
+    database "**Likes**\n<size:10>post_id PK</size>" as LNOSQL
+}
+
+AP1 --> USQL
+AP1 --> UNOSQL
+AP2 --> PSQL
+AP2 --> UNOSQL
+AP3 --> LSQL
+AP3 --> LNOSQL
+AP4 --> USQL
+AP4 --> PSQL
+AP4 --> LSQL
+
+note right of USQL
+  Joins across partitions
+  Higher latency
+end note
+
+note right of UNOSQL
+  Single partition reads
+  Lower latency
+  Denormalized
+end note
+
+note bottom of AP4
+  **Trending**: SQL or
+  dedicated analytics store
+end note
+
+@enduml

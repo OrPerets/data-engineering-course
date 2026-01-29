@@ -1,38 +1,39 @@
 # 📘 מיפוי קורס: הנדסת נתונים (Data Engineering)
 
-מסמך זה נועד לשמש כ־**README מרכזי** לקורס *הנדסת נתונים* (3103177), ולספק מיפוי מסודר של:
+מסמך זה משמש כ־**README מרכזי** לקורס *הנדסת נתונים* (3103177) ומספק מיפוי מסודר של:
 
-* נושאים נדרשים לפי הסילבוס
-* דוגמאות ותרגילים רצויים
-* חומרים קיימים (מהזיפ של שנים קודמות)
-* פערים וחוסרים
+- נושאים נדרשים לפי הסילבוס
+- דוגמאות ותרגילים רצויים (עם דגש הנדסי)
+- חומרים קיימים (משנים קודמות) לצורך Reference
+- פערים וחוסרים לפיתוח תוכן קנוני חדש
 
-המסמך משמש כבסיס עבודה למעבר מלא לפיתוח תכנים מבוססי Markdown, שמהם ניתן יהיה:
-
-* לייצר מצגות (Pandoc / Marp / Quarto)
-* לבנות מחברות תרגול
-* לתחזק את הקורס בצורה גרסתית
+המסמך הוא בסיס עבודה למעבר מלא לתכנים מבוססי Markdown, מהם ניתן יהיה:
+- לייצר מצגות (Pandoc / Marp / Quarto)
+- לבנות מחברות תרגול
+- לתחזק את הקורס בצורה גרסתית וברורה
 
 > ⚠️ **דגש פדגוגי מרכזי**: זהו קורס לסטודנטים להנדסה. כל שיעור חייב לשלב:
+> - תיאוריה פורמלית (הגדרות, מודלים, אלגוריתמים)
+> - תרגילים חישוביים / אנליטיים (ידניים, פסאודו־קוד, ניתוח סיבוכיות/עלות)
+> - דוגמאות פרקטיות מעולמות הנדסת הנתונים  
 >
-> * תיאוריה פורמלית (הגדרות, מודלים, אלגוריתמים)
-> * תרגילים חישוביים / אנליטיים (ידניים, פסאודו־קוד, ניתוח סיבוכיות)
-> * דוגמאות פרקטיות מעולמות הנדסת הנתונים
->
-> אין מדובר בקורס "סקירה טכנולוגית" בלבד, אלא בקורס הנדסי הדורש הבנה, חישוב והסקת מסקנות.
+> זה **לא** קורס "סקירה טכנולוגית" בלבד — זה קורס הנדסי הדורש הבנה, חישוב והסקת מסקנות.
 
 ---
 
-## 🧭 מבנה מומלץ לרפוזיטורי הקורס
+## 🧭 מבנה רפוזיטורי מומלץ (Canonical)
 
-````text
+```text
 Data-Engineering-Course/
 │
-├── README.md                # מיפוי הקורס (מסמך זה)
-├── syllabus/                # סילבוס רשמי
-│   └── syllabus.md
-├── sources/                 # 🔒 חומרים היסטוריים (PDF / PPT)
-│   │                          # Reference בלבד – לא לעריכה
+├── README.md                 # מסמך זה
+├── syllabus/
+│   └── syllabus.md           # סילבוס רשמי
+│
+├── exercises1.md             # ✅ exercise bank (reference only)
+├── exercises2.md             # ✅ exercise bank (reference only)
+│
+├── sources/                  # 🔒 חומרים היסטוריים (PDF / PPT) — Reference בלבד
 │   ├── Lecture 1.pptx
 │   ├── Lecture 2.pptx
 │   ├── Lecture 3.pptx
@@ -41,11 +42,14 @@ Data-Engineering-Course/
 │   ├── TF-IDF.pdf
 │   ├── Spark.pdf
 │   └── RegularExpressions.pptx
-├── lectures/                # ✨ תוכן קנוני – Markdown בלבד
+│
+├── lectures/                 # ✨ תוכן קנוני — Markdown בלבד (Single Source of Truth)
 │   ├── 01-intro/
 │   │   ├── lecture.md
-│   │   └── exercises.md
+│   │   └── practice.md
 │   ├── 02-distributed-db/
+│   │   ├── lecture.md
+│   │   └── practice.md
 │   ├── 03-parallelism/
 │   ├── 04-etl-ingestion/
 │   ├── 05-dwh-datalake/
@@ -59,59 +63,73 @@ Data-Engineering-Course/
 │   ├── 13-dataops/
 │   └── 14-review/
 │
-├── datasets/
-├── diagrams/
-└── build/                   # פלט מצגות / PDF
-```text
-Data-Engineering-Course/
-│
-├── README.md                # מיפוי הקורס (מסמך זה)
-├── syllabus/                # סילבוס רשמי
-│   └── syllabus.md
-├── lectures/
-│   ├── 01-intro/
-│   │   ├── lecture.md
-│   │   └── exercises.md
-│   ├── 02-distributed-db/
-│   ├── 03-parallelism/
-│   ├── 04-etl-ingestion/
-│   ├── 05-dwh-datalake/
-│   ├── 06-mapreduce/
-│   ├── 07-mapreduce-advanced/
-│   ├── 08-text-tfidf/
-│   ├── 09-text-advanced/
-│   ├── 10-streaming/
-│   ├── 11-feature-engineering/
-│   ├── 12-feature-engineering-advanced/
-│   ├── 13-dataops/
-│   └── 14-review/
+├── diagrams/                 # ✅ PlantUML בלבד + template.puml
+│   └── template.puml
 │
 ├── datasets/
-├── diagrams/
-└── build/                   # פלט מצגות / PDF
+└── build/                    # פלט מצגות / PDF (Generated)
 ````
 
 ---
 
-## 📦 מדיניות עבודה עם sources/
+## 📦 מדיניות עבודה עם `sources/` (Read-Only)
 
 תיקיית `sources/` מכילה **אך ורק** חומרים משנים קודמות (PDF / PPT / DOC).
 
 כללים:
 
 * ❌ אין לערוך קבצים בתיקייה זו
-* ❌ אין להסתמך עליהם כ־Single Source of Truth
-* ✅ הם משמשים כ־reference, השראה ובדיקת כיסוי בלבד
+* ❌ אין להתייחס אליהם כ־Single Source of Truth
+* ✅ הם משמשים כ־Reference: השראה, בדיקת כיסוי, ושאיבת דוגמאות
 
-כל תוכן רשמי של הקורס **חייב** להופיע ב־`lectures/*.md`.
+כל תוכן רשמי של הקורס **חייב** להופיע תחת `lectures/*/*.md`.
 
 ---
 
-## 🗂️ מיפוי שיעור־שיעור
+## 📚 Exercise Banks (Root) — Reference Only
 
-> לכל שיעור מצוינים גם **תרגילים הנדסיים נדרשים** – תרגילים הכוללים חישובים, ניתוח אלגוריתמי, הערכת סיבוכיות, או ניתוח תרחישים פורמליים. אלו אינם בגדר העשרה, אלא חלק אינטגרלי מהקורס.
+ברוט של הריפו קיימים:
 
-> כל החומרים ההיסטוריים מהזיפ ימוקמו בתיקייה `sources/` וישמשו כ־**reference בלבד**. אין כוונה לערוך אותם, אלא למפות מהם ידע, דוגמאות ושקפים שימושיים.
+* `exercises1.md`
+* `exercises2.md`
+
+מטרתם: לשמש **בנק תרגילים/פתרונות** ודפוסי כתיבה ל־`practice.md`.
+
+כללים:
+
+* ✅ מותר לשאוב רעיונות, מבנה, וסגנון פתרון
+* ✅ מותר להתאים תרגיל לנושא השבוע ולדאטה של השבוע
+* ❌ אסור להעתיק בלוקים ארוכים מילה-במילה
+* ❌ אסור לערוך את הקבצים הללו
+
+חובה בכל `practice.md`:
+
+* להוסיף שקף: `## Reference Exercises Used (Root)`
+* לציין בקצרה אילו תבניות/תרגילים שימשו כהשראה
+
+---
+
+## 🧩 דיאגרמות (PlantUML) — כלל מחייב
+
+הקורס משתמש בדיאגרמות כדי להעמיק הבנה של:
+
+* pipeline / זרימה
+* execution flow (שאילתה, job, streaming)
+* failure propagation (מה נשבר ואיך)
+
+כללים:
+
+* ✅ כל דיאגרמה משמעותית **חייבת להיות PlantUML**
+* ✅ הדיאגרמות נשמרות תחת `diagrams/` בלבד
+* ✅ כל דיאגרמה מתחילה מהטמפלייט: `diagrams/template.puml`
+* ❌ אסור להחליף PlantUML ב־ASCII עבור תרשימים אמיתיים
+  (מותר ASCII קטן מאוד שורה-שתיים לאינטואיציה נקודתית בלבד)
+
+---
+
+## 🗂️ מיפוי שיעור־שיעור (Coverage Map)
+
+> לכל שיעור מצוינים גם **תרגילים הנדסיים נדרשים** — תרגילים הכוללים חישובים, ניתוח אלגוריתמי, הערכת עלויות/סקייל, או ניתוח תרחישים פורמליים.
 
 ### שיעור 1 – מבוא להנדסת נתונים
 
@@ -127,25 +145,15 @@ Data-Engineering-Course/
 * `Lecture 1.pptx`
 * `Introduction & Recap.pdf`
 
-**מה יש בפועל**
-
-* הגדרות טובות והקשר היסטורי
-* השוואה בסיסית בין מערכות
-
-**מה חסר / פערים**
+**פערים**
 
 * framing ברור של "בעיית סקייל"
-* אין narrative ארגוני (מי צורך את הדאטה ולמה)
+* narrative ארגוני: מי צורך את הדאטה ולמה
 
-**דוגמאות מומלצות להוספה**
+**דוגמאות להוספה**
 
-* סיפור התפתחות: Excel → DB → Data Lake
-* דיאגרמת flow: source → raw → processed → consumer
-
-**Best Practices להדגשה**
-
-* Data engineering מתחיל משאלות עסקיות, לא מטכנולוגיה
-* אין פתרון אחד שמתאים לכולם
+* התפתחות: Excel → DB → Data Lake → Lakehouse
+* Flow: source → raw → processed → consumer
 
 ---
 
@@ -153,33 +161,23 @@ Data-Engineering-Course/
 
 **נושאים נדרשים**
 
-* Distributed databases – למה בכלל לפזר?
+* למה להפיץ? (limits של node יחיד)
 * SQL vs NoSQL – מודלים, לא כלים
-* Trade-offs
+* trade-offs (latency/consistency/availability)
 
 **קיים (sources/)**
 
 * `Lecture 2.pptx`
 
-**מה יש בפועל**
+**פערים**
 
-* השוואה טבלאית טובה
-* דוגמאות קלאסיות
-
-**מה חסר / פערים**
-
-* תרגיל קבלת החלטות
+* תרגיל החלטה (requirements → DB choice)
 * חיבור ל־use cases אמיתיים
 
-**דוגמאות מומלצות להוספה**
+**דוגמאות להוספה**
 
-* תרחיש: מערכת המלצות / מערכת לוגים
+* תרחיש: מערכת לוגים / clickstream
 * טבלת "דרישות → בחירת DB"
-
-**Best Practices**
-
-* SQL vs NoSQL זו לא דיכוטומיה
-* לרוב ארגונים משתמשים בשילוב
 
 ---
 
@@ -188,32 +186,17 @@ Data-Engineering-Course/
 **נושאים נדרשים**
 
 * Divide & Conquer
-* מקביליות לעומת קונקרנציה
+* מקביליות vs קונקרנציה
 * פונקציונליות כבסיס לחישוב מבוזר
 
 **קיים (sources/)**
 
 * `Lecture 3.pptx`
 
-**מה יש בפועל**
-
-* דוגמאות אלגוריתמיות
-* בסיס תאורטי טוב
-
-**מה חסר / פערים**
+**פערים**
 
 * חיבור מפורש ל־MapReduce
 * דוגמה ידנית פשוטה
-
-**דוגמאות מומלצות להוספה**
-
-* פירוק בעיית ספירה גדולה
-* המחשה של bottleneck
-
-**Best Practices**
-
-* מקביליות לא תמיד משפרת ביצועים
-* overhead הוא חלק מהשיקול
 
 ---
 
@@ -224,30 +207,16 @@ Data-Engineering-Course/
 * סוגי מקורות נתונים
 * ETL vs ELT
 * זרימת דאטה בארגון
+* idempotency + reruns + failure handling
 
 **קיים (sources/)**
 
 * `Lecture 4.pptx`
 
-**מה יש בפועל**
-
-* הגדרות ברורות
-* הבחנה נכונה בין ETL ל־ELT
-
-**מה חסר / פערים**
+**פערים**
 
 * pipeline מלא מקצה לקצה
-* טיפול בכשלים
-
-**דוגמאות מומלצות להוספה**
-
-* ingest של clickstream
-* batch יומי מול streaming
-
-**Best Practices**
-
-* לשמור raw data תמיד
-* ingestion חייב להיות idempotent
+* טיפול בכשלים + incremental loads
 
 ---
 
@@ -257,19 +226,11 @@ Data-Engineering-Course/
 
 * DWH vs Data Lake
 * schema-on-read / schema-on-write
+* partitioning / pruning / cost intuition
 
-**דוגמאות / תרגילים רצויים**
+**פערים**
 
-* ארכיטקטורת BI טיפוסית
-* clickstream example
-
-**קיים**
-
-* Lecture 5
-
-**חסר**
-
-* חיבור מפורש ל־Analytics ו־BI
+* חיבור מפורש ל־Analytics/BI
 
 ---
 
@@ -278,21 +239,12 @@ Data-Engineering-Course/
 **נושאים נדרשים**
 
 * אלגוריתם MapReduce
-* חשיבה מבוזרת
+* חשיבה מבוזרת: map/shuffle/reduce
+* data skew + mitigations
 
-**דוגמאות / תרגילים רצויים**
+**פערים**
 
-* Word Count
-* Join ב־MapReduce
-
-**קיים**
-
-* Introduction to MapReduce
-* Lectures 6–8
-
-**חסר**
-
-* תרגיל ידני מלא (map → shuffle → reduce)
+* walkthrough ידני מלא (map → shuffle → reduce)
 * צמצום חזרתיות
 
 ---
@@ -304,18 +256,9 @@ Data-Engineering-Course/
 * TF-IDF
 * שימושים בהנדסת נתונים
 
-**דוגמאות / תרגילים רצויים**
+**פערים**
 
-* חישוב ידני על מסמכים קצרים
-
-**קיים**
-
-* TF-IDF
-* Regular Expressions
-
-**חסר**
-
-* חיבור לצינור הנדסי
+* חיבור לצינור הנדסי (ingestion → cleaning → features → store)
 
 ---
 
@@ -323,17 +266,12 @@ Data-Engineering-Course/
 
 **נושאים נדרשים**
 
-* n-grams / embeddings
-* הבחנה feature vs model
+* n-grams / embeddings (engineering view)
+* feature vs model
 
-**קיים**
+**פערים**
 
-* חלקי בלבד
-
-**חסר**
-
-* הרצאה ייעודית
-* דוגמאות מתקדמות
+* הרצאה ייעודית + דוגמאות מתקדמות
 
 ---
 
@@ -341,17 +279,14 @@ Data-Engineering-Course/
 
 **נושאים נדרשים**
 
-* Streaming data
-* Real-time vs batch
+* streaming data
+* windows
+* latency vs throughput
+* event-time vs processing-time
 
-**קיים**
+**פערים**
 
-* Spark (כללי)
-
-**חסר**
-
-* מסגור Streaming
-* דוגמאות Event-based
+* מסגור Streaming + דוגמאות event-based
 
 ---
 
@@ -359,17 +294,13 @@ Data-Engineering-Course/
 
 **נושאים נדרשים**
 
-* Feature pipelines
-* הקשר בין data ל־ML
+* feature pipelines
+* leakage
+* offline vs online features (conceptual)
 
-**קיים**
+**פערים**
 
-* כמעט ולא
-
-**חסר**
-
-* חומר מלא
-* דוגמאות לפני/אחרי
+* חומר מלא + דוגמאות לפני/אחרי
 
 ---
 
@@ -378,302 +309,168 @@ Data-Engineering-Course/
 **נושאים נדרשים**
 
 * CI/CD
-* בדיקות נתונים
-* ניטור
+* בדיקות דאטה
+* ניטור, איכות, incident thinking
 
-**קיים**
+**פערים**
 
-* לא קיים
-
-**חסר**
-
-* הרצאה מלאה
-* דוגמה עם Great Expectations / dbt tests
+* הרצאה מלאה + דוגמה Great Expectations / dbt tests
 
 ---
 
-## 🧪 תרגולים (Practices) – עקרונות ותכנון
+## 🧪 תרגולים (Practices) — עקרונות ותכנון
 
-מטרת התרגולים בקורס היא **לבסס חשיבה הנדסית** ולא רק שליטה תחבירית.
-כל תרגול הוא חלק אינטגרלי מהקורס, ומיועד:
+מטרת התרגולים היא **לבסס חשיבה הנדסית**, לא רק שליטה תחבירית.
+כל תרגול:
 
-* לחזק את התיאוריה מההרצאה
-* לאמן חישוב, ניתוח ועלויות
-* להכין לקריאה וניתוח של מערכות הנדסת נתונים אמיתיות
+* מחזק את התיאוריה מההרצאה
+* מאמן חישוב, ניתוח ועלויות (זמן/זיכרון/רשת)
+* מכין לקריאה וניתוח של מערכות הנדסת נתונים אמיתיות
 
 ---
 
-## 📐 עקרונות חובה לכל תרגול
+## 📐 עקרונות חובה לכל `practice.md`
 
-> ⚠️ **דרישת פורמט קריטית**: כל קובץ Markdown בקורס (lecture.md / practice.md) חייב להיות כתוב במבנה **מוחלק, אחיד ו־slide-ready**, כך שניתן יהיה להמיר אותו אוטומטית למצגת (Pandoc / Marp) ללא עריכה ידנית.
+> ⚠️ **דרישת פורמט קריטית**: כל קובץ Markdown בקורס חייב להיות **slide-ready**
+> (להמרה אוטומטית ל־PPT/PDF ללא ניקוי ידני).
 
-כל קובץ `practice.md` **חייב** לכלול:
+כל `practice.md` חייב לכלול:
 
-1. **הקשר הנדסי ברור**
+1. **Data Context קונקרטי**
 
-   * למה התרגול חשוב בהנדסת נתונים
-   * לאיזה חלק בקורס / מערכת הוא מתקשר
+   * טבלאות / קבצים / events
+   * columns + meanings
+   * keys/partitions
+   * sizes (גם הערכה)
 
 2. **תרגילים חישוביים**
 
-   * חישובי גודל נתונים (rows, bytes, partitions)
-   * הערכת עלות (זמן / זיכרון / רשת)
-   * ניתוח cardinality ו־intermediate results
+   * נפחים (rows/bytes/partitions)
+   * עלות (זמן/רשת/זיכרון)
+   * cardinality / intermediate results
 
-3. **תרגילי חשיבה וניתוח**
+3. **תרגילי reasoning**
 
-   * "מה יקרה אם…"
-   * זיהוי bottlenecks
-   * בחירה בין חלופות
+   * trade-offs
+   * bottlenecks
+   * “מה יקרה אם…”
 
 4. **מעט קוד – הרבה חשיבה**
 
-   * קוד רק כשצריך
+   * SQL רק כשצריך
    * פסאודו־קוד מועדף על boilerplate
 
 5. **קושי מדורג**
 
-   * Warm-up (יישור קו)
-   * Engineering (לב הקורס)
-   * Challenge (אינטגרטיבי)
+   * Warm-up → Engineering → Challenge
+
+6. **פתרונות מלאים**
+
+   * כל תרגיל מקבל פתרון תואם
+   * פתרון כולל הנחות + חישוב + בדיקה
 
 ---
 
-## 🧭 מיפוי תרגול־לפי־שבוע (שלד)
+## 🧪 Practice Modes (לפי נושא) — מחייב
 
-### Practice 1 – SQL & Tools Recap (Foundation)
+כדי למנוע תרגילים אבסטרקטיים, בכל שבוע בוחרים Mode בהתאם לנושא:
 
-**מטרה**: יישור קו והפיכת SQL לכלי הנדסי.
+### Mode A — SQL / ETL / ELT / Ingestion
 
-**נושאים**
+חובה לכלול:
 
-* SELECT / WHERE / GROUP BY / HAVING
-* JOIN כפעולה יקרה
-* Aggregation כ־data reduction
+* 2–4 טבלאות עם keys + 6–12 שורות דוגמה
+* 2–3 תרגילי SQL + פתרונות SQL מלאים
+* תרגיל טעינה אינקרמנטלית (watermark/CDC) + דה-דופ + אידמפוטנטיות
+* תרחיש כשל: rerun לא יוצר כפילויות
 
-**מה חייב להיות**
+### Mode B — MapReduce
 
-* חישוב גודל תוצאות JOIN
-* ניתוח intermediate results
-* פירוק query לצינור שלבים
+חובה לכלול:
 
-**דגשים ל־Agent**
+* 8–12 רשומות קלט
+* walkthrough מלא ידני: Map emits → Shuffle groups → Reduce output
+* מקרה skew + פתרון (combiner / partitioner / salting)
 
-* לא ללמד SQL מאפס
-* להכריח חישוב והסקת מסקנות
+### Mode C — DWH / OLAP
 
----
+חובה לכלול:
 
-### Practice 2 – Parallelism & Divide-and-Conquer
-
-**מטרה**: להבין מקביליות מעבר לסינטקס.
-
-**נושאים**
-
-* חלוקת עבודה
-* overhead של מקביליות
-* bottlenecks
-
-**מה חייב להיות**
-
-* חישוב speedup תיאורטי
-* זיהוי נקודת רוויה
-
-**דגשים ל־Agent**
-
-* להראות שמקביליות לא תמיד משתלמת
+* סכמת Star (Fact + לפחות 2 Dimensions) + שורות דוגמה
+* תרגיל שמדגים partition pruning / reduction
+* תרגיל על join size/cost reasoning
 
 ---
 
-### Practice 3 – ETL & Data Pipelines
+## 🧠 הנחיות־על לכתיבת `lecture.md` / `practice.md` (Slide-ready)
 
-**מטרה**: חשיבה בצינורות נתונים.
+### מבנה
 
-**נושאים**
+* `#` — כותרת מסמך (שקף פתיחה אחד)
+* `##` — כותרת שקף (שקף אחד בלבד לכל `##`)
 
-* ETL vs ELT
-* raw vs processed
-* כשלים
+### מגבלות שקף
 
-**מה חייב להיות**
+* נושא אחד בלבד לכל שקף
+* עד 6 bullets
+* עד 12 מילים לכל bullet
+* ❌ אין פסקאות טקסט ארוכות
 
-* תרגיל תכנון pipeline
-* ניתוח failure scenarios
+### סגנון תוכן
 
-**דגשים ל־Agent**
+* הפרד בין: הגדרה → דוגמה → חישוב → מסקנה
+* פריסה הדרגתית (progressive disclosure)
+* קוד קצר בלבד (עד ~12 שורות לשקף)
+* נוסחאות LaTeX פשוטות בלבד (1–2 לשקף)
 
-* להתמקד בזרימה, לא בכלים
+### דיאגרמות
 
----
-
-### Practice 4 – Data Warehousing & Data Lakes
-
-**מטרה**: חיבור בין אחסון לאנליטיקה.
-
-**נושאים**
-
-* schema-on-read / write
-* partitioning
-
-**מה חייב להיות**
-
-* חישוב נפחי אחסון
-* השפעת partitioning על queries
-
-**דגשים ל־Agent**
-
-* לחשוב כמו data architect
+* דיאגרמות משמעותיות: PlantUML בלבד (`diagrams/`)
+* בכל קובץ חייב להיות `## Diagram Manifest`
+  (מיפוי שקף → קובץ → מטרה)
 
 ---
 
-### Practice 5 – MapReduce (Core)
+## ✅ Quality Gates (חובה לפני שמקבלים תוצר)
 
-**מטרה**: שליטה בחישוב מבוזר בסיסי.
+כל תוצר (`lecture.md` / `practice.md`) חייב לעבור את הבדיקות:
 
-**נושאים**
+### שקפים
 
-* Map / Shuffle / Reduce
-* data skew
+* [ ] אין שקפים ריקים: כל `##` כולל לפחות 3 bullets / טבלה / קוד / Diagram
+* [ ] אין ערבוב נושאים בשקף
+* [ ] אם נושא גדול → מפצלים (1/3), (2/3), (3/3)
 
-**מה חייב להיות**
+### דיאגרמות
 
-* חישוב עלות shuffle
-* זיהוי skew
-
-**דגשים ל־Agent**
-
-* חישוב לפני קוד
-
----
-
-### Practice 6 – Text Processing at Scale
-
-**מטרה**: עיבוד טקסט כהנדסת נתונים.
-
-**נושאים**
-
-* TF-IDF
-* sparsity
-
-**מה חייב להיות**
-
-* חישוב ידני TF-IDF
-* הערכת גודל מטריצה
-
-**דגשים ל־Agent**
-
-* פחות NLP, יותר דאטה
-
----
-
-### Practice 7 – Streaming & Real-Time Reasoning
-
-**מטרה**: חשיבה בזמן אמת.
-
-**נושאים**
-
-* windows
-* latency vs throughput
-
-**מה חייב להיות**
-
-* חישוב קצבים
-* ניתוח איחורים
-
-**דגשים ל־Agent**
-
-* להכריח trade-offs
-
----
-
-### Practice 8 – Feature Engineering
-
-**מטרה**: גישור בין דאטה למודלים.
-
-**נושאים**
-
-* feature pipelines
-* leakage
-
-**מה חייב להיות**
-
-* לפני / אחרי feature engineering
-* ניתוח השפעה על מודל
-
-**דגשים ל־Agent**
-
-* לא להיכנס למודל עצמו
-
----
-
-### Practice 9 – DataOps & Quality
-
-**מטרה**: יציבות ואמינות.
-
-**נושאים**
-
-* בדיקות דאטה
-* ניטור
-
-**מה חייב להיות**
-
-* תכנון בדיקות
-* ניתוח תקלות
-
-**דגשים ל־Agent**
-
-* לחשוב כמו production
-
----
-
-## 🧠 הנחיות־על ל־Agent (חובה)
-
-כאשר אתה מייצר `lecture.md` או `practice.md`:
-
-### מבנה ופורמט (Slide-ready)
-
-* השתמש ב־Markdown תקני בלבד
-* `#` — כותרת מסמך (שקף פתיחה)
-* `##` — כותרת שקף
-* אין פסקאות ארוכות: כל תוכן חייב להיות
-
-  * bullets
-  * טבלאות קצרות
-  * קוד / פסאודו־קוד
-* לכל `##` מותר לכלול:
-
-  * עד 6 bullets
-  * עד 12 מילים לכל bullet
-* נושא אחד בלבד לכל `##`
-* אם נושא גדול → פצל ל־(1/2), (2/2)
-
-### תוכן
-
-* העדף פירוק הדרגתי (progressive disclosure)
-* הפרד בין:
-
-  * הגדרה
-  * דוגמה
-  * חישוב
-  * מסקנות
-* קוד קצר בלבד (עד ~12 שורות)
+* [ ] קיימת כותרת: `## Diagram Manifest` בתחילת הקובץ
+* [ ] כל `Diagram:` שמוזכר בשקף מופיע ב-Manifest
+* [ ] כל manifest entry משויך לשקף יחיד
+* [ ] שמות קבצים לפי סטנדרט:
+  `week{WEEK_NO}_{lecture|practice}_slide{SLIDE_NO}_{desc}.puml`
 
 ### תרגולים
 
-* כל תרגיל צריך להיות מתאים לשקף אחד או שניים
-* פתרונות מפוצלים לשלבים
-* חישובים כתובים בצורה קריאה (כולל יחידות)
+* [ ] `## Data Context` מופיע בתחילת practice עם דאטה קונקרטי
+* [ ] `## Reference Exercises Used (Root)` קיים ומציין השראות
+* [ ] לכל תרגיל יש שקף פתרון תואם בסדר זהה
+* [ ] לפחות תרגיל אחד כולל חישוב/עלות/סקייל
+* [ ] לפחות תרגיל אחד כולל כשל + rerun/אידמפוטנטיות
 
-### אסור
+---
 
-* ❌ פסקאות טקסט ארוכות
-* ❌ ערבוב נושאים בשקף אחד
-* ❌ תוכן "מאמרי"
+## 🧾 Solution Format Contract (חובה ב־Solutions)
 
-### מותר ומומלץ
+כל שקף פתרון ב־`practice.md` חייב להיות במבנה:
 
-* טבלאות קטנות
-* דיאגרמות בטקסט (ASCII / תיאור מילולי)
-* נוסחאות LaTeX פשוטות
+* **Assumptions**: נתונים/סקייל/keys/חלונות זמן
+* **Plan**: מה עושים ולמה
+* **Execution**: SQL / פסאודו־קוד / (k,v)
+* **Check**: איך מאמתים נכונות + מה יכול להשתבש
 
-מטרה: כל קובץ Markdown צריך להיות **מוכן להמרה למצגת בלחיצת כפתור אחת**, ללא ניקוי ידני.
+---
+
+## 🎯 מטרת־על
+
+כל קובץ Markdown צריך להיות **מוכן להמרה למצגת בלחיצת כפתור אחת** —
+עם עומק הנדסי אמיתי: דאטה קונקרטי, חישובים, trade-offs, וחשיבה על כשל.

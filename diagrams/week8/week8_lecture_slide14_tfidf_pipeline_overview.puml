@@ -1,0 +1,53 @@
+@startuml
+'=================================================
+' Week 8: TF-IDF — Pipeline Overview
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam rectangle { BackgroundColor #F8F9FA; BorderColor #90A4AE; BorderThickness 2 }
+skinparam component { BackgroundColor #FFFFFF; BorderColor #78909C; BorderThickness 1.5 }
+skinparam database { BackgroundColor #ECEFF1; BorderColor #546E7A }
+skinparam arrow { Color #607D8B; Thickness 1.5 }
+
+rectangle "INPUT" #F8F9FA {
+    database "**Documents**\n<size:10>(doc_id, text)</size>" as DOCS
+}
+
+rectangle "TOKENIZE" #F8F9FA {
+    component "**Tokenize**\n<size:10>split, lowercase</size>" as TOK <<Tool>>
+}
+
+rectangle "TERM COUNTS" #F8F9FA {
+    component "**Term count per doc**\n<size:10>(doc_id, term, count)</size>" as TF <<Tool>>
+}
+
+rectangle "GLOBAL STATS" #F8F9FA {
+    component "**Doc lengths**\n<size:10>|d|</size>" as LEN <<Tool>>
+    component "**df, N**\n<size:10>IDF</size>" as IDF <<Tool>>
+}
+
+rectangle "TF-IDF" #F8F9FA {
+    component "**TF × IDF**\n<size:10>(doc_id, term, tfidf)</size>" as TFIDF <<Tool>>
+}
+
+rectangle "OUTPUT" #F8F9FA {
+    database "**Index / Vectors**\n<size:10>sparse (doc, term, score)</size>" as OUT
+}
+
+DOCS --> TOK : "text"
+TOK --> TF : "terms"
+TF --> LEN : "counts"
+TF --> IDF : "(doc, term)"
+LEN --> TFIDF : "|d|"
+IDF --> TFIDF : "idf(t)"
+TFIDF --> OUT : "scores"
+
+note bottom of TFIDF : TF = count/|d|; IDF = log((N+1)/(df+1))
+
+@enduml

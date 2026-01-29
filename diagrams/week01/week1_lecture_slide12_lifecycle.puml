@@ -1,0 +1,130 @@
+@startuml
+'=================================================
+' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+'-------------------------
+' FONT & GLOBAL STYLE
+'-------------------------
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+'-------------------------
+' GENERIC BOX STYLE
+'-------------------------
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontColor #263238
+    FontSize 14
+    FontStyle bold
+    Padding 20
+}
+
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+    FontColor #263238
+}
+
+skinparam arrow {
+    Color #607D8B
+    Thickness 1.5
+    FontSize 11
+    FontColor #546E7A
+}
+
+'-------------------------
+' SEMANTIC STEREOTYPES
+'-------------------------
+skinparam component<<UI>> {
+    BorderColor #8E24AA
+    BackgroundColor #F3E5F5
+    FontColor #4A148C
+}
+
+skinparam component<<Agent>> {
+    BorderColor #0288D1
+    BackgroundColor #E1F5FE
+    FontColor #01579B
+}
+
+skinparam component<<Tool>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+skinparam component<<Config>> {
+    BorderColor #F57C00
+    BackgroundColor #FFF3E0
+    FontColor #E65100
+}
+
+'========================
+' DATA ENGINEERING LIFECYCLE
+'========================
+
+package "DATA SOURCES" #F8F9FA {
+    database "**Web Server Logs**\n<size:10>10M events/day</size>" as SOURCE1
+    database "**User Database**\n<size:10>100M users</size>" as SOURCE2
+    database "**Product Catalog**\n<size:10>1M products</size>" as SOURCE3
+}
+
+package "INGESTION" #F8F9FA {
+    component "**Extract**\n<size:10>Read from sources</size>" as INGEST
+}
+
+package "STORAGE" #F8F9FA {
+    database "**Raw Storage**\n<size:10>Parquet, 5 GB/day</size>" as RAW
+}
+
+package "PROCESSING" #F8F9FA {
+    component "**Transform**\n<size:10>Clean, filter, enrich</size>" as TRANSFORM
+    component "**Aggregate**\n<size:10>Group, count, sum</size>" as AGGREGATE
+}
+
+package "CONSUMPTION" #F8F9FA {
+    database "**Data Warehouse**\n<size:10>Analytics tables</size>" as WAREHOUSE
+    component "**Analytics Dashboard**\n<size:10>BI tools</size>" as DASHBOARD
+    component "**ML Models**\n<size:10>Feature store</size>" as ML
+}
+
+'========================
+' DATA FLOW
+'========================
+
+SOURCE1 --> INGEST
+SOURCE2 --> INGEST
+SOURCE3 --> INGEST
+
+INGEST --> RAW : "5 GB/day"
+
+RAW --> TRANSFORM : "Read raw data"
+TRANSFORM --> AGGREGATE : "Filtered events"
+AGGREGATE --> WAREHOUSE : "5 MB aggregated"
+
+WAREHOUSE --> DASHBOARD : "Query results"
+WAREHOUSE --> ML : "Features"
+
+@enduml

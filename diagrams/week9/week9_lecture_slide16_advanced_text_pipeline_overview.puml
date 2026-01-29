@@ -1,0 +1,48 @@
+@startuml
+'=================================================
+' Week 9: Advanced Text — Pipeline Overview
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam rectangle { BackgroundColor #F8F9FA; BorderColor #90A4AE; BorderThickness 2 }
+skinparam component { BackgroundColor #FFFFFF; BorderColor #78909C; BorderThickness 1.5 }
+skinparam database { BackgroundColor #ECEFF1; BorderColor #546E7A }
+skinparam arrow { Color #607D8B; Thickness 1.5 }
+
+rectangle "INPUT" #F8F9FA {
+    database "**Documents**\n<size:10>(doc_id, text)</size>" as DOCS
+}
+
+rectangle "TOKENIZE" #F8F9FA {
+    component "**Tokenize**\n<size:10>split, lowercase, regex</size>" as TOK <<Tool>>
+}
+
+rectangle "N-GRAMS / FEATURES" #F8F9FA {
+    component "**N-gram extract**\n<size:10>(doc_id, ngram, count)</size>" as NGRAM <<Tool>>
+    component "**Co-occurrence / IDF**\n<size:10>optional</size>" as COOC <<Tool>>
+}
+
+rectangle "VECTORS" #F8F9FA {
+    component "**TF-IDF or Embedding**\n<size:10>sparse/dense vector</size>" as VEC <<Tool>>
+}
+
+rectangle "OUTPUT" #F8F9FA {
+    database "**Feature store / Index**\n<size:10>(doc_id, features)</size>" as OUT
+}
+
+DOCS --> TOK : "text"
+TOK --> NGRAM : "terms"
+NGRAM --> COOC : "ngrams"
+COOC --> VEC : "stats"
+NGRAM --> VEC : "counts"
+VEC --> OUT : "vectors"
+
+note bottom of NGRAM : Word n-grams: (w1..wn); char n-grams: substring. Vocab size ~ V^n.
+
+@enduml

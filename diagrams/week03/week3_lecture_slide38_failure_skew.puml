@@ -1,0 +1,104 @@
+@startuml
+'=================================================
+' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontColor #263238
+    FontSize 14
+    FontStyle bold
+    Padding 20
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+    FontColor #263238
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 1.5
+    FontSize 11
+    FontColor #546E7A
+}
+
+skinparam component<<UI>> {
+    BorderColor #8E24AA
+    BackgroundColor #F3E5F5
+    FontColor #4A148C
+}
+skinparam component<<Agent>> {
+    BorderColor #0288D1
+    BackgroundColor #E1F5FE
+    FontColor #01579B
+}
+skinparam component<<Tool>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+'========================
+' FAILURE: DATA SKEW (HOT KEY → ONE REDUCER)
+'========================
+
+package "SHUFFLE OUTPUT" #F8F9FA {
+    component "**Partition by hash(key)**\n<size:10>Keys → Reducers</size>" as PART
+}
+
+package "REDUCERS" #F8F9FA {
+    component "**R1**\n<size:10>10 keys\n1M values</size>" as R1 <<Tool>>
+    component "**R2**\n<size:10>10 keys\n1M values</size>" as R2 <<Tool>>
+    component "**R3 (HOT)**\n<size:10>1 key\n800M values</size>" as R3 <<Tool>>
+}
+
+package "FAILURE" #F8F9FA {
+    component "**OOM / Timeout**\n<size:10>Single reducer overloaded</size>" as FAIL
+}
+
+database "**Done**" as D1
+database "**Done**" as D2
+
+PART --> R1 : "balanced"
+PART --> R2 : "balanced"
+PART --> R3 : "hot key\nall values"
+
+R1 --> D1
+R2 --> D2
+R3 --> FAIL : "crash or stall"
+
+note right of R3
+  **Skew:** One key has
+  majority of data
+  (e.g. bot user_id)
+end note
+
+note bottom of FAIL
+  **Mitigation:** Salting,
+  combiner, custom partitioner
+end note
+
+@enduml

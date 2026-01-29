@@ -1,0 +1,130 @@
+@startuml
+'=================================================
+' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+'=================================================
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+'-------------------------
+' FONT & GLOBAL STYLE
+'-------------------------
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+'-------------------------
+' GENERIC BOX STYLE
+'-------------------------
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontColor #263238
+    FontSize 14
+    FontStyle bold
+    Padding 20
+}
+
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+    FontColor #263238
+}
+
+skinparam arrow {
+    Color #607D8B
+    Thickness 1.5
+    FontSize 11
+    FontColor #546E7A
+}
+
+'-------------------------
+' SEMANTIC STEREOTYPES
+'-------------------------
+skinparam component<<UI>> {
+    BorderColor #8E24AA
+    BackgroundColor #F3E5F5
+    FontColor #4A148C
+}
+
+skinparam component<<Agent>> {
+    BorderColor #0288D1
+    BackgroundColor #E1F5FE
+    FontColor #01579B
+}
+
+skinparam component<<Tool>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+skinparam component<<Config>> {
+    BorderColor #F57C00
+    BackgroundColor #FFF3E0
+    FontColor #E65100
+}
+
+'========================
+' INGESTION FLOW
+'========================
+
+database "**S3 Log Files**\n<size:10>JSON, 5 GB</size>" as S3
+
+component "**1. Read Files**\n<size:10>List & download</size>" as READ
+
+component "**2. Parse JSON**\n<size:10>Extract events</size>" as PARSE
+
+component "**3. Validate**\n<size:10>Check schema</size>" as VALIDATE
+
+component "**4. Write Parquet**\n<size:10>Compress & store</size>" as WRITE
+
+database "**Raw Storage**\n<size:10>10M events, 5 GB</size>" as RAW
+
+'========================
+' EXECUTION FLOW
+'========================
+
+S3 --> READ : "Download files"
+READ --> PARSE : "JSON strings"
+PARSE --> VALIDATE : "Parsed events"
+VALIDATE --> WRITE : "Valid events"
+WRITE --> RAW : "Parquet format"
+
+note right of READ
+  Time: 5 minutes
+  Network: 5 GB transfer
+end note
+
+note right of PARSE
+  Time: 10 minutes
+  CPU: JSON parsing
+end note
+
+note right of VALIDATE
+  Time: 3 minutes
+  Check: timestamp, page
+end note
+
+note right of WRITE
+  Time: 2 minutes
+  Compression: 5×
+end note
+
+@enduml

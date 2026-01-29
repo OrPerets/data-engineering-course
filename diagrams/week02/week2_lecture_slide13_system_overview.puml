@@ -1,0 +1,126 @@
+@startuml
+'=================================================
+' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+'-------------------------
+' FONT & GLOBAL STYLE
+'-------------------------
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+'-------------------------
+' GENERIC BOX STYLE
+'-------------------------
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontColor #263238
+    FontSize 14
+    FontStyle bold
+    Padding 20
+}
+
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+    FontColor #263238
+}
+
+skinparam arrow {
+    Color #607D8B
+    Thickness 1.5
+    FontSize 11
+    FontColor #546E7A
+}
+
+'-------------------------
+' SEMANTIC STEREOTYPES
+'-------------------------
+skinparam component<<UI>> {
+    BorderColor #8E24AA
+    BackgroundColor #F3E5F5
+    FontColor #4A148C
+}
+
+skinparam component<<Agent>> {
+    BorderColor #0288D1
+    BackgroundColor #E1F5FE
+    FontColor #01579B
+}
+
+skinparam component<<Tool>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+skinparam component<<Config>> {
+    BorderColor #F57C00
+    BackgroundColor #FFF3E0
+    FontColor #E65100
+}
+
+'========================
+' DISTRIBUTED DB SYSTEM OVERVIEW
+'========================
+
+package "CLIENTS" #F8F9FA {
+    component "**App / Query**\n<size:10>Read / Write</size>" as CLIENT
+}
+
+package "COORDINATION" #F8F9FA {
+    component "**Router / Coordinator**\n<size:10>Partition key → Node</size>" as ROUTER
+}
+
+package "DATA NODES" #F8F9FA {
+    database "**Node 1**\n<size:10>P0, P3\nReplicas: 2</size>" as N1
+    database "**Node 2**\n<size:10>P1, P4\nReplicas: 2</size>" as N2
+    database "**Node 3**\n<size:10>P2, P5\nReplicas: 2</size>" as N3
+}
+
+package "NETWORK" #F8F9FA {
+    component "**Replication**\n<size:10>Async / Sync</size>" as REPL
+}
+
+CLIENT --> ROUTER : "Request"
+ROUTER --> N1 : "P0, P3"
+ROUTER --> N2 : "P1, P4"
+ROUTER --> N3 : "P2, P5"
+N1 <-[#2E7D32]-> REPL
+N2 <-[#2E7D32]-> REPL
+N3 <-[#2E7D32]-> REPL
+
+note bottom of ROUTER
+  **Partitioning**
+  hash(key) mod N → node
+  Data split by key
+end note
+
+note bottom of N1
+  **Storage**
+  Independent disks
+  No shared storage
+end note
+
+@enduml

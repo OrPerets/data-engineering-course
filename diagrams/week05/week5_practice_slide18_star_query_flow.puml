@@ -1,0 +1,80 @@
+@startuml
+'=================================================
+' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontColor #263238
+    FontSize 14
+    FontStyle bold
+    Padding 20
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+    FontColor #263238
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 1.5
+    FontSize 11
+    FontColor #546E7A
+}
+
+skinparam component<<Tool>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+'========================
+' STAR SCHEMA QUERY PATH AND PARTITION PRUNING
+'========================
+
+component "**BI: Revenue by region**\n<size:10>SQL + date filter</size>" as BI <<Tool>>
+
+component "**Planner**\n<size:10>Partition pruning (date_key)</size>" as PLAN <<Tool>>
+
+database "**sales_fact**\n<size:10>Scan pruned partitions only</size>" as FACT
+
+database "**dim_customer**\n<size:10>Broadcast (small)</size>" as DIM
+
+component "**Join • Aggregate**\n<size:10>region, SUM(amount)</size>" as AGG <<Tool>>
+
+database "**Result**\n<size:10>region, total_revenue</size>" as RESULT
+
+BI --> PLAN : "1"
+PLAN --> FACT : "2 Partitions only"
+PLAN --> DIM : "2"
+FACT --> AGG : "3"
+DIM --> AGG : "3"
+AGG --> RESULT : "4"
+
+note bottom of FACT : **Pruning:** WHERE date_key\nBETWEEN 20251201 AND 20251231
+note bottom of DIM : **Small dim**\nBroadcast to nodes
+
+@enduml

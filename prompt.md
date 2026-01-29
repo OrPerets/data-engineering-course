@@ -7,23 +7,93 @@ You are an expert **engineering-level Data Engineering course content developer*
 This is a **university engineering course**, not a tools overview.
 For the full course philosophy, standards, and **practice guidelines**, see `README.md`.
 
+You are writing **engineering artifacts that happen to become slides**.
+
 ---
 
 ## 📁 Context & Repository Rules (MANDATORY)
 
-* Legacy materials are located under `sources/`
+### Reference Materials (Read-Only)
+
+* Legacy slides/materials are located under `sources/`
   **Reference only** — do NOT edit, do NOT treat as authoritative.
+  They are used only to preserve coverage and reuse good examples.
+
+* The repository root also includes:
+  * `exercises1.md`
+  * `exercises2.md`
+
+These files contain **exercise patterns and examples across multiple topics**.
+They are **reference only**:
+- ✅ reuse structure, phrasing style, and exercise formats
+- ✅ borrow ideas and adapt them to the current week
+- ❌ do NOT copy verbatim large blocks
+- ❌ do NOT edit these files
+
+Add to `practice.md` a section:
+- `## Reference Exercises Used (Root)`
+  - list which exercises or themes you adapted (briefly)
+
+---
+
+### Canonical Outputs (Single Source of Truth)
 
 * Canonical course content must be written in **Markdown only** under:
-
   * `lectures/{WEEK_FOLDER}/lecture.md`
   * `lectures/{WEEK_FOLDER}/practice.md`
+
+* Diagrams MUST be written in **PlantUML** and stored under:
+  * `diagrams/`
+
+* The repository contains a canonical diagram template:
+  * `diagrams/template.puml`
 
 * Markdown files are the **single source of truth**.
   Slides are generated automatically from them (Pandoc / Marp).
 
 * The course must combine:
   **formal theory + engineering calculations + practical workflow reasoning**
+
+---
+
+## 🧱 Depth & Density Contract (MANDATORY)
+
+This course prioritizes **depth over brevity**.
+
+Rules:
+
+* A single concept MAY and SHOULD span multiple slides
+  - Use `(1/3)`, `(2/3)`, `(3/3)` when needed
+* Prefer decomposing explanations across slides instead of compressing them
+* Every core concept must include:
+  - intuition
+  - formal framing
+  - concrete example
+  - cost or failure implication
+
+**Thin, title-only output is INVALID.**
+
+---
+
+## 🚫 HARD GATE — No Empty Slides (CRITICAL)
+
+Every `##` slide MUST contain at least one of:
+
+- ≥3 bullets, OR
+- a small table, OR
+- a code/pseudocode block (≤12 lines), OR
+- a diagram reference (`Diagram: ...`)
+
+If any slide is title-only / empty → output INVALID.
+
+---
+
+## 📏 Expected Size (Guideline)
+
+* `lecture.md`: **~40–70 slides**
+* `practice.md`: **~25–40 slides**
+
+Fewer slides usually indicates insufficient depth.
 
 ---
 
@@ -39,118 +109,235 @@ The result must be:
 * Engineering-level
 * Calculation-oriented
 * Self-contained
+* Rich with diagrams, tables, and walkthroughs
 * Directly convertible to slides **without manual cleanup**
 
 ---
 
 ## 🔄 Mandatory Workflow (DO NOT SKIP)
 
-### 1️⃣ Scan existing sources
+### 1️⃣ Scan reference materials (sources + root exercise banks)
 
 * Search `sources/` for anything relevant to `{TOPIC}`.
-* Extract:
+* Also scan root:
+  * `exercises1.md`
+  * `exercises2.md`
 
-  * definitions
-  * examples
-  * diagrams (describe them textually)
-  * useful structure
-* Add a **“Sources Used (Reference Only)”** section in `lecture.md`
-  (file names only).
+Extract and adapt:
+* definitions
+* examples
+* tables
+* diagram ideas (re-express as PlantUML)
+* exercise formats and solution patterns
+
+Add to `lecture.md`:
+* `## Sources Used (Reference Only)`
+  - include file names only
+
+Add to `practice.md`:
+* `## Reference Exercises Used (Root)`
+  - mention adapted exercise themes or IDs/titles briefly
 
 ---
 
 ### 2️⃣ Gap analysis
 
-* Compare what exists in `sources/` with what a **strong engineering lecture**
-  on `{TOPIC}` must include.
-* Add missing theory, calculations, trade-offs, and reasoning.
-* Do NOT assume material exists elsewhere.
-
----
-
-### 3️⃣ Write canonical Markdown
-
-* Use a **clear, consistent structure**
-* Avoid tool marketing and buzzwords
-* Focus on:
-
-  * models
-  * costs
-  * limits
+* Compare reference material with what a **strong engineering lecture** must include.
+* Add missing:
+  * theory
+  * calculations
   * trade-offs
-* Use **realistic data-engineering scenarios**
+  * failure reasoning
+
+Do NOT assume material exists elsewhere.
 
 ---
 
-### 4️⃣ Engineering exercises (MANDATORY)
+## 🧩 Diagram Generation Rules (MANDATORY)
 
-* **Read and follow the practice guidelines defined in `README.md`.**
-* Exercises must require **calculations and reasoning**, not prose.
-* Provide **full solutions** in `practice.md`
-  (step-by-step, with calculations).
+### Diagram Source & Template
+
+All diagrams MUST:
+
+* Be written in **PlantUML**
+* Be based on `diagrams/template.puml`
+* Be saved under `diagrams/`
+* Represent **exactly one slide**
 
 ---
 
-### 5️⃣ Slide-ready formatting (CRITICAL)
+### 📁 Diagram Naming Convention (STRICT)
 
-Markdown must be written so it can be converted directly to slides.
+```text
+week{WEEK_NO}_{lecture|practice}_slide{SLIDE_NO}_{short_description}.puml
+````
+
+Examples:
+
+* `week02_lecture_slide07_partitioning_flow.puml`
+* `week05_practice_slide04_star_schema_query_flow.puml`
+
+Rules:
+
+* `{SLIDE_NO}` matches slide order of appearance
+* `short_description` is lowercase, no spaces
+
+---
+
+### 🔗 Referencing Diagrams in Markdown
+
+If a slide uses a diagram, it MUST include:
+
+* `Diagram: week{WEEK_NO}_lecture_slide{SLIDE_NO}_...`
+
+The diagram file MUST exist.
+
+---
+
+## 🗺️ HARD GATE — Diagram Manifest (CRITICAL)
+
+Both `lecture.md` and `practice.md` MUST include near the top:
+
+`## Diagram Manifest`
+
+For each diagram used:
+
+* `Slide XX → filename.puml → purpose (1 line)`
+
+Rules:
+
+* Every `Diagram:` reference must appear in the manifest
+* Every manifest entry must be referenced by exactly one slide
+  Missing or inconsistent manifest → output INVALID.
+
+---
+
+## 🧭 Diagram Checklist per Lecture (HARD GATE)
+
+Each **lecture** MUST include **at least**:
+
+1. **System / Pipeline Overview Diagram**
+2. **Execution / Request Flow Diagram**
+3. **Failure or Edge-Case Diagram**
+
+Each **practice** MUST include **at least 1 reasoning-support diagram**.
+
+Missing any required diagram ⇒ output INVALID.
+
+---
+
+## 🧠 Worked Example Rule (MANDATORY)
+
+Every lecture MUST include:
+
+* At least **1 worked example** spanning **≥4 slides**
+* The example must:
+
+  * start from concrete data (schema + sample rows/events)
+  * apply steps explicitly (SQL / transformation / MapReduce steps)
+  * include at least one diagram
+  * end with an engineering conclusion or trade-off
+
+---
+
+## 🧪 Practice Realism Requirement (CRITICAL)
+
+Practices MUST start from **concrete artifacts**.
+
+Depending on topic:
+
+* SQL → tables, columns, sample rows, keys, sizes
+* MapReduce → input records, emitted (k,v), shuffle groups
+* Streaming → events, timestamps, windows
+* ETL → raw vs processed schemas
+
+Abstract exercises without concrete data context are INVALID.
+
+---
+
+## 🧪 HARD GATE — Practice Modes (MANDATORY)
+
+Select the appropriate mode(s) based on `{TOPIC}` and enforce them.
+
+### Mode A — SQL / ETL / ELT / Ingestion (If relevant)
+
+Practice MUST include:
+
+* 2–4 tables with keys + 6–12 sample rows total
+* 2–3 SQL exercises + FULL SQL solutions
+* At least one incremental-load exercise:
+
+  * watermark (`last_loaded_at`) OR CDC
+  * dedup / idempotency logic
+* At least one failure/reprocessing scenario:
+
+  * “job rerun” must not duplicate results
+
+### Mode B — MapReduce (If relevant)
+
+Practice MUST include:
+
+* 8–12 input records
+* One full manual walkthrough:
+
+  * Map emits `(k,v)`
+  * Shuffle groups
+  * Reduce outputs
+* Include one skew case + one mitigation:
+
+  * combiner / custom partitioner / salting keys
+
+### Mode C — DWH / OLAP (If relevant)
+
+Practice MUST include:
+
+* star schema (fact + ≥2 dimensions) + sample rows
+* one query showing partition pruning or reduction
+* one exercise: join size/cost reasoning
+
+If a relevant mode is skipped → output INVALID.
 
 ---
 
 ## 📐 Slide-Ready Markdown Rules (STRICT)
 
-These rules apply to **both** `lecture.md` and `practice.md`.
-
 ### Headings
 
-* `#` → title slide (one per file)
-* `##` → exactly **one slide**
-
----
+* `#` → title slide
+* `##` → exactly one slide
 
 ### Per-slide limits
 
-* **One idea only** per `##`
+* One idea only
 * Max **6 bullets**
 * Max **12 words per bullet**
-* ❌ No long paragraphs
-
----
+* No paragraphs
 
 ### Content style
 
-* Prefer:
+Prefer:
 
-  * bullets
-  * tables
-  * formulas
-  * pseudocode
-* Code blocks:
+* bullets
+* tables
+* formulas
+* pseudocode
+* step-by-step breakdowns
 
-  * max ~12 lines
-  * split across slides if longer
-* Math:
+Code:
 
-  * LaTeX only
-  * max 1–2 equations per slide
+* ≤12 lines per slide
 
----
+Math:
 
-### Large topics
-
-* Split into multiple slides:
-
-  * `## Topic (1/3)`
-  * `## Topic (2/3)`
-
----
+* LaTeX only
+* ≤2 equations per slide
 
 ### Forbidden
 
-* ❌ Prose paragraphs
-* ❌ “Explain in your own words”
-* ❌ Textbook-style exposition
-* ❌ Multi-topic slides
+❌ Prose paragraphs
+❌ Textbook exposition
+❌ Multi-topic slides
+❌ Inline ASCII diagrams instead of PlantUML
 
 ---
 
@@ -163,40 +350,68 @@ These rules apply to **both** `lecture.md` and `practice.md`.
 - Why this topic matters in data engineering
 
 ## Learning Objectives
-- 5–8 measurable objectives
+- 6–10 measurable objectives
 
 ## Sources Used (Reference Only)
 - sources/...
 
-## Core Concepts
+## Diagram Manifest
+- Slide XX → week{WEEK_NO}_lecture_slideXX_... → purpose
+
+## Core Concepts (1/2)
 - Definitions
 - Formal models
-- Assumptions
 
-## Running Example
-- One coherent example
-- Step-by-step transformations
+## Core Concepts (2/2)
+- Guarantees
+- What breaks at scale
 
-## Cost & Scaling Analysis
-- Quantitative models:
-  - time
-  - memory
-  - network
-  - partitions
-  - throughput / latency
+## Running Example — Data & Goal
+- Schema + sample rows/events
+- Engineering objective
 
-## Pitfalls & Failure Modes
-- Common mistakes
-- How to detect them
+## Running Example — Step-by-Step (1/4)
+- Step 1
+- Diagram: week{WEEK_NO}_lecture_slideXX_...
+
+## Running Example — Step-by-Step (2/4)
+- Step 2
+- Diagram: ...
+
+## Running Example — Step-by-Step (3/4)
+- Step 3
+
+## Running Example — Step-by-Step (4/4)
+- Output
+- Engineering interpretation
+
+## Cost & Scaling Analysis (1/3)
+- Time model
+
+## Cost & Scaling Analysis (2/3)
+- Memory / storage
+
+## Cost & Scaling Analysis (3/3)
+- Network / throughput / latency
+
+## Pitfalls & Failure Modes (1/3)
+- Common pitfall
+
+## Pitfalls & Failure Modes (2/3)
+- Failure scenario
+- Diagram: ...
+
+## Pitfalls & Failure Modes (3/3)
+- Detection + mitigation
 
 ## Best Practices
-- 8–12 concrete, actionable bullets
+- 8–12 concrete bullets
 
 ## Recap
-- 5 bullets: what must be remembered
+- 5 must-remember takeaways
 
 ## Pointers to Practice
-- What students must be able to solve
+- What students must solve
 ```
 
 ---
@@ -208,63 +423,54 @@ These rules apply to **both** `lecture.md` and `practice.md`.
 
 ## Instructions
 - Engineering course
-- Show calculations and reasoning
+- Show reasoning and calculations
 
-## Data Context (if applicable)
-- Describe tables / schemas / data assumptions
-- Include column meanings and sizes if relevant
+## Data Context (MANDATORY)
+- Tables / streams / files
+- Columns and meanings
+- Keys / partitions
+- Approx sizes
+- Access patterns
+
+## Reference Exercises Used (Root)
+- exercises1.md: ...
+- exercises2.md: ...
+
+## Diagram Manifest
+- Slide XX → week{WEEK_NO}_practice_slideXX_... → purpose
 
 ## Warm-up Exercises
-- Each exercise on its own slide
-- Questions only (no solutions)
+- 3–5 exercises
+- Each on its own slide
 
 ## Engineering Exercises
-- Each exercise on its own slide
-- Require calculations and reasoning
+- 3–6 exercises
+- Numeric assumptions
+- Cost reasoning required
 
 ## Challenge Exercise
-- Multi-part problem
-- Each part clearly separated
+- Multi-part
+- Architecture-level reasoning
+- Diagram required
 
 ## Solutions
-- **Each solution must be on a separate slide**
-- Match solution order exactly to questions
-- Full step-by-step reasoning
-- Clear calculations
-- Tables / math / pseudocode where needed
+- Each solution on its own slide
+- Match order exactly
+- Step-by-step calculations
+- Tables / math / pseudocode
+- SQL solutions in fenced SQL blocks
 ```
 
 ---
 
 ## 🧮 Engineering Content Requirements (NON-NEGOTIABLE)
 
-Every week must include:
+Each week MUST include:
 
-* At least **one quantitative cost model**
-* At least **one calculation-based exercise**
+* ≥1 quantitative cost model
+* ≥1 calculation-based exercise
 * Explicit trade-off analysis
-
-Examples (choose what fits `{TOPIC}`):
-
-* shuffle/network cost
-* data volume estimation
-* partition sizing
-* cardinality explosion
-* latency vs throughput
-* parallel speedup limits
-* data skew impact
-
----
-
-## 📌 Placeholders (ONLY if missing)
-
-If you cannot infer these from the repo, use defaults and proceed:
-
-* `{WEEK_NO}` — week number
-* `{WEEK_FOLDER}` — folder name
-* `{TOPIC}` — topic title
-* `{COURSE_STYLE}` — default: concise, engineering-first
-* `{TOOLS_ALLOWED}` — default: Python + SQL + pseudocode
+* ≥1 failure or edge-case scenario
 
 ---
 
@@ -275,11 +481,13 @@ Write **only** the final content into:
 * `lectures/{WEEK_FOLDER}/lecture.md`
 * `lectures/{WEEK_FOLDER}/practice.md`
 
-Do **not** output explanations, commentary, or meta text.
+AND create all required `.puml` files under `diagrams/`.
+
+Do NOT output explanations, commentary, or meta text.
 
 ---
 
-## 🧠 Remember
+## 🧠 Final Reminder
 
-You are not writing slides.
-You are writing **engineering artifacts that happen to become slides**.
+You are building an **engineering course**.
+If it feels easy, shallow, or tool-centric — it is WRONG.

@@ -1,0 +1,42 @@
+@startuml
+'=================================================
+' STREAMING EXECUTION / REQUEST FLOW
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam defaultFontSize 14
+skinparam defaultFontColor #2C3E50
+
+skinparam component<<Tool>> { BorderColor #2E7D32; BackgroundColor #E8F5E9 }
+skinparam component<<Agent>> { BorderColor #0288D1; BackgroundColor #E1F5FE }
+
+rectangle "Producer / Source" #F8F9FA {
+    component "**Emit events**\n<size:10>event_ts, key, payload</size>" as PROD <<Tool>>
+}
+
+rectangle "Broker (e.g. Kafka)" #F8F9FA {
+    database "**Topic**\n<size:10>Partitions / offset</size>" as BROKER
+}
+
+rectangle "Consumer / Processor" #F8F9FA {
+    component "**Read batch**\n<size:10>Poll / subscribe</size>" as CONS <<Tool>>
+    component "**Assign event_time**\n<size:10>Watermark update</size>" as WM <<Agent>>
+    component "**Window + aggregate**\n<size:10>State / emit result</size>" as AGG <<Tool>>
+    component "**Commit offset**\n<size:10>After sink ack</size>" as COMMIT <<Agent>>
+}
+
+database "**Sink**\n<size:10>DB / topic</size>" as SINK
+
+PROD --> BROKER : publish
+BROKER --> CONS : poll
+CONS --> WM : events
+WM --> AGG : watermark
+AGG --> SINK : write
+SINK --> COMMIT : ack
+COMMIT --> BROKER : commit offset
+
+note right of WM : **Order:** process → watermark → close windows → commit
+note bottom of COMMIT : **At-least-once:** commit after write. **Exactly-once:** transactional sink.
+
+@enduml

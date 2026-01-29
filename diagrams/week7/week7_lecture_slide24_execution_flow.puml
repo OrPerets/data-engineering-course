@@ -1,0 +1,34 @@
+@startuml
+'=================================================
+' Week 7: Execution / Request Flow — Map → Shuffle → Reduce
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam component { BackgroundColor #FFFFFF; BorderColor #78909C }
+skinparam database { BackgroundColor #ECEFF1; BorderColor #546E7A }
+skinparam arrow { Color #607D8B; FontSize 11 }
+
+component "**1. Map**\n<size:10>Read split → emit (k,v)</size>" as M <<Tool>>
+component "**2. Shuffle**\n<size:10>Partition → sort → transfer</size>" as S <<Agent>>
+component "**3. Reduce**\n<size:10>Consume iterator(k, [v]) → emit (k,v')</size>" as R <<Tool>>
+
+database "**Input splits**" as IN
+database "**Output**" as OUT
+
+IN --> M : "records"
+M --> S : "(k,v) stream"
+S --> R : "grouped by k"
+R --> OUT : "(k,v')"
+
+note right of S
+  **Bottleneck:** Network + disk.
+  Cost ∝ intermediate size.
+end note
+
+@enduml

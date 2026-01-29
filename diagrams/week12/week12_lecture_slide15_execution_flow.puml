@@ -1,0 +1,54 @@
+@startuml
+'=================================================
+' WEEK 12 — FEATURE PIPELINE EXECUTION FLOW
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam rectangle { BackgroundColor #F8F9FA; BorderColor #90A4AE; BorderThickness 2; FontColor #263238; FontSize 14; FontStyle bold; Padding 20 }
+skinparam component { BackgroundColor #FFFFFF; BorderColor #78909C; BorderThickness 1.5; FontSize 14; Padding 12 }
+skinparam database { BackgroundColor #ECEFF1; BorderColor #546E7A; BorderThickness 1.5; FontSize 14; FontColor #263238 }
+skinparam arrow { Color #607D8B; Thickness 1.5; FontSize 11; FontColor #546E7A }
+skinparam component<<Tool>> { BorderColor #2E7D32; BackgroundColor #E8F5E9; FontColor #1B5E20 }
+skinparam component<<Agent>> { BorderColor #0288D1; BackgroundColor #E1F5FE; FontColor #01579B }
+
+'========================
+' INCREMENTAL vs BACKFILL REQUEST FLOW
+'========================
+
+rectangle "INCREMENTAL (Daily)" #F8F9FA {
+    component "**Trigger**\n<size:10>Watermark = last_as_of_ts</size>" as TRIG <<Tool>>
+    component "**Compute**\n<size:10>New as_of_ts only</size>" as COMP <<Agent>>
+    database "**Feature table**\n<size:10>MERGE new partition</size>" as FT1
+    TRIG --> COMP
+    COMP --> FT1
+}
+
+rectangle "BACKFILL (Full / Range)" #F8F9FA {
+    component "**Request**\n<size:10>as_of_ts range [d1, d2]</size>" as REQ <<Tool>>
+    component "**Compute**\n<size:10>All (entity, as_of) in range</size>" as BACKFILL <<Agent>>
+    database "**Feature table**\n<size:10>Overwrite partitions d1..d2</size>" as FT2
+    REQ --> BACKFILL
+    BACKFILL --> FT2
+}
+
+rectangle "ORCHESTRATION" #F8F9FA {
+    component "**Control table**\n<size:10>last_as_of_ts, last_run_ts</size>" as CTRL <<Agent>>
+}
+
+TRIG --> CTRL
+CTRL --> TRIG
+
+note bottom of COMP : **Cost:** O(events in window) × 1 day; bounded.
+note bottom of BACKFILL : **Cost:** O(events) × (d2 − d1); overlap = duplicate keys if not overwrite.
+
+@enduml

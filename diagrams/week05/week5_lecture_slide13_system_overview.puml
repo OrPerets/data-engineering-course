@@ -1,0 +1,91 @@
+@startuml
+'=================================================
+' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontColor #263238
+    FontSize 14
+    FontStyle bold
+    Padding 20
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+    FontColor #263238
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 1.5
+    FontSize 11
+    FontColor #546E7A
+}
+
+skinparam component<<Agent>> {
+    BorderColor #0288D1
+    BackgroundColor #E1F5FE
+    FontColor #01579B
+}
+skinparam component<<Tool>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+'========================
+' DWH AND LAKE IN THE ANALYTICS PIPELINE
+'========================
+
+rectangle "SOURCES" #F8F9FA {
+    database "**DB / API**\n<size:10>Operational systems</size>" as SRC1
+    database "**Files / Logs**\n<size:10>Raw data</size>" as SRC2
+}
+
+rectangle "ETL / ELT" #F8F9FA {
+    component "**Extract • Transform**\n<size:10>Load to DWH / Lake</size>" as ETL <<Tool>>
+}
+
+rectangle "STORAGE" #F8F9FA {
+    database "**Data Warehouse**\n<size:10>Schema-on-write • Star schema</size>" as DWH
+    database "**Data Lake**\n<size:10>Schema-on-read • Raw + processed</size>" as LAKE
+}
+
+rectangle "CONSUMERS" #F8F9FA {
+    component "**BI / Analytics**\n<size:10>SQL • Reports</size>" as BI <<Agent>>
+}
+
+SRC1 --> ETL
+SRC2 --> ETL
+ETL --> DWH
+ETL --> LAKE
+DWH --> BI
+LAKE --> BI
+
+note bottom of DWH : **DWH:** Curated tables, partition by date. OLAP.
+note bottom of LAKE : **Lake:** Parquet/ORC. Flexibility, ML.
+
+@enduml

@@ -1,30 +1,86 @@
-
-# Build Week 2: Distributed Databases — SQL, NoSQL & CAP Intuition
+# Build Week 2: Distributed Databases: SQL vs NoSQL
 
 ### (lecture.md + practice.md)
 
 You are an expert **engineering-level Data Engineering course content developer**.
 
-This is **Week 2** of the course and establishes the **distributed-systems mindset** required for all later topics.
-
 This is a **university engineering course**, not a tools overview.
-You **must** follow the course standards defined in `README.md`, especially the **Practice Guidelines** section.
+For the full course philosophy, standards, and **practice guidelines**, see `README.md`.
+
+You are writing **engineering artifacts that happen to become slides**.
 
 ---
 
 ## 📁 Context & Repository Rules (MANDATORY)
 
-* Legacy materials are located under `sources/`
-  **Reference only** — do NOT edit.
-  For Week 2 lecture, they are **authoritative for coverage**.
+### Reference Materials (Read-Only)
+
+* Legacy slides/materials are located under `sources/`
+  **Reference only** — do NOT edit, do NOT treat as authoritative.
+  They are used only to preserve coverage and reuse good examples.
+
+* The repository root also includes:
+  * `exercises1.md`
+  * `exercises2.md`
+
+These files contain **exercise patterns and examples across multiple topics**.
+They are **reference only**:
+- ✅ reuse structure, phrasing style, and exercise formats
+- ✅ borrow ideas and adapt them to the current week
+- ❌ do NOT copy verbatim large blocks
+- ❌ do NOT edit these files
+
+Add to `practice.md` a section:
+- `## Reference Exercises Used (Root)`
+  - list which exercises or themes you adapted (briefly)
+
+---
+
+### Canonical Outputs (Single Source of Truth)
 
 * Canonical course content must be written in **Markdown only** under:
-
   * `lectures/02-distributed-db/lecture.md`
   * `lectures/02-distributed-db/practice.md`
 
+* Diagrams MUST be written in **PlantUML** and stored under:
+  * `diagrams/`
+
+* The repository contains a canonical diagram template:
+  * `diagrams/template.puml`
+
 * Markdown files are the **single source of truth**.
   Slides are generated automatically from them (Pandoc / Marp).
+
+* The course must combine:
+  **formal theory + engineering calculations + practical workflow reasoning**
+
+---
+
+## 🧱 Depth & Density Contract (MANDATORY)
+
+This course prioritizes **depth over brevity**.
+
+Rules:
+
+* A single concept MAY and SHOULD span multiple slides
+  - Use `(1/3)`, `(2/3)`, `(3/3)` when needed
+* Prefer decomposing explanations across slides instead of compressing them
+* Every core concept must include:
+  - intuition
+  - formal framing
+  - concrete example
+  - cost or failure implication
+
+**Thin, title-only output is INVALID.**
+
+---
+
+## 📏 Expected Size (Guideline)
+
+* `lecture.md`: **~40–70 slides**
+* `practice.md`: **~25–40 slides**
+
+Fewer slides usually indicates insufficient depth.
 
 ---
 
@@ -38,260 +94,312 @@ Create **perfect, ready-to-teach, slide-ready Markdown** for:
 The result must be:
 
 * Engineering-level
-* Distributed-systems oriented
-* Calculation-aware
+* Calculation-oriented
 * Self-contained
+* Rich with diagrams, tables, and walkthroughs
 * Directly convertible to slides **without manual cleanup**
 
 ---
 
 ## 🔄 Mandatory Workflow (DO NOT SKIP)
 
-### 0️⃣ Mandatory Week 2 legacy coverage (CRITICAL)
+### 1️⃣ Scan reference materials (sources + root exercise banks)
 
-For Week 2, you MUST reconstruct and reorganize the lecture using **existing materials** under:
+* Search `sources/` for anything relevant to `Distributed Databases: SQL vs NoSQL`.
+* Also scan root:
+  * `exercises1.md`
+  * `exercises2.md`
 
-* `sources/` related to:
+Extract and adapt:
+* definitions
+* examples
+* tables
+* diagram ideas (re-express as PlantUML)
+* exercise formats and solution patterns
 
-  * Distributed databases
-  * SQL vs NoSQL
-  * Scalability / availability
-  * CAP or consistency trade-offs
-
-**Rule:**
-If the final `lecture.md` is missing major topics that appear in legacy sources, the output is **incorrect**.
-
-You must add to `lecture.md`:
-
+Add to `lecture.md`:
 * `## Sources Used (Reference Only)`
-* `## Coverage Checklist (Legacy)`
+  - include file names only
+
+Add to `practice.md`:
+* `## Reference Exercises Used (Root)`
+  - mention adapted exercise themes or IDs/titles briefly
 
 ---
 
-### 1️⃣ Scan existing sources
+### 2️⃣ Gap analysis
 
-* Search `sources/` for anything related to:
-
-  * Distributed DB concepts
-  * NoSQL motivation
-  * Scalability limits of relational databases
-
-* Extract:
-
-  * definitions
-  * diagrams (describe textually)
-  * comparison tables
-  * example schemas or access patterns
-
----
-
-### 2️⃣ Gap analysis (CRITICAL FOR WEEK 2)
-
-Assume students:
-
-* Know **basic SQL**
-* Do NOT yet understand **distributed constraints**
-
-Ensure the lecture:
-
-* Does NOT teach specific DB products
-* DOES explain:
-
-  * why distribution breaks assumptions
-  * why SQL semantics become expensive
-  * why NoSQL exists at all
-
-Add missing:
-
-* replication intuition
-* partitioning intuition
-* consistency trade-offs
-
----
-
-### 3️⃣ Write canonical Markdown (lecture)
-
-* Week 2 lecture must be **conceptual but engineering-driven**
-* Avoid marketing language (“scales infinitely”, “cloud-native”)
-* Focus on:
-
-  * constraints
+* Compare reference material with what a **strong engineering lecture** must include.
+* Add missing:
+  * theory
+  * calculations
   * trade-offs
-  * impossibility results (informal)
+  * failure reasoning
+
+Do NOT assume material exists elsewhere.
 
 ---
 
-### 3️⃣.5 Distributed-systems depth enforcement (MANDATORY)
+## 🧩 Diagram Generation Rules (MANDATORY)
 
-Week 2 lecture MUST include:
+### Diagram Source & Template
 
-* At least **2 numeric scalability examples**
-  (e.g., nodes, partitions, replicas, latency)
-* At least **1 failure scenario**
-  (network partition, replica lag, split-brain)
-* At least **1 SQL vs NoSQL trade-off** explained quantitatively
-* At least **1 CAP-style trade-off** using a concrete scenario
+All diagrams MUST:
 
-If any are missing, the lecture is **incomplete**.
+* Be written in **PlantUML**
+* Be based on `diagrams/template.puml`
+* Be saved under `diagrams/`
+* Represent **exactly one slide**
 
 ---
 
-### 4️⃣ Engineering exercises (MANDATORY)
+### 📁 Diagram Naming Convention (STRICT)
 
-You **must** read and follow the **Practice Guidelines in `README.md`**.
+```
 
-For **Week 2 specifically**:
+week2_{lecture|practice}*slide{SLIDE_NO}*{short_description}.puml
 
-Practice must focus on **reasoning**, not syntax.
+````
 
-Exercises must involve:
+Examples:
+* `week02_lecture_slide07_partitioning_flow.puml`
+* `week05_practice_slide04_star_schema_query_flow.puml`
 
-* choosing between SQL / NoSQL
-* partitioning decisions
-* replication trade-offs
-* reasoning about consistency, availability, latency
+Rules:
+* `{SLIDE_NO}` matches slide order of appearance
+* `short_description` is lowercase, no spaces
 
-Include:
+---
 
-* 3 warm-up exercises (conceptual but precise)
-* 3 engineering exercises (design + calculations)
-* 1 multi-part challenge (architecture-level reasoning)
+### 🔗 Referencing Diagrams in Markdown
+
+If a slide uses a diagram, it MUST include:
+
+- `Diagram: week2_lecture_slide{SLIDE_NO}_...`
+
+The diagram file MUST exist.
+
+---
+
+## 🧭 Diagram Checklist per Lecture (HARD GATE)
+
+Each **lecture** MUST include **at least**:
+
+1. **System / Pipeline Overview Diagram**
+   - Components + data movement
+
+2. **Execution / Request Flow Diagram**
+   - Query, job, or task execution path
+
+3. **Failure or Edge-Case Diagram**
+   - What breaks
+   - How failure propagates
+
+Each **practice** MUST include **at least 1 reasoning-support diagram**.
+
+Missing any required diagram ⇒ output INVALID.
+
+---
+
+## 🧠 Worked Example Rule (MANDATORY)
+
+Every lecture MUST include:
+
+* At least **1 worked example** spanning **≥4 slides**
+* The example must:
+  - start from concrete data
+  - apply steps explicitly
+  - include at least one diagram
+  - end with an engineering conclusion or trade-off
+
+---
+
+## 🧪 Practice Realism Requirement (CRITICAL)
+
+Practices MUST start from **concrete artifacts**.
+
+Depending on topic:
+
+* SQL → tables, columns, sample rows, keys, sizes
+* MapReduce → input records, emitted (k,v), shuffle groups
+* Streaming → events, timestamps, windows
+* ETL → raw vs processed schemas
+
+Abstract exercises without concrete data context are INVALID.
 
 ---
 
 ## 📐 Slide-Ready Markdown Rules (STRICT)
 
-Apply to **both** files.
+### Headings
 
 * `#` → title slide
-* `##` → exactly **one slide**
+* `##` → exactly one slide
 
-Per slide:
+---
+
+### Per-slide limits
 
 * One idea only
-* Max 6 bullets
-* Max 12 words per bullet
-* ❌ No long paragraphs
+* Max **6 bullets**
+* Max **12 words per bullet**
+* No paragraphs
+
+Multiple slides per concept REQUIRED when needed.
+
+---
+
+### Content style
+
+Prefer:
+
+* bullets
+* tables
+* formulas
+* pseudocode
+* step-by-step breakdowns
+
+Code:
+* ≤12 lines per slide
+
+Math:
+* LaTeX only
+* ≤2 equations per slide
+
+---
+
+### Forbidden
+
+❌ Prose paragraphs  
+❌ Textbook exposition  
+❌ Multi-topic slides  
+❌ Inline ASCII diagrams instead of PlantUML  
 
 ---
 
 ## 📄 `lecture.md` — REQUIRED STRUCTURE (EXACT ORDER)
 
 ```md
-# Week 2: Distributed Databases — SQL, NoSQL & CAP
+# Week 2: Distributed Databases: SQL vs NoSQL
 
 ## Purpose
-- Why databases must be distributed
-- Why distribution changes everything
+- Why this topic matters in data engineering
 
 ## Learning Objectives
-- 5–8 measurable objectives
+- 6–10 measurable objectives
 
 ## Sources Used (Reference Only)
 - sources/...
 
-## Coverage Checklist (Legacy)
-- [ ] Distributed DB motivation
-- [ ] SQL scalability limits
-- [ ] NoSQL motivation
-- [ ] Consistency trade-offs
+## Core Concepts (1/2)
+- Definitions
+- Formal models
 
-## Why Single-Node Databases Break
-- Storage limits
-- Throughput limits
-- Availability limits
+## Core Concepts (2/2)
+- Guarantees
+- What breaks at scale
 
-## What “Distributed” Really Means
-- Multiple machines
-- Partial failures
-- Network uncertainty
+## Running Example — Data & Goal
+- Concrete dataset
+- Engineering objective
 
-## SQL in a Distributed World
-- Joins across machines
-- Transactions at scale
-- Cost explosion
+## Running Example — Step-by-Step (1/4)
+- Step 1
+- Diagram: week2_lecture_slideXX_...
 
-## Why NoSQL Exists
-- Relaxed guarantees
-- Simplified access patterns
-- Predictable scaling
+## Running Example — Step-by-Step (2/4)
+- Step 2
+- Diagram: ...
 
-## Visual Comparison: SQL vs NoSQL
-- MUST include a comparison table
+## Running Example — Step-by-Step (3/4)
+- Step 3
 
-## Partitioning Intuition
-- Horizontal partitioning
-- Key-based distribution
+## Running Example — Step-by-Step (4/4)
+- Output
+- Engineering interpretation
 
-## Replication Intuition
-- Replicas
-- Read/write paths
+## Cost & Scaling Analysis (1/3)
+- Time model
 
-## CAP Intuition (Engineering View)
-- Concrete scenario
-- Trade-offs explained
+## Cost & Scaling Analysis (2/3)
+- Memory / storage
 
-## Failure Scenarios
-- Network partition
-- Replica lag
-- Node failure
+## Cost & Scaling Analysis (3/3)
+- Network / throughput / latency
 
-## Best Practices (Week 2)
-- Distributed design mindset
+## Pitfalls & Failure Modes (1/3)
+- Common pitfall
+
+## Pitfalls & Failure Modes (2/3)
+- Failure scenario
+- Diagram: ...
+
+## Pitfalls & Failure Modes (3/3)
+- Detection + mitigation
+
+## Best Practices
+- 8–12 concrete bullets
 
 ## Recap
-- 5 key takeaways
+- 5 must-remember takeaways
 
 ## Pointers to Practice
-- What students should now reason about
-```
-
-📊 **Lecture visual requirements (MANDATORY)**
-
-* At least **2** diagrams (partitioning, replication, request flow)
-* At least **1** comparison table (SQL vs NoSQL)
-* At least **1** failure scenario slide
+- What students must solve
+````
 
 ---
 
 ## 🧪 `practice.md` — REQUIRED STRUCTURE (EXACT ORDER)
 
 ```md
-# Week 2: Distributed Databases — Practice
+# Week 2: Distributed Databases: SQL vs NoSQL — Practice
 
 ## Instructions
 - Engineering course
 - Show reasoning and calculations
 
+## Data Context (MANDATORY)
+- Tables / streams / files
+- Columns and meanings
+- Keys / partitions
+- Approx sizes
+- Access patterns
+
+## Reference Exercises Used (Root)
+- exercises1.md: ...
+- exercises2.md: ...
+
 ## Warm-up Exercises
-- Conceptual but precise
-- Each exercise on its own slide
+- 3–5 exercises
+- Each on its own slide
 
 ## Engineering Exercises
-- Design-oriented
-- Include numeric assumptions
-- Reason about trade-offs
+- 3–6 exercises
+- Numeric assumptions
+- Cost reasoning required
 
 ## Challenge Exercise
-- Multi-part system design
-- Partitioning + replication + consistency
+- Multi-part
+- Architecture-level reasoning
+- Diagram required
 
 ## Solutions
 - Each solution on its own slide
-- Step-by-step reasoning
-- Clear assumptions
+- Match order exactly
+- Step-by-step calculations
+- Tables / math / pseudocode
 ```
 
 ---
 
-## 🧮 Engineering Content Requirements (WEEK 2–SPECIFIC)
+## 🧮 Engineering Content Requirements (NON-NEGOTIABLE)
 
-Must include:
+Each week MUST include:
 
-* At least one **partition sizing calculation**
-* At least one **replication factor trade-off**
-* At least one **latency vs consistency discussion**
-* At least one **failure-mode reasoning exercise**
+* ≥1 quantitative cost model
+* ≥1 calculation-based exercise
+* Explicit trade-off analysis
+* ≥1 failure or edge-case scenario
 
 ---
 
@@ -302,19 +410,15 @@ Write **only** the final content into:
 * `lectures/02-distributed-db/lecture.md`
 * `lectures/02-distributed-db/practice.md`
 
-Do **not** output explanations, commentary, or meta text.
+AND create all required `.puml` files under `diagrams/`.
+
+Do NOT output explanations, commentary, or meta text.
 
 ---
 
-## 🧠 Final Reminder (IMPORTANT)
+## 🧠 Final Reminder
 
-If:
+You are building an **engineering course**.
+If it feels easy, shallow, or tool-centric — it is WRONG.
 
-* you skip legacy topics
-* you reduce this to a product overview
-* you avoid failure scenarios
-* you omit quantitative reasoning
-
-then the output is **incorrect**.
-
-You are writing **engineering artifacts that happen to become slides**.
+```

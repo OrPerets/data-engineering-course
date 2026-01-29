@@ -1,0 +1,45 @@
+@startuml
+'=================================================
+' Week 9 Practice: N-gram pipeline reasoning
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam rectangle { BackgroundColor #F8F9FA; BorderColor #90A4AE; BorderThickness 2 }
+skinparam component { BackgroundColor #FFFFFF; BorderColor #78909C; BorderThickness 1.5 }
+skinparam database { BackgroundColor #ECEFF1; BorderColor #546E7A }
+skinparam arrow { Color #607D8B; Thickness 1.5 }
+
+rectangle "Documents" #F8F9FA {
+    database "**(doc_id, text)**" as DOCS
+}
+
+rectangle "Tokenize" #F8F9FA {
+    component "**Split, lowercase**\noptional: regex clean" as TOK
+}
+
+rectangle "N-gram extract" #F8F9FA {
+    component "**Sliding window n**\nemit (doc_id, ngram, 1)" as NGRAM
+}
+
+rectangle "Aggregate" #F8F9FA {
+    component "**Reduce by (doc_id, ngram)**\n(doc_id, ngram, count)" as AGG
+}
+
+rectangle "Output" #F8F9FA {
+    database "**Feature table**\n(doc_id, ngram, count)" as OUT
+}
+
+DOCS --> TOK
+TOK --> NGRAM
+NGRAM --> AGG
+AGG --> OUT
+
+note bottom of NGRAM : Bigram vocab ~ V^2; skew if df(ngram) aggregated by ngram key.
+
+@enduml

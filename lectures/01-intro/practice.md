@@ -1,374 +1,475 @@
 # Week 1: Introduction to Data Engineering — Practice
 
 ## Instructions
-- Engineering course: show calculations and reasoning
-- Every exercise requires explicit SQL queries
-- Calculate intermediate result sizes
-- Show cost reasoning for each query
+- Engineering course: show reasoning and calculations
+- Focus on data engineering thinking
+- Calculate costs, latencies, storage requirements
+- Design pipelines with trade-offs
+- Identify failure modes and solutions
 
-## Data Context (MANDATORY BEFORE QUESTIONS)
+## Data Context (MANDATORY)
 
-### Schema: E-commerce Analytics System
+### Scenario: Social Media Analytics Platform
 
-**Table: `users`**
-- Columns: user_id (INT), email (VARCHAR), country (VARCHAR), signup_date (DATE)
-- Row count: 1,000,000 users
-- Row size: ~154 bytes
-- Total size: ~154 MB
+**System Requirements:**
+- 100 million registered users
+- 500 million posts (5 posts/user average)
+- 10 billion interactions (likes, comments, shares)
+- Peak load: 50,000 posts/minute, 500,000 interactions/minute
+- Average load: 10,000 posts/minute, 100,000 interactions/minute
 
-**Table: `orders`**
-- Columns: order_id (INT), user_id (INT), product_id (INT), amount (DECIMAL), order_date (DATE)
-- Row count: 10,000,000 orders
-- Row size: ~124 bytes
-- Total size: ~1.24 GB
+**Data Sources:**
 
-**Table: `products`**
-- Columns: product_id (INT), name (VARCHAR), category (VARCHAR), price (DECIMAL)
-- Row count: 10,000 products
-- Row size: ~200 bytes
-- Total size: ~2 MB
+**Posts Table:**
+- Columns: post_id (8 bytes), user_id (8 bytes), content (2 KB text), timestamp (8 bytes), category (20 bytes)
+- Total row size: ~2.1 KB
+- 500M rows total
+- Partition key: user_id
+- Access pattern: get posts by user_id (80%), get posts by category (20%)
 
-### Sample Data
+**Interactions Table:**
+- Columns: interaction_id (8 bytes), post_id (8 bytes), user_id (8 bytes), type (1 byte: like/comment/share), timestamp (8 bytes)
+- Total row size: ~33 bytes
+- 10B rows total
+- Partition key: post_id
+- Access pattern: get interactions by post_id (90%), get interactions by user_id (10%)
 
-**users (sample)**:
-| user_id | email | country | signup_date |
-|---------|-------|---------|-------------|
-| 1 | alice@example.com | US | 2023-01-15 |
-| 2 | bob@example.com | UK | 2023-02-20 |
-| 3 | carol@example.com | US | 2023-03-10 |
+**Users Table:**
+- Columns: user_id (8 bytes), username (50 bytes), email (100 bytes), profile (1 KB JSON), created_at (8 bytes)
+- Total row size: ~1.2 KB
+- 100M rows total
+- Partition key: user_id
+- Access pattern: get user by user_id (100%)
 
-**orders (sample)**:
-| order_id | user_id | product_id | amount | order_date |
-|----------|---------|------------|--------|------------|
-| 101 | 1 | 501 | 29.99 | 2024-01-05 |
-| 102 | 1 | 502 | 49.99 | 2024-01-10 |
-| 103 | 2 | 501 | 29.99 | 2024-01-12 |
+**Storage Details:**
+- Raw data: uncompressed JSON files
+- Processed data: Parquet format (5× compression)
+- Retention: 90 days raw, 365 days processed
+- Replication: 3× for availability
+
+**Pipeline Requirements:**
+- Process posts and interactions hourly
+- Calculate: daily post counts per category, daily interaction counts per post
+- Output: analytics-ready tables for dashboards
+- Latency: data available within 2 hours of event time
 
 ## Warm-up Exercises
 
 ## Exercise 1
-Given the following SQL query:
-```sql
-SELECT country, COUNT(*) as user_count
-FROM users
-GROUP BY country;
-```
-**Questions**:
-a) How many rows will this query scan?
-b) What is the approximate data volume scanned (in MB)?
-c) If there are 50 unique countries, how many rows in the output?
+Calculate storage requirements for the social media platform.
+
+**Questions:**
+a) What is the total raw storage size for posts, interactions, and users (in GB)?
+b) If data is stored in Parquet format (5× compression), what is the compressed size?
+c) With 90-day retention for raw data, what is the total raw storage needed?
+d) With 3× replication, what is the total storage including replicas?
 
 ## Exercise 2
-Given the following SQL query:
-```sql
-SELECT u.user_id, COUNT(o.order_id) as order_count
-FROM users u
-LEFT JOIN orders o ON u.user_id = o.user_id
-GROUP BY u.user_id;
-```
-**Questions**:
-a) What is the maximum possible number of rows in the join result?
-b) If each user has an average of 10 orders, estimate the join result size in MB.
-c) What is the final output row count?
+A data pipeline processes 1 million events per hour.
+
+**Questions:**
+a) If each event is 1 KB, what is the hourly data volume in GB?
+b) If processing takes 30 minutes, what is the throughput in MB/s?
+c) If the pipeline runs daily for 30 days, what is the total monthly volume?
+d) If storage costs $0.023/GB/month, what is the monthly storage cost?
 
 ## Exercise 3
-Given the following SQL query:
-```sql
-SELECT product_id, SUM(amount) as total_revenue
-FROM orders
-WHERE order_date >= '2024-01-01'
-GROUP BY product_id;
-```
-**Questions**:
-a) If 30% of orders are from 2024, how many rows are scanned?
-b) Estimate the filtered result size before aggregation (in MB).
-c) If there are 5,000 unique products in 2024 orders, what is the output size?
+A batch pipeline runs every hour.
+
+**Questions:**
+a) If processing takes 45 minutes, what is the maximum data latency?
+b) If a failure occurs at minute 30, how long until the next successful run?
+c) If the pipeline must complete within 1 hour, what is the maximum processing time?
+d) If processing time increases 2× due to data growth, what happens to latency?
 
 ## Engineering Exercises
 
 ## Exercise 4
-Consider this naive query:
-```sql
-SELECT u.country, AVG(o.amount) as avg_order_value
-FROM users u
-JOIN orders o ON u.user_id = o.user_id
-WHERE u.country = 'US'
-GROUP BY u.country;
-```
-**Tasks**:
-a) Calculate total data scanned (users + orders) in GB.
-b) Calculate the intermediate join result size in MB.
-c) Design an optimized version that filters users first.
-d) Calculate the data scanned by the optimized query.
-e) What is the improvement factor?
+Design a data pipeline for the social media platform.
+
+**Given:**
+- Source: posts and interactions tables (updated continuously)
+- Target: daily aggregated analytics tables
+- Frequency: hourly batch processing
+- Latency requirement: 2 hours maximum
+
+**Tasks:**
+a) Design pipeline steps: ingestion, transformation, aggregation, load.
+b) Calculate intermediate data sizes: raw → filtered → aggregated.
+c) Estimate processing time: assume 100 MB/s processing speed.
+d) Identify potential bottlenecks and suggest optimizations.
+e) Calculate total pipeline cost: compute + storage + network.
 
 ## Exercise 5
-Given this query that finds top customers:
-```sql
-SELECT u.user_id, u.email, SUM(o.amount) as total_spent
-FROM users u
-JOIN orders o ON u.user_id = o.user_id
-GROUP BY u.user_id, u.email
-HAVING SUM(o.amount) > 1000
-ORDER BY total_spent DESC
-LIMIT 100;
-```
-**Tasks**:
-a) Calculate the join result size (assume 10 orders per user average).
-b) Calculate the size after GROUP BY (before HAVING).
-c) Explain why HAVING is applied after aggregation.
-d) Estimate the final output size (100 rows).
+Analyze batch vs streaming trade-offs.
+
+**Scenario:**
+- Posts: 10,000/minute average, 50,000/minute peak
+- Analytics need: "trending posts in last 5 minutes"
+
+**Batch Approach:**
+- Process every 5 minutes
+- Latency: 5-10 minutes
+- Cost: $0.10 per batch run
+
+**Streaming Approach:**
+- Process continuously
+- Latency: < 1 second
+- Cost: $2.00 per hour (always running)
+
+**Tasks:**
+a) Calculate daily cost for batch (288 runs/day) vs streaming (24 hours).
+b) If business requires < 1 minute latency, which approach is required?
+c) If cost is the primary concern, which approach is better?
+d) Design a hybrid approach: streaming for recent, batch for history.
 
 ## Exercise 6
-Analyze this two-stage aggregation query:
-```sql
-WITH daily_revenue AS (
-  SELECT order_date, SUM(amount) as daily_total
-  FROM orders
-  WHERE order_date >= '2024-01-01'
-  GROUP BY order_date
-)
-SELECT AVG(daily_total) as avg_daily_revenue
-FROM daily_revenue;
-```
-**Tasks**:
-a) Calculate the size of the CTE result (assume 365 days in 2024).
-b) Compare this to a single-query approach without CTE.
-c) Explain the memory benefit of the CTE approach.
-d) Calculate total data scanned in both approaches.
+Calculate pipeline failure impact and recovery.
+
+**Scenario:**
+- Pipeline processes 1 hour of data (10,000 posts, 100,000 interactions)
+- Failure occurs: 30 minutes into processing
+- 50% of data processed, 50% lost
+- Recovery: manual investigation + rerun = 2 hours
+
+**Tasks:**
+a) Calculate data loss: how many posts/interactions not processed?
+b) Calculate time to recovery: failure time + investigation + rerun.
+c) If pipeline runs hourly, how many subsequent runs are delayed?
+d) Design checkpoint strategy: save state every 10 minutes.
+e) With checkpoints, calculate recovery time and data loss.
+
+## Exercise 7
+Estimate network and compute costs.
+
+**Given:**
+- Ingest: 5 GB/hour from source databases
+- Process: 5 GB/hour (local, no network)
+- Output: 100 MB/hour to data warehouse
+- Network: $0.09/GB egress, $0.00/GB ingress
+- Compute: $0.10 per hour for processing
+
+**Tasks:**
+a) Calculate daily network cost (ingress + egress).
+b) Calculate daily compute cost (24 hours).
+c) Calculate monthly total cost (30 days).
+d) If data volume increases 5×, calculate new costs.
+e) If processing time is 30 minutes (not 1 hour), calculate compute savings.
 
 ## Challenge Exercise
 
-## Challenge: End-to-End Analytics Pipeline
-You need to build a monthly revenue report by country and product category.
+## Challenge: End-to-End Pipeline Design
 
-**Part 1: Data Quality Check**
-Write a SQL query to identify data quality issues:
-- Users with NULL country
-- Orders with NULL user_id or amount
-- Orders with invalid dates (future dates or before 2020)
+You are designing a complete data engineering pipeline for a news aggregation platform.
 
-**Part 2: Data Transformation**
-Write a query to create a cleaned orders table that:
-- Filters out orders with NULL user_id or amount
-- Filters out orders with invalid dates
-- Adds a month column extracted from order_date
+**Requirements:**
+- 50 million articles (from 1,000 sources)
+- 200 million user clicks (4 clicks/user average)
+- Real-time requirement: trending articles updated every 5 minutes
+- Batch requirement: daily analytics reports
+- Availability: 99.9% (8.76 hours downtime/year max)
 
-**Part 3: Join and Aggregate**
-Write a query that:
-- Joins cleaned orders with users and products
-- Groups by country, product category, and month
-- Calculates total revenue and order count per group
-- Filters to only 2024 data
+**Data Models:**
 
-**Part 4: Cost Analysis**
-For the final query in Part 3:
-- Calculate the data scanned from each table
-- Estimate the join intermediate result size
-- Calculate the final aggregated result size
-- Propose one optimization to reduce scan size
+**Articles:**
+- article_id, source_id, title (200 bytes), content (10 KB), category (50 bytes), published_at
+- Row size: ~10.3 KB
+- 50M articles total
+- Growth: 10,000 articles/day
+
+**Clicks:**
+- click_id, article_id, user_id, timestamp, device_type (20 bytes)
+- Row size: ~44 bytes
+- 200M clicks total
+- Growth: 500,000 clicks/day
+
+**Sources:**
+- source_id, name (100 bytes), domain (50 bytes), category (50 bytes)
+- Row size: ~208 bytes
+- 1,000 sources total
+- Static (rarely changes)
+
+**Part 1: Storage Architecture**
+a) Calculate total raw storage for articles, clicks, sources (in GB).
+b) Design partitioning strategy: how to partition articles? clicks?
+c) Calculate storage with 90-day retention and 3× replication.
+d) Estimate monthly storage cost at $0.023/GB/month.
+
+**Part 2: Pipeline Design**
+a) Design batch pipeline: daily aggregation of clicks per article.
+  - Calculate input size, output size, processing time.
+  - Estimate cost: compute + storage + network.
+b) Design streaming pipeline: trending articles every 5 minutes.
+  - Calculate throughput: articles/minute, clicks/minute.
+  - Estimate cost: compute (always running).
+c) Compare batch vs streaming costs for trending use case.
+d) Recommend hybrid approach with justification.
+
+**Part 3: Failure Analysis**
+a) Identify 3 critical failure modes in your pipeline design.
+b) For each failure, calculate:
+  - Probability of occurrence
+  - Data loss impact
+  - Recovery time
+  - Business impact (downtime cost)
+c) Design mitigation strategies for each failure mode.
+d) Calculate additional cost for failure mitigation (redundancy, monitoring).
+
+**Part 4: Scaling Analysis**
+a) If article volume grows 10× (100,000/day), recalculate:
+  - Storage requirements
+  - Processing time
+  - Costs
+b) If click volume grows 10× (5M/day), recalculate:
+  - Network transfer size
+  - Aggregation time
+  - Costs
+c) Design scaling strategy: when to add more compute nodes?
+d) Calculate break-even point: batch processing vs distributed processing.
+
+**Part 5: Architecture Diagram**
+- Create diagram showing: sources → ingestion → storage → processing → consumption
+- Include: batch pipeline, streaming pipeline, data flows
+- Label: data volumes, latencies, costs
+- Diagram: week1_practice_slide15_architecture.puml
 
 ## Solutions
 
 ## Solution 1
-**a) Rows scanned**: 1,000,000 rows (entire users table)
 
-**b) Data volume scanned**:
+**a) Total raw storage:**
 ```
-1,000,000 rows × 154 bytes = 154,000,000 bytes
-= 154 MB
+Posts: 500M rows × 2.1 KB = 1,050,000 MB = 1,050 GB
+Interactions: 10B rows × 33 bytes = 330,000 MB = 330 GB
+Users: 100M rows × 1.2 KB = 120,000 MB = 120 GB
+Total: 1,050 + 330 + 120 = 1,500 GB = 1.5 TB
 ```
 
-**c) Output rows**: 50 rows (one per country)
+**b) Compressed size (Parquet, 5×):**
+```
+Posts: 1,050 GB / 5 = 210 GB
+Interactions: 330 GB / 5 = 66 GB
+Users: 120 GB / 5 = 24 GB
+Total: 210 + 66 + 24 = 300 GB
+```
+
+**c) 90-day retention raw:**
+```
+Daily growth: posts (10M/day × 2.1 KB) + interactions (200M/day × 33 bytes)
+Posts daily: 21 GB/day
+Interactions daily: 6.6 GB/day
+Total daily: 27.6 GB/day
+90 days: 27.6 GB × 90 = 2,484 GB = 2.5 TB
+```
+
+**d) With 3× replication:**
+```
+Raw: 2.5 TB × 3 = 7.5 TB
+Processed: 300 GB × 3 = 900 GB
+Total: 8.4 TB
+```
 
 ## Solution 2
-**a) Maximum join rows**: 
+
+**a) Hourly volume:**
 ```
-1,000,000 users × 10,000,000 orders = 10,000,000,000,000 potential matches
-But actual matches limited by user_id foreign key: 10,000,000 rows
+1M events × 1 KB = 1,000 MB = 1 GB/hour
 ```
 
-**b) Join result size**:
+**b) Throughput:**
 ```
-Average 10 orders per user × 1,000,000 users = 10,000,000 join rows
-Each row: user columns (154 bytes) + order columns (124 bytes) = 278 bytes
-Total: 10,000,000 × 278 bytes = 2,780,000,000 bytes ≈ 2.78 GB
+1 GB in 30 minutes = 1 GB / 1800s = 0.56 MB/s
 ```
 
-**c) Final output**: 1,000,000 rows (one per user, including users with 0 orders)
+**c) Monthly volume:**
+```
+1 GB/hour × 24 hours × 30 days = 720 GB/month
+```
+
+**d) Storage cost:**
+```
+720 GB × $0.023/GB = $16.56/month
+```
 
 ## Solution 3
-**a) Rows scanned**:
+
+**a) Maximum latency:**
 ```
-10,000,000 orders × 30% = 3,000,000 rows
+Processing: 45 minutes
+Next run starts: 1 hour after previous
+Maximum: 45 min (processing) + 60 min (wait) = 105 minutes
 ```
 
-**b) Filtered result size**:
+**b) Time to next success:**
 ```
-3,000,000 rows × 124 bytes = 372,000,000 bytes ≈ 372 MB
+Failure at 30 min
+Current run: fails (no output)
+Next run: starts in 30 min, takes 45 min
+Total: 30 + 45 = 75 minutes
 ```
 
-**c) Output size**:
+**c) Maximum processing time:**
 ```
-5,000 products × (product_id: 4 bytes + total_revenue: 8 bytes)
-= 5,000 × 12 bytes = 60,000 bytes ≈ 0.06 MB
+Must complete within 1 hour window
+Buffer for failures: 10 minutes
+Maximum: 50 minutes processing time
+```
+
+**d) Latency impact:**
+```
+Processing: 45 min → 90 min
+If window is 1 hour: pipeline cannot complete
+Solution: increase parallelism or reduce data volume
 ```
 
 ## Solution 4
-**a) Total data scanned (naive)**:
+
+**a) Pipeline steps:**
 ```
-Users: 1,000,000 rows × 154 bytes = 154 MB
-Orders: 10,000,000 rows × 124 bytes = 1,240 MB
-Total: 1,394 MB ≈ 1.39 GB
+1. Ingestion: Read posts and interactions from source
+2. Transformation: Filter valid records, extract fields
+3. Aggregation: Group by (date, category) for posts, (date, post_id) for interactions
+4. Load: Write aggregated results to analytics tables
 ```
 
-**b) Intermediate join result**:
+**b) Intermediate sizes:**
 ```
-US users: 200,000 (20% of 1M)
-Join matches: 200,000 users × 10 orders avg = 2,000,000 rows
-Size: 2,000,000 × 278 bytes = 556,000,000 bytes ≈ 556 MB
+Raw posts: 500M × 2.1 KB = 1,050 GB
+After filter (95% valid): 1,050 GB × 0.95 = 997.5 GB
+After aggregation: 50K rows/day × 100 bytes = 5 MB/day
+
+Raw interactions: 10B × 33 bytes = 330 GB
+After filter (98% valid): 330 GB × 0.98 = 323.4 GB
+After aggregation: 500K rows/day × 50 bytes = 25 MB/day
 ```
 
-**c) Optimized query**:
-```sql
-SELECT u.country, AVG(o.amount) as avg_order_value
-FROM (SELECT * FROM users WHERE country = 'US') u
-JOIN orders o ON u.user_id = o.user_id
-GROUP BY u.country;
+**c) Processing time:**
+```
+Posts: 997.5 GB / 100 MB/s = 9,975 seconds = 166 minutes
+Interactions: 323.4 GB / 100 MB/s = 3,234 seconds = 54 minutes
+Total: 220 minutes = 3.7 hours
+Bottleneck: posts processing
 ```
 
-**d) Optimized data scanned**:
+**d) Optimizations:**
 ```
-Filtered users: 200,000 rows × 154 bytes = 30.8 MB
-Orders: 10,000,000 rows × 124 bytes = 1,240 MB
-Total: 1,270.8 MB ≈ 1.27 GB
+- Partition processing by date (parallel)
+- Use columnar format (Parquet) for faster reads
+- Pre-filter invalid records during ingestion
+- Incremental processing: only new data
 ```
 
-**e) Improvement**: Minimal (still scans all orders), but join is smaller.
-Better optimization: filter orders by user_id IN (US user_ids) first.
+**e) Total cost:**
+```
+Compute: 3.7 hours × $0.10/hour = $0.37 per run
+Daily: $0.37 × 24 = $8.88/day
+Storage: 30 MB/day × 365 days × $0.023/GB = $0.25/year
+Network: 100 MB/day egress × $0.09/GB = $0.009/day
+Monthly: ($8.88 + $0.009) × 30 = $266.67/month
+```
 
 ## Solution 5
-**a) Join result size**:
+
+**a) Daily costs:**
 ```
-1,000,000 users × 10 orders = 10,000,000 rows
-Size: 10,000,000 × 278 bytes = 2,780 MB ≈ 2.78 GB
+Batch: 288 runs × $0.10 = $28.80/day
+Streaming: 24 hours × $2.00 = $48.00/day
+Difference: $19.20/day more for streaming
 ```
 
-**b) After GROUP BY**:
+**b) Latency requirement:**
 ```
-1,000,000 user groups × (user_id: 4 bytes + email: 100 bytes + total_spent: 8 bytes)
-= 1,000,000 × 112 bytes = 112,000,000 bytes ≈ 112 MB
+Batch: 5-10 minutes latency
+Requirement: < 1 minute
+Conclusion: Batch insufficient, streaming required
 ```
 
-**c) HAVING after aggregation**: HAVING filters aggregated results, cannot use WHERE on aggregates.
+**c) Cost comparison:**
+```
+If latency not critical: batch is $19.20/day cheaper
+If latency critical: streaming required despite cost
+```
 
-**d) Final output**: 100 rows × 112 bytes = 11,200 bytes ≈ 0.01 MB
+**d) Hybrid approach:**
+```
+- Streaming: last 1 hour of data (low latency)
+- Batch: historical data (hourly, lower cost)
+- Cost: $2.00/hour streaming + $0.10/hour batch = $2.10/hour
+- Daily: $2.10 × 24 = $50.40/day
+- Benefit: real-time for recent, cost-effective for history
+```
 
 ## Solution 6
-**a) CTE result size**:
+
+**a) Data loss:**
 ```
-365 days × (order_date: 4 bytes + daily_total: 8 bytes)
-= 365 × 12 bytes = 4,380 bytes ≈ 0.004 MB
+Posts: 10,000 × 0.5 = 5,000 posts not processed
+Interactions: 100,000 × 0.5 = 50,000 interactions not processed
 ```
 
-**b) Single-query approach**:
-```sql
-SELECT AVG(daily_total) as avg_daily_revenue
-FROM (
-  SELECT order_date, SUM(amount) as daily_total
-  FROM orders
-  WHERE order_date >= '2024-01-01'
-  GROUP BY order_date
-) subquery;
+**b) Time to recovery:**
 ```
-Same intermediate size, but CTE is more readable.
-
-**c) Memory benefit**: CTE materializes small result (365 rows) before final aggregation.
-
-**d) Total data scanned**: Same in both: 3,000,000 orders × 124 bytes = 372 MB
-
-## Solution: Challenge Part 1
-```sql
--- Data quality issues
-SELECT 'NULL country users' as issue_type, COUNT(*) as count
-FROM users
-WHERE country IS NULL
-UNION ALL
-SELECT 'NULL user_id orders', COUNT(*)
-FROM orders
-WHERE user_id IS NULL
-UNION ALL
-SELECT 'NULL amount orders', COUNT(*)
-FROM orders
-WHERE amount IS NULL
-UNION ALL
-SELECT 'Invalid date orders', COUNT(*)
-FROM orders
-WHERE order_date > CURRENT_DATE OR order_date < '2020-01-01';
+Failure time: 30 minutes
+Investigation: 2 hours = 120 minutes
+Rerun: 60 minutes (full pipeline)
+Total: 30 + 120 + 60 = 210 minutes = 3.5 hours
 ```
 
-## Solution: Challenge Part 2
-```sql
-CREATE TABLE orders_cleaned AS
-SELECT 
-  order_id,
-  user_id,
-  product_id,
-  amount,
-  order_date,
-  DATE_TRUNC('month', order_date) as order_month
-FROM orders
-WHERE user_id IS NOT NULL
-  AND amount IS NOT NULL
-  AND order_date >= '2020-01-01'
-  AND order_date <= CURRENT_DATE;
+**c) Delayed runs:**
+```
+Recovery: 3.5 hours
+Pipeline frequency: hourly
+Delayed runs: 3-4 runs (depending on timing)
 ```
 
-## Solution: Challenge Part 3
-```sql
-SELECT 
-  u.country,
-  p.category,
-  DATE_TRUNC('month', o.order_date) as month,
-  SUM(o.amount) as total_revenue,
-  COUNT(o.order_id) as order_count
-FROM orders_cleaned o
-JOIN users u ON o.user_id = u.user_id
-JOIN products p ON o.product_id = p.product_id
-WHERE o.order_date >= '2024-01-01'
-GROUP BY u.country, p.category, DATE_TRUNC('month', o.order_date)
-ORDER BY month, country, category;
+**d) Checkpoint strategy:**
+```
+Checkpoint every 10 minutes
+Failure at 30 min: last checkpoint at 20 min
+Data loss: 10 minutes = 1,667 posts, 16,667 interactions
+Recovery: resume from checkpoint, process remaining 40 min
+Recovery time: 40 minutes (no investigation needed)
 ```
 
-## Solution: Challenge Part 4
-**Data scanned**:
+**e) With checkpoints:**
 ```
-orders_cleaned: 3,000,000 rows (2024) × 140 bytes ≈ 420 MB
-users: 1,000,000 rows × 154 bytes = 154 MB
-products: 10,000 rows × 200 bytes = 2 MB
-Total scan: 576 MB
+Data loss: 10 minutes instead of 30 minutes (67% reduction)
+Recovery time: 40 minutes instead of 210 minutes (81% reduction)
 ```
 
-**Join intermediate**:
+## Solution 7
+
+**a) Daily network cost:**
 ```
-3M orders × (order: 140 bytes + user: 154 bytes + product: 200 bytes)
-= 3,000,000 × 494 bytes ≈ 1,482 MB ≈ 1.48 GB
+Ingress: 5 GB/hour × 24 hours = 120 GB/day × $0.00 = $0.00
+Egress: 100 MB/hour × 24 hours = 2.4 GB/day × $0.09/GB = $0.216/day
+Total: $0.216/day
 ```
 
-**Final aggregated result**:
+**b) Daily compute cost:**
 ```
-Assume 50 countries × 20 categories × 12 months = 12,000 groups
-Each row: country (50) + category (50) + month (4) + revenue (8) + count (4)
-= 116 bytes per row
-Total: 12,000 × 116 bytes ≈ 1.4 MB
+24 hours × $0.10/hour = $2.40/day
 ```
 
-**Optimization**: Add WHERE clause on orders_cleaned first, then join:
-```sql
-SELECT ... 
-FROM (SELECT * FROM orders_cleaned WHERE order_date >= '2024-01-01') o
-JOIN users u ON o.user_id = u.user_id
-JOIN products p ON o.product_id = p.product_id
-...
+**c) Monthly total:**
 ```
-This reduces initial scan from all orders to just 2024 orders.
+Network: $0.216 × 30 = $6.48/month
+Compute: $2.40 × 30 = $72.00/month
+Total: $78.48/month
+```
+
+**d) 5× volume increase:**
+```
+Ingress: 120 GB × 5 = 600 GB/day (still free)
+Egress: 2.4 GB × 5 = 12 GB/day × $0.09 = $1.08/day
+Compute: $2.40 × 5 = $12.00/day (if processing time scales)
+Monthly: ($1.08 + $12.00) × 30 = $392.40/month
+```
+
+**e) 30-minute processing:**
+```
+Compute: 0.5 hours × $0.10 = $0.05 per run
+Daily: $0.05 × 24 = $1.20/day (50% savings)
+Monthly: $1.20 × 30 = $36.00/month
+Savings: $72 - $36 = $36/month
+```

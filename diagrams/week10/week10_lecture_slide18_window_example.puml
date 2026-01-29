@@ -1,0 +1,33 @@
+@startuml
+'=================================================
+' WINDOW EXAMPLE — EVENT-TIME VS BOUNDARIES
+'=================================================
+
+top to bottom direction
+skinparam defaultFontSize 14
+skinparam defaultFontColor #2C3E50
+
+rectangle "Event stream (event_time)" {
+    card "e1: 10:00" as e1 #E8F5E9
+    card "e2: 10:02" as e2 #E8F5E9
+    card "e3: 10:05" as e3 #E8F5E9
+    card "e4: 10:08" as e4 #E8F5E9
+    card "e5: 10:12" as e5 #E8F5E9
+}
+
+rectangle "Tumbling windows (size=5 min)" #F8F9FA {
+    card "W1 [10:00, 10:05)" as w1 #E1F5FE
+    card "W2 [10:05, 10:10)" as w2 #E1F5FE
+    card "W3 [10:10, 10:15)" as w3 #E1F5FE
+}
+
+e1 --> w1
+e2 --> w1
+e3 --> w2
+e4 --> w2
+e5 --> w3
+
+note bottom of w1 : e1,e2 in W1. e3 starts W2. No overlap.
+note bottom of w2 : Watermark ≥ window end → emit. Late e? Drop or side output.
+
+@enduml

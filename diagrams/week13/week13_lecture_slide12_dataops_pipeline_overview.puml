@@ -1,0 +1,67 @@
+@startuml
+'=================================================
+' Week 13 — DataOps Pipeline Overview
+' Based on diagrams/template.puml
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle { BackgroundColor #F8F9FA; BorderColor #90A4AE; BorderThickness 2; FontColor #263238; FontSize 14; FontStyle bold; Padding 20 }
+skinparam component { BackgroundColor #FFFFFF; BorderColor #78909C; BorderThickness 1.5; FontSize 14; Padding 12 }
+skinparam database { BackgroundColor #ECEFF1; BorderColor #546E7A; BorderThickness 1.5; FontSize 14; FontColor #263238 }
+skinparam arrow { Color #607D8B; Thickness 1.5; FontSize 11; FontColor #546E7A }
+
+skinparam component<<UI>> { BorderColor #8E24AA; BackgroundColor #F3E5F5; FontColor #4A148C }
+skinparam component<<Agent>> { BorderColor #0288D1; BackgroundColor #E1F5FE; FontColor #01579B }
+skinparam component<<Tool>> { BorderColor #2E7D32; BackgroundColor #E8F5E9; FontColor #1B5E20 }
+skinparam component<<Config>> { BorderColor #F57C00; BackgroundColor #FFF3E0; FontColor #E65100 }
+
+rectangle "CI / Orchestrator" #F8F9FA {
+    component "**Trigger**\n<size:10>Schedule / commit</size>" as TRIGGER <<UI>>
+}
+
+rectangle "Pipeline" #F8F9FA {
+    component "**Extract**\n<size:10>Source + watermark</size>" as EXTRACT <<Tool>>
+    component "**Transform**\n<size:10>Dedup / validate</size>" as TRANSFORM <<Tool>>
+    component "**Load**\n<size:10>MERGE / target</size>" as LOAD <<Agent>>
+}
+
+rectangle "Data Tests" #F8F9FA {
+    component "**Schema / Row**\n<size:10>NotNull / unique</size>" as TEST1 <<Tool>>
+    component "**Freshness / Volume**\n<size:10>SLAs / counts</size>" as TEST2 <<Tool>>
+}
+
+rectangle "Storage" #F8F9FA {
+    database "**Staging**\n<size:10>Raw / DLQ</size>" as STAGING
+    database "**Target**\n<size:10>DWH / lake</size>" as TARGET
+}
+
+rectangle "Observability" #F8F9FA {
+    component "**Monitor / Alert**\n<size:10>Metrics / incidents</size>" as MONITOR <<Agent>>
+}
+
+TRIGGER --> EXTRACT
+EXTRACT --> STAGING
+STAGING --> TRANSFORM
+TRANSFORM --> LOAD
+LOAD --> TARGET
+TARGET --> TEST1
+TARGET --> TEST2
+TEST1 --> MONITOR
+TEST2 --> MONITOR
+LOAD --> MONITOR
+
+note bottom of TARGET : **Quality gate:** Tests must pass before promote / alert.
+note bottom of MONITOR : **Incident:** Fail tests or SLA → alert; no silent regression.
+
+@enduml

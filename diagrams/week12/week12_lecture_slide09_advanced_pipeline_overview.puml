@@ -1,0 +1,61 @@
+@startuml
+'=================================================
+' WEEK 12 — ADVANCED FEATURE PIPELINE OVERVIEW
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam rectangle { BackgroundColor #F8F9FA; BorderColor #90A4AE; BorderThickness 2; FontColor #263238; FontSize 14; FontStyle bold; Padding 20 }
+skinparam component { BackgroundColor #FFFFFF; BorderColor #78909C; BorderThickness 1.5; FontSize 14; Padding 12 }
+skinparam database { BackgroundColor #ECEFF1; BorderColor #546E7A; BorderThickness 1.5; FontSize 14; FontColor #263238 }
+skinparam arrow { Color #607D8B; Thickness 1.5; FontSize 11; FontColor #546E7A }
+skinparam component<<Tool>> { BorderColor #2E7D32; BackgroundColor #E8F5E9; FontColor #1B5E20 }
+skinparam component<<Agent>> { BorderColor #0288D1; BackgroundColor #E1F5FE; FontColor #01579B }
+
+'========================
+' ADVANCED FEATURE PIPELINE (MULTI-STEP DAG)
+'========================
+
+rectangle "RAW SOURCES" #F8F9FA {
+    database "**Events**\n<size:10>user/item/ts</size>" as EVT
+    database "**Dimensions**\n<size:10>users, items</size>" as DIM
+}
+
+rectangle "STEP 1 — ENTITY FEATURES" #F8F9FA {
+    component "**User features**\n<size:10>clicks_7d, views_7d</size>" as UFEAT <<Tool>>
+    component "**Item features**\n<size:10>impressions_7d</size>" as IFEAT <<Tool>>
+}
+
+rectangle "STEP 2 — JOIN & DERIVED" #F8F9FA {
+    component "**Point-in-time join**\n<size:10>user + item + as_of_ts</size>" as JOIN <<Agent>>
+    component "**Derived features**\n<size:10>ratio, cross-entity</size>" as DERIVED <<Tool>>
+}
+
+rectangle "TARGET & CONSUMERS" #F8F9FA {
+    database "**Feature table**\n<size:10>(user_id, item_id, as_of_ts)</size>" as FT
+    component "**Training / Serving**\n<size:10>Offline + online</size>" as CONS <<Tool>>
+}
+
+EVT --> UFEAT
+EVT --> IFEAT
+DIM --> UFEAT
+DIM --> IFEAT
+UFEAT --> JOIN
+IFEAT --> JOIN
+JOIN --> DERIVED
+DERIVED --> FT
+FT --> CONS
+
+note bottom of JOIN : **Order matters:** entity features before join; idempotent write per key.
+note bottom of FT : **Key:** (user_id, item_id, as_of_ts); MERGE to avoid backfill duplicates.
+
+@enduml

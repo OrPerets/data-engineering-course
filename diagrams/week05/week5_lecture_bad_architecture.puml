@@ -1,0 +1,91 @@
+@startuml
+'=================================================
+' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontColor #263238
+    FontSize 14
+    FontStyle bold
+    Padding 20
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+    FontColor #263238
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 1.5
+    FontSize 11
+    FontColor #546E7A
+}
+
+skinparam component<<Bad>> {
+    BorderColor #C62828
+    BackgroundColor #FFEBEE
+    FontColor #B71C1C
+}
+skinparam component<<Tool>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+'========================
+' BAD ARCHITECTURE: NO PARTITION FILTER → FULL SCAN
+'========================
+
+rectangle "BAD (fails at scale)" #FFEBEE {
+    component "**BI Report**\n<size:10>Revenue by region</size>" as BI_BAD <<Bad>>
+    component "**Query**\n<size:10>No WHERE date_key</size>" as Q_BAD <<Bad>>
+    database "**Fact table**\n<size:10>1 TB, 365 partitions</size>" as FACT_BAD
+}
+BI_BAD --> Q_BAD
+Q_BAD --> FACT_BAD : "Full scan\nall partitions"
+
+rectangle "CORRECT" #F8F9FA {
+    component "**BI Report**\n<size:10>Revenue by region</size>" as BI_OK
+    component "**Query**\n<size:10>WHERE date_key IN (Dec 2025)</size>" as Q_OK <<Tool>>
+    component "**Pruning**\n<size:10>31 partitions only</size>" as PRUNE <<Tool>>
+    database "**sales_fact**\n<size:10>Partitioned by date_key</size>" as FACT_OK
+}
+BI_OK --> Q_OK
+Q_OK --> PRUNE
+PRUNE --> FACT_OK : "Scan 31 only"
+
+note bottom of FACT_BAD
+  **Why it fails:** Full table scan.
+  Dashboards timeout; mistrust in data.
+end note
+
+note bottom of FACT_OK
+  **Why it works:** Partition pruning.
+  Low latency; predictable cost.
+end note
+
+@enduml

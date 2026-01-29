@@ -1,0 +1,33 @@
+@startuml
+'=================================================
+' FAILURE: LATE DATA AND WATERMARK
+'=================================================
+
+top to bottom direction
+skinparam defaultFontSize 14
+skinparam defaultFontColor #2C3E50
+
+rectangle "Event-time axis" #F8F9FA {
+    card "e1: 10:00" as e1 #E8F5E9
+    card "e2: 10:02" as e2 #E8F5E9
+    card "e3 (late): 10:01" as e3 #FFEBEE
+    card "Watermark" as wm #E1F5FE
+}
+
+rectangle "Window W1 [10:00, 10:05)" #F8F9FA {
+    component "**Emitted**\n<size:10>count=2 (e1,e2)</size>" as out #C8E6C9
+}
+
+rectangle "Late arrival" #F8F9FA {
+    component "**e3 arrives**\n<size:10>after W1 closed</size>" as late #FFCDD2
+}
+
+e1 --> out
+e2 --> out
+wm --> out : watermark ≥ 10:05 → close W1
+e3 --> late : arrives at 10:06 (processing time)
+
+note bottom of out : **Correctness:** W1 already emitted. e3 event_time=10:01 belongs to W1.
+note bottom of late : **Options:** drop / side output / allow Lateness (delay watermark). Trade: completeness vs latency.
+
+@enduml

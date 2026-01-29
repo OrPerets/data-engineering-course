@@ -1,0 +1,35 @@
+@startuml
+'=================================================
+' Week 7: Running Example — Shuffle groups (word count)
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam component { BackgroundColor #FFFFFF; BorderColor #78909C }
+skinparam database { BackgroundColor #ECEFF1; BorderColor #546E7A }
+skinparam arrow { Color #607D8B }
+
+component "**Map emits**\n<size:10>(word, 1) per token</size>" as MAP
+database "**Partition by hash(word)**" as PART
+
+component "**Reducer 1**\n<size:10>key: \"data\"\nvalues: [1,1,1,...]</size>" as R1 <<Tool>>
+component "**Reducer 2**\n<size:10>key: \"eng\"\nvalues: [1,1,...]</size>" as R2 <<Tool>>
+component "**Reducer 3**\n<size:10>key: \"fun\"\nvalues: [1]</size>" as R3 <<Tool>>
+
+MAP --> PART
+PART --> R1 : "data"
+PART --> R2 : "eng"
+PART --> R3 : "fun"
+
+note bottom of PART
+  Same key → same reducer.
+  Skew = one key has
+  many more values.
+end note
+
+@enduml

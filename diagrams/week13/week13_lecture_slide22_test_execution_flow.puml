@@ -1,0 +1,53 @@
+@startuml
+'=================================================
+' Week 13 — Test Execution Flow (CI run)
+' Based on diagrams/template.puml
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle { BackgroundColor #F8F9FA; BorderColor #90A4AE; BorderThickness 2; FontColor #263238; FontSize 14; FontStyle bold; Padding 20 }
+skinparam component { BackgroundColor #FFFFFF; BorderColor #78909C; BorderThickness 1.5; FontSize 14; Padding 12 }
+skinparam database { BackgroundColor #ECEFF1; BorderColor #546E7A; BorderThickness 1.5; FontSize 14; FontColor #263238 }
+skinparam arrow { Color #607D8B; Thickness 1.5; FontSize 11; FontColor #546E7A }
+
+skinparam component<<Agent>> { BorderColor #0288D1; BackgroundColor #E1F5FE; FontColor #01579B }
+skinparam component<<Tool>> { BorderColor #2E7D32; BackgroundColor #E8F5E9; FontColor #1B5E20 }
+
+rectangle "Request" #F8F9FA {
+    component "**Commit / Schedule**\n<size:10>Trigger</size>" as REQ <<Agent>>
+}
+
+rectangle "Build & Test" #F8F9FA {
+    component "**Build**\n<size:10>Compile / package</size>" as BUILD <<Tool>>
+    component "**Unit Tests**\n<size:10>Code / logic</size>" as UNIT <<Tool>>
+    component "**Data Pipeline**\n<size:10>Run transform + load</size>" as PIPE <<Tool>>
+    component "**Data Tests**\n<size:10>Assertions on output</size>" as DTEST <<Tool>>
+}
+
+rectangle "Outcome" #F8F9FA {
+    component "**Pass**\n<size:10>Deploy / promote</size>" as PASS <<Tool>>
+    component "**Fail**\n<size:10>Block + alert</size>" as FAIL <<Tool>>
+}
+
+REQ --> BUILD
+BUILD --> UNIT
+UNIT --> PIPE
+PIPE --> DTEST
+DTEST --> PASS
+DTEST --> FAIL
+
+note right of DTEST : **Order:** Pipeline writes target;\nthen tests read target.
+note bottom of FAIL : **Idempotent rerun:** Same input → same output; no duplicate rows.
+
+@enduml

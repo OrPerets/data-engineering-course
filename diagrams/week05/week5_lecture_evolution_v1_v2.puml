@@ -1,0 +1,88 @@
+@startuml
+'=================================================
+' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontColor #263238
+    FontSize 14
+    FontStyle bold
+    Padding 20
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+    FontColor #263238
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 1.5
+    FontSize 11
+    FontColor #546E7A
+}
+
+skinparam component<<V1>> {
+    BorderColor #F57C00
+    BackgroundColor #FFF3E0
+    FontColor #E65100
+}
+skinparam component<<V2>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+'========================
+' EVOLUTION: v1 SINGLE TABLE → v2 STAR + PARTITIONED FACT
+'========================
+
+rectangle "v1 — Single table / no star (does not scale)" #FFF3E0 {
+    database "**One big table**\n<size:10>No partition key</size>" as T1 <<V1>>
+    component "**BI**\n<size:10>Ad-hoc WHERE</size>" as BI1 <<V1>>
+}
+BI1 --> T1 : "Full scan"
+
+rectangle "v2 — Star + partitioned fact" #E8F5E9 {
+    database "**sales_fact**\n<size:10>Partition by date_key</size>" as F2 <<V2>>
+    database "**dim_customer**\n<size:10>dim_product, dim_date</size>" as D2
+    component "**BI**\n<size:10>WHERE date_key required</size>" as BI2 <<V2>>
+}
+BI2 --> F2 : "Pruning"
+F2 --> D2 : "Join"
+BI2 --> D2
+
+note bottom of T1
+  **v1:** Full scan every query.
+  No pruning; unpredictable cost.
+end note
+
+note bottom of F2
+  **v2:** Prune by date_key.
+  Predictable joins; governed BI.
+end note
+
+@enduml

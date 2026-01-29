@@ -1,0 +1,60 @@
+@startuml
+'=================================================
+' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle { BackgroundColor #F8F9FA; BorderColor #90A4AE; BorderThickness 2; FontColor #263238; FontSize 14; FontStyle bold; Padding 20 }
+skinparam component { BackgroundColor #FFFFFF; BorderColor #78909C; BorderThickness 1.5; FontSize 14; Padding 12 }
+skinparam database { BackgroundColor #ECEFF1; BorderColor #546E7A; BorderThickness 1.5; FontSize 14; FontColor #263238 }
+skinparam arrow { Color #607D8B; Thickness 1.5; FontSize 11; FontColor #546E7A }
+skinparam component<<Tool>> { BorderColor #2E7D32; BackgroundColor #E8F5E9; FontColor #1B5E20 }
+skinparam component<<Agent>> { BorderColor #0288D1; BackgroundColor #E1F5FE; FontColor #01579B }
+
+'========================
+' STREAMING PIPELINE OVERVIEW
+'========================
+
+rectangle "SOURCES" #F8F9FA {
+    database "**Event sources**\n<size:10>Logs / IoT / Kafka</size>" as SRC1
+    database "**Message queue**\n<size:10>Topics / partitions</size>" as SRC2
+}
+
+rectangle "INGEST" #F8F9FA {
+    component "**Ingest**\n<size:10>Subscribe / poll</size>" as INGEST <<Tool>>
+}
+
+rectangle "STREAM ENGINE" #F8F9FA {
+    component "**Window / aggregate**\n<size:10>Event-time / watermark</size>" as WINDOW <<Tool>>
+    component "**State**\n<size:10>Per-key / checkpoint</size>" as STATE <<Agent>>
+}
+
+rectangle "SINK" #F8F9FA {
+    component "**Sink**\n<size:10>DB / API / topic</size>" as SINK <<Tool>>
+}
+
+database "**Downstream**\n<size:10>DWH / dashboard</size>" as TARGET
+
+SRC1 --> INGEST
+SRC2 --> INGEST
+INGEST --> WINDOW
+WINDOW --> STATE
+STATE --> WINDOW
+WINDOW --> SINK
+SINK --> TARGET
+
+note bottom of WINDOW : **Windows:** tumbling / sliding / session. Watermark for late data.
+note bottom of SINK : **Delivery:** at-least-once / exactly-once. Idempotent writes.
+
+@enduml

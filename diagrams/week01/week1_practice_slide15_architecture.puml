@@ -1,0 +1,150 @@
+@startuml
+'=================================================
+' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+'-------------------------
+' FONT & GLOBAL STYLE
+'-------------------------
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+'-------------------------
+' GENERIC BOX STYLE
+'-------------------------
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontColor #263238
+    FontSize 14
+    FontStyle bold
+    Padding 20
+}
+
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+    FontColor #263238
+}
+
+skinparam arrow {
+    Color #607D8B
+    Thickness 1.5
+    FontSize 11
+    FontColor #546E7A
+}
+
+'-------------------------
+' SEMANTIC STEREOTYPES
+'-------------------------
+skinparam component<<UI>> {
+    BorderColor #8E24AA
+    BackgroundColor #F3E5F5
+    FontColor #4A148C
+}
+
+skinparam component<<Agent>> {
+    BorderColor #0288D1
+    BackgroundColor #E1F5FE
+    FontColor #01579B
+}
+
+skinparam component<<Tool>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+skinparam component<<Config>> {
+    BorderColor #F57C00
+    BackgroundColor #FFF3E0
+    FontColor #E65100
+}
+
+'========================
+' NEWS PLATFORM ARCHITECTURE
+'========================
+
+package "DATA SOURCES" #F8F9FA {
+    database "**News Sources**\n<size:10>1,000 sources</size>" as SOURCES
+    database "**User Clicks**\n<size:10>500K/day</size>" as CLICKS
+}
+
+package "INGESTION LAYER" #F8F9FA {
+    component "**Article Ingestion**\n<size:10>10K articles/day</size>" as INGEST_ART
+    component "**Click Ingestion**\n<size:10>Streaming</size>" as INGEST_CLICK
+}
+
+package "STORAGE LAYER" #F8F9FA {
+    database "**Raw Articles**\n<size:10>50M articles, 515 GB</size>" as RAW_ART
+    database "**Raw Clicks**\n<size:10>200M clicks, 8.8 GB</size>" as RAW_CLICK
+}
+
+package "PROCESSING LAYER" #F8F9FA {
+    component "**Batch Pipeline**\n<size:10>Daily aggregation</size>" as BATCH
+    component "**Streaming Pipeline**\n<size:10>5-min trending</size>" as STREAM
+}
+
+package "ANALYTICS LAYER" #F8F9FA {
+    database "**Data Warehouse**\n<size:10>Aggregated tables</size>" as WAREHOUSE
+    component "**Trending Service**\n<size:10>Real-time API</size>" as TRENDING
+}
+
+package "CONSUMPTION" #F8F9FA {
+    component "**Analytics Dashboard**\n<size:10>Daily reports</size>" as DASHBOARD
+    component "**News App**\n<size:10>Trending feed</size>" as APP
+}
+
+'========================
+' DATA FLOWS
+'========================
+
+SOURCES --> INGEST_ART : "Articles"
+CLICKS --> INGEST_CLICK : "Clicks"
+
+INGEST_ART --> RAW_ART : "Store raw"
+INGEST_CLICK --> RAW_CLICK : "Store raw"
+
+RAW_ART --> BATCH : "Daily batch"
+RAW_CLICK --> BATCH : "Daily batch"
+RAW_CLICK --> STREAM : "Real-time stream"
+
+BATCH --> WAREHOUSE : "Aggregated data"
+STREAM --> TRENDING : "Trending articles"
+
+WAREHOUSE --> DASHBOARD : "Query"
+TRENDING --> APP : "API calls"
+
+note right of BATCH
+  **Cost**: $0.10/run
+  **Latency**: 2 hours
+  **Frequency**: Daily
+end note
+
+note right of STREAM
+  **Cost**: $2.00/hour
+  **Latency**: < 1 second
+  **Frequency**: Continuous
+end note
+
+@enduml

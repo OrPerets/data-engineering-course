@@ -1,0 +1,131 @@
+@startuml
+'=================================================
+' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+'-------------------------
+' FONT & GLOBAL STYLE
+'-------------------------
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+'-------------------------
+' GENERIC BOX STYLE
+'-------------------------
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontColor #263238
+    FontSize 14
+    FontStyle bold
+    Padding 20
+}
+
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+    FontColor #263238
+}
+
+skinparam arrow {
+    Color #607D8B
+    Thickness 1.5
+    FontSize 11
+    FontColor #546E7A
+}
+
+'-------------------------
+' SEMANTIC STEREOTYPES
+'-------------------------
+skinparam component<<UI>> {
+    BorderColor #8E24AA
+    BackgroundColor #F3E5F5
+    FontColor #4A148C
+}
+
+skinparam component<<Agent>> {
+    BorderColor #0288D1
+    BackgroundColor #E1F5FE
+    FontColor #01579B
+}
+
+skinparam component<<Tool>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+skinparam component<<Config>> {
+    BorderColor #F57C00
+    BackgroundColor #FFF3E0
+    FontColor #E65100
+}
+
+'=================================================
+' LAYERED PLACEHOLDERS (DO NOT REMOVE)
+'=================================================
+
+package "LAYER 1" #F8F9FA {
+    component "**BOX-1**\n<size:10>Role • Responsibility</size>" as BOX1 <<UI>>
+}
+
+package "LAYER 2" #F8F9FA {
+    component "**BOX-2**\n<size:10>Control • Routing • Decisions</size>" as BOX2 <<Agent>>
+}
+
+package "LAYER 3" #F8F9FA {
+    together {
+        component "**BOX-3**\n<size:10>Function / Task</size>" as BOX3 <<Tool>>
+        component "**BOX-4**\n<size:10>Function / Task</size>" as BOX4 <<Tool>>
+        component "**BOX-5**\n<size:10>Function / Task</size>" as BOX5 <<Tool>>
+    }
+}
+
+package "LAYER 4" #F8F9FA {
+    component "**BOX-6**\n<size:10>Runtime / Engine</size>" as BOX6 <<Agent>>
+    component "**BOX-7**\n<size:10>Schema / Model</size>" as BOX7 <<Config>>
+}
+
+package "LAYER 5" #F8F9FA {
+    database "**BOX-8**\n<size:10>Primary Data</size>" as BOX8
+    database "**BOX-9**\n<size:10>Reference / Metadata</size>" as BOX9
+
+    BOX8 -[hidden]left- BOX9
+}
+
+'=================================================
+' DEFAULT FLOW (EDIT, DO NOT DELETE)
+'=================================================
+
+BOX1 --> BOX2
+BOX2 --> BOX3
+BOX2 --> BOX4
+BOX2 --> BOX5
+
+BOX3 --> BOX7
+BOX7 --> BOX6
+BOX6 --> BOX8
+BOX6 --> BOX9
+BOX6 --> BOX2
+
+@enduml

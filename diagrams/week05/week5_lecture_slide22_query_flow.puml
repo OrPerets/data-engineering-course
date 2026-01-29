@@ -1,0 +1,89 @@
+@startuml
+'=================================================
+' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontColor #263238
+    FontSize 14
+    FontStyle bold
+    Padding 20
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+    FontColor #263238
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 1.5
+    FontSize 11
+    FontColor #546E7A
+}
+
+skinparam component<<Agent>> {
+    BorderColor #0288D1
+    BackgroundColor #E1F5FE
+    FontColor #01579B
+}
+skinparam component<<Tool>> {
+    BorderColor #2E7D32
+    BackgroundColor #E8F5E9
+    FontColor #1B5E20
+}
+
+'========================
+' OLAP QUERY PATH AND PARTITION PRUNING
+'========================
+
+rectangle "QUERY" #F8F9FA {
+    component "**SQL**\n<size:10>e.g. revenue by region, date filter</size>" as SQL <<Agent>>
+}
+
+rectangle "PLANNER" #F8F9FA {
+    component "**Partition pruning**\n<size:10>List partitions to read</size>" as PRUNE <<Tool>>
+}
+
+rectangle "SCAN" #F8F9FA {
+    component "**Scan fact**\n<size:10>Only selected partitions</size>" as SCAN1 <<Tool>>
+}
+
+rectangle "JOIN / AGG" #F8F9FA {
+    component "**Join dims • Aggregate**\n<size:10>Broadcast small dims</size>" as JOIN <<Tool>>
+}
+
+database "**Result**\n<size:10>Rows to BI</size>" as RESULT
+
+SQL --> PRUNE : "1"
+PRUNE --> SCAN : "2 Partitions only"
+SCAN --> JOIN : "3"
+JOIN --> RESULT : "4"
+
+note right of PRUNE : **Filter by date_key**\nSkips other partitions
+note right of SCAN : **Reduced I/O**\nvs full table scan
+
+@enduml
