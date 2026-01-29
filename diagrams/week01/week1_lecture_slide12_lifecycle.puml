@@ -8,8 +8,8 @@ skinparam linetype ortho
 skinparam shadowing false
 skinparam roundcorner 8
 skinparam handwritten false
-skinparam nodesep 30
-skinparam ranksep 40
+skinparam nodesep 24
+skinparam ranksep 28
 
 '-------------------------
 ' FONT & GLOBAL STYLE
@@ -147,17 +147,22 @@ package "STORAGE" #F8F9FA {
 }
 
 package "PROCESSING" #F8F9FA {
-    component "**Transform**\n<size:10>Clean, filter, enrich</size>" as TRANSFORM
-    component "**Aggregate**\n<size:10>Group, count, sum</size>" as AGGREGATE
+    together {
+        component "**Transform**\n<size:10>Clean, filter, enrich</size>" as TRANSFORM
+        component "**Aggregate**\n<size:10>Group, count, sum</size>" as AGGREGATE
+    }
 }
 
 package "CONSUMPTION" #F8F9FA {
     database "**Data Warehouse**\n<size:10>Analytics tables</size>" as WAREHOUSE
-    component "**Analytics Dashboard**\n<size:10>BI tools</size>" as DASHBOARD
-    component "**ML Models**\n<size:10>Feature store</size>" as ML
+    together {
+        component "**Analytics Dashboard**\n<size:10>BI tools</size>" as DASHBOARD
+        component "**ML Models**\n<size:10>Feature store</size>" as ML
+    }
 }
 
 '========================
+' Balanced flow: sources → ingest → storage → (transform | aggregate) → warehouse → (dashboard | ML)
 
 SOURCE1 --> INGEST
 SOURCE2 --> INGEST

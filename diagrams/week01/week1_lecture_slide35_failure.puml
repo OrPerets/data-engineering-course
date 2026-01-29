@@ -8,8 +8,8 @@ skinparam linetype ortho
 skinparam shadowing false
 skinparam roundcorner 8
 skinparam handwritten false
-skinparam nodesep 30
-skinparam ranksep 40
+skinparam nodesep 24
+skinparam ranksep 28
 
 '-------------------------
 ' FONT & GLOBAL STYLE
@@ -131,36 +131,46 @@ skinparam component<<failure>> {
 
 '=================================================
 
-' FAILURE PROPAGATION
-component "**Step 1: Ingestion**\n<size:10>10 minutes</size>" as STEP1 <<success>>
+' FAILURE PROPAGATION — two columns: success (left) | failure (right), notes below to fit slide
 
+component "**Step 1: Ingestion**\n<size:10>10 minutes</size>" as STEP1 <<success>>
 component "**Step 2: Transform**\n<size:10>20 minutes</size>" as STEP2 <<failure>>
 
 component "**Step 3: Aggregate**\n<size:10>10 minutes</size>" as STEP3
+database "**Intermediate**\n<size:10>Partial: 2.5 GB</size>" as INTERMEDIATE
 
 component "**Step 4: Load**\n<size:10>5 minutes</size>" as STEP4
+database "**Output**\n<size:10>Not created</size>" as OUTPUT
 
 database "**Raw Storage**\n<size:10>5 GB stored</size>" as RAW
 
-database "**Intermediate**\n<size:10>Partial: 2.5 GB</size>" as INTERMEDIATE
+' Same rank: success and failure paths start side by side
+STEP1 -[hidden]right- STEP2
 
-database "**Output**\n<size:10>Not created</size>" as OUTPUT
+' Success path (left column, top to bottom)
+STEP1 --> STEP3
+STEP3 --> STEP4
+STEP4 --> RAW
 
-note right of STEP2
+' Failure path (right column, top to bottom)
+STEP2 --> INTERMEDIATE
+INTERMEDIATE --> OUTPUT
+
+note bottom of STEP2
   **Failure Point**
   - Memory exhaustion
   - 50% data processed
   - Pipeline stops
 end note
 
-note right of INTERMEDIATE
+note bottom of INTERMEDIATE
   **Impact**
   - Partial data written
   - Inconsistent state
   - Manual cleanup needed
 end note
 
-note right of OUTPUT
+note bottom of OUTPUT
   **Downstream Impact**
   - Analytics unavailable
   - Dashboard shows stale data

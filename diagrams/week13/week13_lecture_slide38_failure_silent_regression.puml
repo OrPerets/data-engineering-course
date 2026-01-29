@@ -8,8 +8,8 @@ skinparam linetype ortho
 skinparam shadowing false
 skinparam roundcorner 8
 skinparam handwritten false
-skinparam nodesep 30
-skinparam ranksep 40
+skinparam nodesep 24
+skinparam ranksep 28
 
 '-------------------------
 ' FONT & GLOBAL STYLE
@@ -153,7 +153,7 @@ T --> L
 L --> TGT
 TGT --> TEST
 
-note right of T : **Gap:** No assertion on column X;\nbad value passes through.
+note bottom of T : **Gap:** No assertion on column X;\nbad value passes through.
 note bottom of TGT : **Result:** Dashboard shows wrong X;\nno alert; silent regression.
 
 @enduml

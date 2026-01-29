@@ -8,8 +8,8 @@ skinparam linetype ortho
 skinparam shadowing false
 skinparam roundcorner 8
 skinparam handwritten false
-skinparam nodesep 30
-skinparam ranksep 40
+skinparam nodesep 24
+skinparam ranksep 28
 
 '-------------------------
 ' FONT & GLOBAL STYLE
@@ -151,7 +151,7 @@ NA ..[#90A4AE].. NB : "✗ unreachable"
 NA ..[#90A4AE].. NC : "✗ unreachable"
 NB <--> NC : "✓ replicated"
 
-note right of PART
+note bottom of PART
   **Split-brain**
   - A has divergent data
   - B,C have same data

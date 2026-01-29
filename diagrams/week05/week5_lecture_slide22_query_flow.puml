@@ -8,8 +8,8 @@ skinparam linetype ortho
 skinparam shadowing false
 skinparam roundcorner 8
 skinparam handwritten false
-skinparam nodesep 30
-skinparam ranksep 40
+skinparam nodesep 24
+skinparam ranksep 28
 
 '-------------------------
 ' FONT & GLOBAL STYLE
@@ -155,7 +155,7 @@ PRUNE --> SCAN1 : "2 Partitions only"
 SCAN1 --> JOIN : "3"
 JOIN --> RESULT : "4"
 
-note right of PRUNE : **Filter by date_key**\nSkips other partitions
-note right of SCAN1 : **Reduced I/O**\nvs full table scan
+note bottom of PRUNE : **Filter by date_key**\nSkips other partitions
+note bottom of SCAN1 : **Reduced I/O**\nvs full table scan
 
 @enduml

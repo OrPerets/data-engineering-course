@@ -8,8 +8,8 @@ skinparam linetype ortho
 skinparam shadowing false
 skinparam roundcorner 8
 skinparam handwritten false
-skinparam nodesep 30
-skinparam ranksep 40
+skinparam nodesep 24
+skinparam ranksep 28
 
 '-------------------------
 ' FONT & GLOBAL STYLE
@@ -155,8 +155,8 @@ TOPIC_ID --> CONCEPTS_LIST : "2"
 CONCEPTS_LIST --> PLAN : "3"
 PLAN --> ANSWER : "4"
 
-note right of TOPIC_ID : **SQL/ETL:** MERGE, dedup, watermark
-note right of CONCEPTS_LIST : **MapReduce:** (k,v), shuffle, skew
-note right of PLAN : **DWH:** star, pruning, join size
+note bottom of TOPIC_ID : **SQL/ETL:** MERGE, dedup, watermark
+note bottom of CONCEPTS_LIST : **MapReduce:** (k,v), shuffle, skew
+note bottom of PLAN : **DWH:** star, pruning, join size
 
 @enduml

@@ -8,8 +8,8 @@ skinparam linetype ortho
 skinparam shadowing false
 skinparam roundcorner 8
 skinparam handwritten false
-skinparam nodesep 30
-skinparam ranksep 40
+skinparam nodesep 24
+skinparam ranksep 28
 
 '-------------------------
 ' FONT & GLOBAL STYLE
@@ -167,7 +167,7 @@ SORT_XFER --> R2
 R1 --> OUT
 R2 --> OUT
 
-note right of PART
+note bottom of PART
   **Skew mitigation:** Combiner,
   custom partitioner, salting
 end note

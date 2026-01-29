@@ -8,8 +8,8 @@ skinparam linetype ortho
 skinparam shadowing false
 skinparam roundcorner 8
 skinparam handwritten false
-skinparam nodesep 30
-skinparam ranksep 40
+skinparam nodesep 24
+skinparam ranksep 28
 
 '-------------------------
 ' FONT & GLOBAL STYLE
@@ -143,7 +143,7 @@ rectangle "DECISION" #F8F9FA {
 }
 
 rectangle "WRITE" #F8F9FA {
-    component "**Overwrite partition**\n<size:10>per as_of_ts</size>" as WRITE <<Agent>>
+    component "**Overwrite partition**\n<size:10>per as_of_ts</size>" as WRITE1 <<Agent>>
     database "**user_features**\n<size:10>key (user_id, as_of_ts)</size>" as FT
 }
 

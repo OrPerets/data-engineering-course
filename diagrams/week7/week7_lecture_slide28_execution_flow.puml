@@ -8,8 +8,8 @@ skinparam linetype ortho
 skinparam shadowing false
 skinparam roundcorner 8
 skinparam handwritten false
-skinparam nodesep 30
-skinparam ranksep 40
+skinparam nodesep 24
+skinparam ranksep 28
 
 '-------------------------
 ' FONT & GLOBAL STYLE
@@ -144,7 +144,7 @@ M --> S : "(k,v) stream"
 S --> R : "grouped by k"
 R --> OUT : "(k,v')"
 
-note right of S
+note bottom of S
   **Bottleneck:** Network + disk.
   Cost ∝ intermediate size.
 end note
