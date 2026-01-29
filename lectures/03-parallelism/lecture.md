@@ -23,16 +23,23 @@
 - Slide 22 → week3_lecture_slide22_execution_flow.puml → map-shuffle-reduce execution flow
 - Slide 38 → week3_lecture_slide38_failure_skew.puml → failure: data skew, hot reducer
 
-## Core Concepts (1/2)
-- **Divide-and-conquer:** split problem into subproblems, solve independently, combine results
+## Core Concepts (1/2) — Constraints, Not Definitions
+- **Divide-and-conquer:** split problem into subproblems, solve independently, combine — **constraint:** no shared state across chunks
 - **Parallelism:** simultaneous execution; **concurrency:** overlapping (may be time-sliced)
-- **Divide:** partition input into chunks; no shared state; **Conquer:** same function per chunk; **Combine:** group by key
-- Map: one output per input record; no cross-record state; pure functions enable safe distribution
+- **Divide:** partition input; **Conquer:** same function per chunk; **Combine:** group by key — **violate independence ⇒ non-determinism and failures**
+- **Map:** one output per input; no cross-record state; **pure functions** enable safe distribution; **shared state breaks at scale**
 
-## Core Concepts (2/2)
-- **Determinism:** same input ⇒ same output (pure map/reduce); **Scalability:** more workers ⇒ more throughput until shuffle/skew
-- **Shuffle cost:** network and disk I/O to group by key; **Skew:** one key ⇒ one reducer overloaded
-- **Coordination:** fault tolerance, stragglers, partial failures
+## Core Concepts (2/2) — Why Systems Break
+- **Determinism:** same input ⇒ same output; **violation** (e.g. shared state, time-dependent logic) ⇒ wrong results on rerun
+- **Scalability:** more workers ⇒ more throughput **until** shuffle or skew dominates — **shuffle is the bottleneck**
+- **Shuffle cost:** network and disk I/O to group by key; **skew:** one key ⇒ one reducer overloaded ⇒ OOM or timeout
+- **Coordination:** fault tolerance, stragglers, partial failures — **design for them**
+
+## Cost of Naïve Design (Parallelism)
+- **Naïve:** “just add more workers” — **shuffle** and **skew** often dominate; more workers ⇒ more shuffle traffic; **cost explosion**
+- **Naïve:** shared state or order-dependent logic in map/reduce ⇒ **non-determinism**, wrong results on rerun, impossible to debug
+- **Naïve:** ignore key distribution — one hot key (e.g. bot user_id, null) **overloads one reducer**; job latency = slowest task; **systems break**
+- **Takeaway:** minimize shuffle, balance partitions, pure functions — **constraints drive design**
 
 ## Running Example — Data & Goal
 - **Input:** lines of text; sample: "the quick brown fox"; "the quick brown dog"; "quick brown fox jumps"
@@ -128,15 +135,10 @@
 - Causes: data skew (one partition huge), GC pauses, network, disk contention
 - Mitigation: speculative execution (rerun slow tasks), better partition balance
 
-## Skew: hot key and hot partition
-- Hot key: one key has majority of values (e.g. bot user_id, null bucket)
-- Hot partition: one reducer gets most data ⇒ OOM or timeout
-- Zipfian key distribution in real data often causes skew
-
-## Detection: per-partition size and runtime
-- Monitor size of each partition after shuffle; alert if max ≫ median
-- Monitor reducer runtimes; one reducer much slower ⇒ skew or straggler
-- Metrics: partition size distribution, P99 reducer time, spill count
+## Skew: Hot Key and Hot Partition (Why Systems Break)
+- **Hot key:** one key has majority of values (e.g. bot user_id, null bucket) — **real data is often Zipfian**
+- **Hot partition:** one reducer gets most data ⇒ OOM or timeout; **job latency = slowest reducer**
+- **Detection:** per-partition size after shuffle; reducer runtimes; alert if max ≫ median; P99 reducer time, spill count
 
 ## Mitigation 1: Combiner
 - Local pre-aggregation on map side before sending to shuffle
@@ -163,27 +165,11 @@
 - Timeout: single reducer runs too long; fix: split partition, combiner, salting
 - Detection: monitor heap, GC, task duration; alert on outliers
 
-## Summary: failure modes so far
-- Non-determinism and stragglers; skew and hot key; detection and mitigations
-- Next: diagram of skew failure (one reducer overloaded)
-
-## Skew failure: one reducer gets most data
-- Hash partitioning sends same key to same reducer; hot key ⇒ one reducer gets huge input
-- That reducer: OOM (cannot hold all values) or timeout (too long to process)
-- Other reducers finish quickly; job waits for the hot one or fails
-
-## Visual: skew failure (next slide)
-- Diagram shows: balanced reducers R1, R2; hot reducer R3 with one key and huge value list
-- R3 → OOM or timeout; mitigation (salting, combiner) shown in practice
-
-## Pitfalls & Failure Modes (2/3): skew failure scenario
-- Central failure mode in distributed aggregation: one key dominates
-- Next: diagram of hot reducer and OOM/timeout
-
-## Failure scenario: data skew (hot key)
-- One key (e.g. user_id of a bot) gets a huge fraction of values
-- One reducer receives almost all data ⇒ OOM or extreme latency
-- Diagram: week3_lecture_slide38_failure_skew.puml
+## Failure Scenario: Data Skew (Hot Key) — One Idea
+- **What breaks:** hash partitioning sends same key to same reducer; hot key ⇒ one reducer gets huge input ⇒ OOM or timeout
+- **Other reducers** finish quickly; **job waits for the hot one or fails** — **cost of naïveté:** “just add reducers” doesn’t fix skew
+- **Diagram:** week3_lecture_slide38_failure_skew.puml — balanced R1, R2; hot R3 with one key and huge value list
+- **Mitigation:** combiner (pre-aggregate), salting (split hot key), custom partitioner
 
 ## Pitfalls & Failure Modes (3/3)
 
@@ -201,12 +187,12 @@
 - Prefer smaller, bounded reduce groups to avoid OOM
 - Document key schema and partitioning strategy for operators
 
-## Recap
-- Divide-and-conquer: divide → conquer → combine; basis for distributed processing
-- Parallelism ≠ concurrency; pure functions enable safe distribution
-- Map emits (k,v); shuffle groups by key; reduce aggregates; shuffle is the bottleneck
-- Skew and hot keys cause reducer OOM or timeout; use combiners and salting
-- Cost reasoning: work, span, shuffle size, and network drive scalability
+## Recap (Engineering Judgment)
+- **Divide-and-conquer:** divide → conquer → combine; **constraint:** no shared state; pure functions enable safe distribution
+- **Shuffle is the bottleneck** — network and disk I/O; **more workers ⇒ more shuffle** until skew dominates
+- **Skew and hot keys** cause reducer OOM or timeout — **design for Zipfian key distribution**; use combiners and salting
+- **Cost reasoning:** work, span, shuffle size, network — **minimize shuffle, balance partitions, monitor per-partition size**
+- **Opinion:** parallelism scales until coordination and skew bite; **constraints drive design**
 
 ## Pointers to Practice
 - Run a full manual MapReduce (map → shuffle → reduce) on 8–12 input records

@@ -107,6 +107,12 @@
 - **Hot partition:** If partitioned but only by date, “today” gets all writes and most reads ⇒ throttle and skew
 - **Diagram:** week5_lecture_bad_architecture.puml (full scan vs pruned scan)
 
+## Cost of Naïve Design (DWH / Lake)
+- **Naïve choice:** One big table; no partition key; “we’ll add filters in the query”
+- **Cost at scale:** Full scan at 1 TB ⇒ 15+ min or timeout; dashboards fail; teams export to Excel and duplicate logic; governance collapses
+- **Real cost:** Not just slow queries—trust in “the data” breaks; ad-hoc SQL without partition filter becomes the norm
+- **Engineering rule:** Partition fact by time; require partition filter in WHERE for all fact queries. Enforce it in governance
+
 ## Evolution: v1 Single Table → v2 Star + Partitioned Fact
 - **v1:** One big table (or fact with no dimensions); no partition key; ad-hoc WHERE on any column
   - Fails at scale: full scan; unpredictable join cost; no pruning
@@ -272,22 +278,24 @@ GROUP BY c.region ORDER BY total_revenue DESC;
 - **Mitigation:** enforce partition filters; coalesce files; size partitions; pre-aggregate or mini dimensions
 - **Lake + DWH:** use Lake for raw and heavy ML; use DWH for governed BI; sync curated tables as needed
 
-## Best Practices
+## Best Practices (1/2)
 - Model analytics with star schema; partition fact table by date (or time range)
 - Always include partition key in WHERE for large tables to enable pruning
 - Use surrogate keys in fact for dimensions (SCD Type 2); keep dimensions small or partitioned
 - In Lake: store in columnar format (Parquet/ORC); coalesce small files; schema evolution with care
+
+## Best Practices (2/2)
 - Document partition key and expected query patterns for operators
 - Monitor query cost (bytes read, partitions read); alert on full scans
 - Separate raw, processed, and curated zones; govern access to curated layer
 - Trade-off: denormalization (star) for query speed vs normalization for storage
+- Enforce: no fact query without partition filter above size threshold; target 100 MB–1 GB per file in Lake
 
-## Recap
-- DWH: schema-on-write, SQL, curated; Lake: schema-on-read, flexible, raw + processed
-- Star schema: fact + dimensions; partition fact by date for pruning
-- Partition pruning reduces scan and cost; missing partition filter causes full scan
-- Join and aggregate cost depend on scan size and dimension size; design for pruning first
-- Pipeline: sources → ETL/ELT → DWH and/or Lake → BI/analytics
+## Recap (Engineering Judgment)
+- **DWH vs Lake:** DWH for governed BI and low-latency reporting; Lake for raw landing and ML. Hybrid (Lakehouse or sync curated to DWH) when you need both. Don’t expose one huge table without a partition key.
+- **Partition pruning is the lever.** Full scan at 1 TB kills dashboards and trust. Require date_key (or equivalent) in WHERE for all fact queries; enforce in governance and BI templates.
+- **Star schema + partition by time:** Predictable joins and pruning. Keep dimensions small; broadcast them; stream fact with pruning. In Lake, coalesce small files—target 100 MB–1 GB per file.
+- **Cost:** At 10× data, enforce partition filter or cost and latency explode. Monitor bytes/partitions read; alert on full scan.
 
 ## Pointers to Practice
 - Build star schema (fact + ≥2 dimensions) with sample rows; write OLAP query with partition filter

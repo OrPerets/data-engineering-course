@@ -53,6 +53,12 @@
 - **Duplicate rows:** append-only writes on rerun → duplicate (entity_id, as_of_ts); training and joins wrong
 - **Schema drift:** new features added; old jobs or consumers still expect old schema; silent mismatches
 
+## Cost of Naïve Design (Feature Engineering)
+- **No as_of_ts in joins:** "clicks in last 7 days" computed with all events up to today ⇒ train sees future; serve sees past only ⇒ model accuracy collapses in production; production cost: silent wrong predictions
+- **Append-only on rerun:** job writes (user_id, as_of_ts, clicks_7d) with INSERT; rerun appends same keys ⇒ duplicate rows per (entity_id, as_of_ts) ⇒ wrong aggregates and broken backtests; sink must MERGE or partition overwrite
+- **Train/serve skew:** offline feature definition differs from online (e.g. different window, different source) ⇒ model sees different distribution at serve time ⇒ drift and poor performance
+- **Engineering rule:** key = (entity_id, as_of_ts); every join filtered by ts ≤ as_of_ts; MERGE or overwrite so rerun does not duplicate; same definition in offline and online paths
+
 ## Formal Model: Feature as Function
 - Let \( x = f(\text{raw}; \, t) \): feature value at time \( t \) depends only on raw data up to \( t \)
 - **No leakage:** \( f \) must not use any event with timestamp \( > t \)
@@ -135,12 +141,12 @@
 - Monitor feature freshness (max as_of_ts) and job success; alert on duplicate key violations
 - Prefer incremental feature compute for new as_of_ts only when event volume is large
 
-## Recap
-- Features are derived inputs; pipelines must be point-in-time correct and idempotent
-- Key = (entity_id, as_of_ts); no data with ts > as_of_ts; MERGE/overwrite to avoid duplicates on rerun
-- Offline = batch read; online = key lookup; same feature definition in both paths
-- Leakage and rerun duplicates are critical failure modes; audit logic and write semantics
-- Cost: compute (partition pruning, incremental), storage (partition, retention), latency (online index/cache)
+## Recap — Engineering Judgment
+- **Point-in-time is non-negotiable:** no data with ts > as_of_ts in any join or filter; leakage breaks production models; audit every feature SQL for as_of_ts
+- **Key = (entity_id, as_of_ts):** MERGE or partition overwrite so rerun overwrites same key; append-only ⇒ duplicate rows ⇒ wrong training and joins
+- **Offline vs online:** same feature definition in both paths; train/serve skew (different window or source) ⇒ silent drift; align definitions and semantics
+- **Cost levers:** compute = partition pruning and incremental; storage = partition by as_of_ts and retention; online latency = index or cache on entity_id
+- **Failure modes:** leakage (no as_of_ts), rerun duplicates (append), schema drift; mitigate with key design, MERGE, and versioning
 
 ## Pointers to Practice
 - Compute features from concrete events table with point-in-time aggregation

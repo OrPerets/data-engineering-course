@@ -6,11 +6,11 @@
 - Scale, reliability, and cost as first-class concerns
 
 ## Learning Objectives
-- Define data engineering vs data science vs analytics
+- **Frame** data engineering as constraints (scale, reliability, cost), not definitions
 - Calculate data volume growth and storage requirements
-- Design basic data pipeline architectures
-- Estimate pipeline costs (time, storage, network)
-- Identify failure modes in data systems
+- Design basic data pipeline architectures and **justify** choices
+- Estimate pipeline costs (time, storage, network) and **spot** cost explosions
+- Identify failure modes and **why systems break** in production
 - Reason about trade-offs: batch vs streaming, SQL vs NoSQL
 - Map business questions to data engineering solutions
 
@@ -20,18 +20,19 @@
 
 ## What is Data Engineering?
 
-## Definition
-- Building systems to collect, store, process data
-- Focus: reliability, scale, cost, maintainability
-- Output: clean, accessible data for consumers
-- Not about: building ML models or dashboards
+## Constraints, Not Definitions
+- **Constraint:** data lives in many systems; consumers need one place to read from
+- **Constraint:** volume and velocity grow; single machines and scripts break
+- **Constraint:** failures happen; pipelines must be rerunnable and observable
+- **Output:** clean, queryable data at the right latency and cost
+- **Not:** building ML models or dashboards — we build the plumbing they depend on
 
 ## Core Problem Statement
 - Data exists in many sources (databases, APIs, files)
 - Consumers need unified, reliable access
-- Scale: millions of records, terabytes daily
-- Time: batch (hours) vs real-time (seconds)
-- Quality: missing, duplicate, inconsistent data
+- **Scale:** millions of records, terabytes daily — naïve “one script” design fails
+- **Time:** batch (hours) vs real-time (seconds) — choice drives architecture and cost
+- **Quality:** missing, duplicate, inconsistent data — pipelines must detect and handle, not assume
 
 ## Data Engineering vs Data Science
 
@@ -75,29 +76,25 @@
 
 ## Why Data Engineering Exists
 
-## The Scale Problem
-- 2010: 1 TB/day typical company
-- 2020: 1 PB/day large companies
-- Growth: 10× every 5 years
-- Single machine: insufficient
+## The Scale Problem (Why Naïve Design Breaks)
+- 2010: 1 TB/day typical company → 2020: 1 PB/day at scale
+- Growth: ~10× every 5 years — **linear scripts and single-node DBs hit a wall**
+- **Cost of naïveté:** “run a nightly job” becomes 20-hour runs, then failures; re-architect under fire
 
 ## The Variety Problem
-- Sources: databases, APIs, logs, files
-- Formats: JSON, CSV, Parquet, Avro
+- Sources: databases, APIs, logs, files; formats: JSON, CSV, Parquet, Avro
 - Schemas: structured, semi-structured, unstructured
-- Integration: complex, error-prone
+- **Constraint:** integration is complex and error-prone; schema drift and bad data will happen
 
 ## The Velocity Problem
-- Batch: process once per day
-- Streaming: process in real-time
-- Latency requirements: seconds to hours
-- Throughput: 100K to 1M events/second
+- Batch: process once per day vs streaming: process in real-time
+- Latency: seconds to hours; throughput: 100K–1M events/sec at scale
+- **Trade-off:** lower latency ⇒ more complexity and cost; choose from requirements, not fashion
 
-## The Reliability Problem
-- Data quality: missing, wrong, late
-- System failures: nodes crash, network partitions
-- Business impact: wrong decisions, lost revenue
-- Need: monitoring, alerting, recovery
+## The Reliability Problem (Why Systems Break)
+- Data: missing, wrong, late; systems: nodes crash, network partitions
+- **Production reality:** pipelines fail; the question is detection, recovery, and blast radius
+- Business impact: wrong decisions, lost revenue — **design for failure from day one**
 
 ## Data Engineering Lifecycle
 
@@ -128,58 +125,46 @@
 ## Lifecycle Diagram
 - Diagram: week1_lecture_slide12_lifecycle.puml
 
-## Core Concepts (1/2)
+## Core Concepts (1/3)
 
 ## Data Pipeline
-- Sequence of processing steps
-- Input → Transform → Output
-- Each step: independent, testable
-- Failure: one step fails, pipeline stops
+- Sequence of processing steps: Input → Transform → Output
+- Each step: independent, testable — **failure in one step must not leave partial state**
+- **Constraint:** design so reruns produce the same result (idempotency)
 
-## ETL: Extract, Transform, Load
-- Extract: read from source
-- Transform: clean, enrich, aggregate
-- Load: write to destination
-- Order: transform before load
+## ETL vs ELT (1/2)
+- **ETL:** Extract → Transform → Load; transform before load; smaller storage, faster queries
+- **ELT:** Extract → Load → Transform; load raw first; preserve raw data, flexible analytics later
+- **Cost:** ETL = compute up front + less storage; ELT = more storage + compute on demand
 
-## ELT: Extract, Load, Transform
-- Extract: read from source
-- Load: write raw to storage
-- Transform: process in storage
-- Order: load before transform
+## ETL vs ELT (2/2) — Engineering Trade-off
+- ETL: good when schema and consumers are stable; **risk:** lose raw data, hard to reprocess
+- ELT: good when requirements change; **risk:** higher storage cost, need discipline on transforms
+- **Opinion:** keep raw immutable; prefer ELT-style raw layer, then derived layers
 
-## ETL vs ELT Trade-off
-- ETL: smaller storage, faster queries
-- ELT: preserve raw data, flexible
-- Cost: ETL = compute + storage
-- Cost: ELT = storage + compute
+## Core Concepts (2/3)
 
-## Core Concepts (2/2)
-
-## Batch Processing
-- Process data in chunks
-- Frequency: hourly, daily, weekly
-- Latency: minutes to hours
-- Use case: reports, analytics
-
-## Streaming Processing
-- Process data continuously
-- Frequency: real-time, seconds
-- Latency: milliseconds to seconds
-- Use case: alerts, dashboards
-
-## Batch vs Streaming
-- Batch: simpler, cheaper, higher latency
-- Streaming: complex, expensive, low latency
-- Hybrid: batch for history, stream for recent
-- Choose based on requirements
+## Batch vs Streaming — Scalability Tension
+- **Batch:** chunks; hourly/daily; latency minutes–hours; simpler, cheaper; **breaks when** latency requirement drops to seconds
+- **Streaming:** continuous; real-time; latency ms–sec; complex, expensive; **breaks when** throughput or consistency requirements spike
+- **Hybrid:** batch for history, stream for recent — common in production; choose from **latency and cost**, not hype
 
 ## Schema-on-Write vs Schema-on-Read
-- Schema-on-write: validate at ingestion
-- Schema-on-read: validate at query time
-- Trade-off: flexibility vs performance
-- Data warehouse: schema-on-write
-- Data lake: schema-on-read
+- Schema-on-write: validate at ingestion (warehouse); **fails fast**, rigid
+- Schema-on-read: validate at query time (lake); **flexible**, risk of garbage-in
+- **Trade-off:** strict schema ⇒ fewer surprises and better performance; loose schema ⇒ agility and schema evolution
+
+## Core Concepts (3/3) — One Idea
+- **One clear choice per pipeline:** ETL or ELT; batch or stream; schema-on-write or -read
+- Mixing without boundaries leads to **cost overruns and unmaintainable pipelines**
+
+## Cost of Naïve Design (Why We Need Engineering)
+
+## What Goes Wrong Without Discipline
+- **Naïve:** “one script, one DB, run nightly” — works until volume doubles; then 20-hour runs, timeouts, no observability
+- **Naïve:** no raw layer — schema change or bug ⇒ cannot reprocess; **cost:** full re-ingestion or lost history
+- **Naïve:** no idempotency — rerun doubles counts; **cost:** wrong reports, loss of trust
+- **Takeaway:** constraints (scale, failure, cost) force pipeline design; definitions don’t
 
 ## Running Example — Data & Goal
 
@@ -382,80 +367,41 @@ Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 - Detection: cost alerts, daily reports
 - Mitigation: optimize queries, compress data
 
-## Best Practices
+## Best Practices (1/2)
 
 ## Start with Business Questions
-- What decisions need data?
-- Who consumes the data?
-- What latency is acceptable?
-- Don't build pipelines without purpose
+- What decisions need data? Who consumes it? What latency is acceptable?
+- **Don't build pipelines without purpose** — avoid “data lake as dumping ground”
 
-## Store Raw Data
-- Never delete source data
-- Raw data is immutable
-- Enables reprocessing, debugging
-- Cost: minimal with compression
+## Store Raw Data & Idempotency
+- **Raw data:** never delete; immutable; enables reprocessing and debugging; cost kept low with compression
+- **Idempotent operations:** rerun ⇒ same output; deterministic transforms; avoid time-dependent logic; test: run twice, compare
 
-## Idempotent Operations
-- Rerun pipeline: same output
-- Use deterministic transformations
-- Avoid time-dependent logic
-- Test: run twice, compare outputs
+## Monitor & Version
+- **Monitor:** pipeline success/failure, data quality, latency, cost per run — **you can't fix what you don't measure**
+- **Version:** code (Git), schema (versioned), data (timestamped); enables rollback and debugging
 
-## Monitor Everything
-- Pipeline success/failure rates
-- Data quality metrics
-- Processing latency
-- Cost per pipeline run
+## Best Practices (2/2)
 
-## Version Control
-- Code: Git for pipeline code
-- Schema: versioned schemas
-- Data: timestamped outputs
-- Enables rollback, debugging
+## Test & Design for Failure
+- **Test:** unit (functions), integration (full pipeline), data (outputs), failure (simulate errors)
+- **Design for failure:** assume components fail; retry, checkpoints, recovery procedures — **production breaks; design for it**
 
-## Test Incrementally
-- Unit tests: individual functions
-- Integration tests: full pipeline
-- Data tests: validate outputs
-- Failure tests: simulate errors
-
-## Design for Failure
-- Assume components fail
-- Build retry logic
-- Use checkpoints
-- Plan recovery procedures
-
-## Document Assumptions
-- Data sources and formats
-- Business logic and rules
-- Expected volumes and latencies
-- Failure modes and mitigations
-
-## Optimize Last
-- First: make it work
-- Second: make it reliable
-- Third: make it fast
-- Premature optimization: waste time
+## Document Assumptions & Optimize Last
+- **Document:** sources, formats, business rules, expected volumes/latencies, failure modes
+- **Optimize last:** first make it work, then reliable, then fast — **premature optimization wastes time and hides bugs**
 
 ## Recap
 
-## Data Engineering Defined
-- Build systems for data at scale
-- Focus: reliability, performance, cost
-- Output: clean, accessible data
+## Data Engineering: Constraints, Not Definitions
+- **Constraints:** scale, reliability, cost; output: clean, accessible data at the right latency
+- **Judgment:** ETL vs ELT, batch vs stream, schema-on-write vs -read — each choice has cost and failure modes
 
-## Key Concepts
-- Pipelines: ETL vs ELT
-- Processing: batch vs streaming
-- Schema: on-write vs on-read
-- Lifecycle: ingest → store → process → consume
-
-## Engineering Mindset
-- Calculate costs and trade-offs
-- Design for failure
-- Monitor and measure
-- Start simple, optimize later
+## Engineering Mindset (Non-Negotiable)
+- **Calculate** costs and trade-offs before scaling
+- **Design for failure** — pipelines and nodes will break
+- **Monitor and measure** — no blind spots
+- **Start simple, optimize later** — avoid premature complexity
 
 ## What's Next
 - Distributed databases (Week 2)

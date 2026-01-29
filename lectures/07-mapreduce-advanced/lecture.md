@@ -29,6 +29,22 @@
 - Slide 24 → week7_lecture_slide24_execution_flow.puml → Execution flow Map → Shuffle → Reduce
 - Slide 28 → week7_lecture_slide28_failure_skew.puml → Failure: hot key → one reducer OOM
 
+## The Real Problem This Lecture Solves
+- **In production:** MapReduce jobs fail or stall not because the logic is wrong, but because one reducer gets most of the data (skew) or because shuffle dominates runtime (data movement, not code).
+- **Hot key:** One key with huge value set → one reducer OOM or straggler; job latency = that reducer’s time.
+- **Shuffle cost:** Intermediate (k,v) size can match or exceed input; no combiner ⇒ network and disk I/O dominate; thinking in *data movement* is the lever.
+
+## The System We Are Building (Tie to Week 6)
+- **Context:** Week 6 gave the MapReduce model (map → shuffle → reduce). Here we make it production-ready for skewed and large datasets.
+- **Same pipeline shape:** Event analytics by user_id or session_id; word count; join Users (small) with Clicks (large). The *partition balance* and *shuffle size* determine success.
+- **Engineering goal:** Design keys and partitioners so no single reducer is overloaded; cut shuffle with combiners; detect skew from metrics before it becomes an incident.
+
+## Cost of Naïve Design (Advanced MapReduce)
+- **No combiner:** Emit (word, 1) for every occurrence ⇒ shuffle size ≈ map output; for 1 TB of text, intermediate data similar scale ⇒ network and disk thrashing; combiner cuts bytes sent and spilled.
+- **Default partitioner on skewed key:** Join on user_id; one bot has 1B clicks ⇒ all 1B (user_id, click) go to one reducer ⇒ OOM or timeout; “correct” logic, wrong data distribution.
+- **No salting on hot key:** Same join; without splitting the hot key across reducers, the job cannot scale; salting trades small-table replication for reducer balance.
+- **Production cost:** Job retries, SLA misses, on-call; fixing skew post-incident is far more expensive than profiling key distribution and designing partition strategy up front.
+
 ## Core Concepts (1/2)
 - **Shuffle:** Framework groups all (k,v) by k; same key → same reducer
 - **Partition function:** `partition_id = hash(k) mod R`; R = number of reducers
@@ -167,11 +183,11 @@
 - Test with skewed samples (e.g. inject hot key) to validate OOM and timeout handling
 - Prefer engine features (e.g. Spark AQE) when available; understand underlying MR semantics
 
-## Recap
-- Shuffle groups by key; skew = one key has most values → one reducer fails or stalls
-- Combiner reduces shuffle size; partitioner controls key→reducer; salting splits hot key across reducers
-- Cost dominated by shuffle; measure reducer input variance to detect skew
-- Mitigation: combiner, custom partitioner, salted keys; detect via metrics and sampling
+## Recap — Engineering Judgment
+- **Shuffle is the bottleneck:** Think in data movement, not code; intermediate size and partition balance determine job success; combiner is the first lever when reduce is associative.
+- **Skew is a first-class failure:** One key with most values → one reducer OOM or straggler; design partition strategy and key shape (e.g. salting) so no single reducer gets the hot key alone.
+- **Measure before and after:** Reducer input size variance and task duration variance; sample key distribution before large jobs; alert on skew so you fix before incident.
+- **Non-negotiable in production:** Use combiners when valid; profile and mitigate hot keys (partitioner or salting); document partition strategy; test with skewed samples.
 
 ## Pointers to Practice
 - Manual walkthrough: 8–12 input records → Map emits → Shuffle groups → Reduce outputs

@@ -23,19 +23,69 @@
 - Slide 18 → week14_practice_slide18_reasoning_pipeline_choice.puml → Reasoning: ETL vs ELT and when to use MERGE vs partition overwrite
 
 ## Warm-up Exercises
-- **W1:** List the partition key and primary key of sales_fact. Why must BI queries include a filter on date_key?
-- **W2:** For raw_events sample above, how many rows have event_id = 1? After dedup by event_id (keep earliest event_timestamp), how many rows for event_id = 1?
-- **W3:** In MapReduce word count, after map emits (word, 1) for all words in the 4 lines, how many pairs does key "a" receive at shuffle? What is the reduce output for "a"?
-- **W4:** Write one SQL line: update the watermark in a metadata table to the value '2025-12-01 12:00:00' for key 'events_sync'.
-- **W5:** Name three failure modes from the course: one in ingestion, one in MapReduce, one in DWH.
+- 3–5 short exercises; each on its own slide below
+- Use Data Context tables and sample rows in answers
+- Full solutions follow in Solutions section
+
+## W1
+- List the partition key of sales_fact
+- List the primary key of sales_fact
+- Why must BI queries include a filter on date_key?
+
+## W2
+- How many rows in raw_events sample have event_id = 1?
+- After dedup by event_id (keep earliest event_timestamp), how many rows for event_id = 1?
+- What does idempotent rerun require for this load?
+
+## W3
+- After map emits (word, 1) for the 4 lines, how many pairs does key "a" receive at shuffle?
+- What is the reduce output for "a"?
+- How many distinct keys are there after map?
+
+## W4
+- Write one SQL statement: update the watermark to '2025-12-01 12:00:00' for key 'events_sync'
+- Assume table etl_state(key, val)
+- One line only
+
+## W5
+- Name one failure mode in ingestion (e.g. duplicate on rerun)
+- Name one failure mode in MapReduce (e.g. skew)
+- Name one failure mode in DWH (e.g. full scan)
 
 ## Engineering Exercises
-- **E1 (SQL/ETL):** Load from raw_events into events_clean: filter event_type IN ('click','view','purchase'), deduplicate by event_id (keep one row per event_id, earliest event_timestamp), cast event_timestamp to TIMESTAMP as event_time. Write full SQL (CTE for dedup + MERGE into events_clean). Assume events_clean has last_updated_ts; MERGE only when source is newer.
-- **E2 (Incremental + idempotency):** A job loads raw_events for 2025-12-01 and 2025-12-02. It fails after writing 2025-12-01 to events_clean. Describe how to rerun so that 2025-12-02 is loaded and 2025-12-01 is not duplicated. Use watermark and partition-level logic (pseudocode or bullet steps).
-- **E3 (MapReduce):** For the 4-line word-count input, write map outputs (key, value) for each line, then shuffle groups (key → list of values), then reduce outputs (word, count). Use exact strings: "a", "b", "c".
-- **E4 (Skew):** Suppose one word "the" has 50 values at one reducer; others have 1–3. What failure can occur? Propose one mitigation (combiner or salting) in one sentence each.
-- **E5 (DWH):** Write a SQL query: total revenue (quantity * unit_price) by region for December 2025 (date_key between 20251201 and 20251231). Join sales_fact to dim_customer. Mention partition pruning.
-- **E6 (Cost):** Estimate scan size: sales_fact has 10M rows/year, partitioned by date_key (daily). Query filters date_key IN (20251201, 20251202). Rows per partition ~27K. How many rows are scanned? If the query omitted the date filter, how many rows would be scanned?
+- 3–6 exercises; numeric assumptions and cost reasoning; each on its own slide below
+- Include SQL/ETL, MapReduce trace, DWH query, and cost estimate
+- Full solutions with assumptions and check follow in Solutions section
+
+## E1 (SQL/ETL)
+- Filter raw_events: event_type IN ('click','view','purchase'); cast event_timestamp to TIMESTAMP
+- Deduplicate by event_id (keep earliest event_timestamp per event_id)
+- Write full SQL: CTE for dedup + MERGE into events_clean ON event_id; MERGE only when source newer than target last_updated_ts
+
+## E2 (Incremental + idempotency)
+- Job loads 2025-12-01 and 2025-12-02; fails after writing 2025-12-01. How to rerun without duplicating 2025-12-01?
+- Use watermark or partition list to track progress
+- Give pseudocode or bullet steps for resume logic
+
+## E3 (MapReduce)
+- Write map outputs (key, value) for each of the 4 lines (exact strings "a", "b", "c")
+- Write shuffle groups: key → list of values
+- Write reduce outputs: (word, count) for each key
+
+## E4 (Skew)
+- What failure can occur when one reducer gets 50 values for "the" and others get 1–3?
+- Propose combiner: what does it do and how does it help?
+- Propose salting: one sentence on how it distributes load
+
+## E5 (DWH)
+- Query: total revenue (quantity * unit_price) by region for December 2025
+- Join sales_fact to dim_customer; filter date_key between 20251201 and 20251231
+- State why partition pruning applies
+
+## E6 (Cost)
+- With filter date_key IN (20251201, 20251202): how many rows scanned? (2 partitions × ~27K)
+- Without date filter: how many rows scanned? (10M)
+- What is the reduction factor from pruning?
 
 ## Challenge Exercise
 - **C1 (Multi-part):** (a) Design a minimal pipeline (extract → staging → load) so that daily raw_events are loaded into events_clean and rerun never duplicates. State: how you track progress (watermark or partition list), how you dedup, and how you write (MERGE or partition overwrite). (b) Draw or reference a diagram that shows the decision: when to use MERGE vs partition overwrite (one sentence per branch). Diagram: week14_practice_slide18_reasoning_pipeline_choice.puml

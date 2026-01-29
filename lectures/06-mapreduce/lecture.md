@@ -13,6 +13,21 @@
 - Identify data skew and hot keys as failure modes; describe combiner and salting
 - Reason about cost: work, span, network, and when shuffle dominates
 
+## The Real Problem This Lecture Solves
+- **Production failure:** A team ran “clicks per user_id” at 1B events; one bot user_id had 800M clicks
+- **Trigger:** Hash partitioning sent that user_id to one reducer; reducer received ~800M values
+- **Consequence:** Reducer OOM or ran for hours; job failed or blocked the cluster; no combiner had been used, so shuffle moved 800M pairs
+- **Root cause:** Naïve key design (user_id only); no combiner; no salting for known hot keys
+- **Takeaway:** MapReduce scales only if key distribution and shuffle are designed for it. Skew and shuffle cost are not edge cases—they are the main failure modes at scale
+
+## The System We Are Building (End-to-End)
+- **Domain:** Event analytics (same event stream as Week 4): clicks, views, purchases; aggregate by key for BI and product
+- **Input:** Event log or ETL output (e.g. events_clean or raw_events); (event_id, user_id, event_type, event_time, …); partitioned by date
+- **Job:** Map emits (user_id, 1) or (session_id, 1); shuffle groups by key; reduce sums ⇒ (user_id, count) or (session_id, count)
+- **Output:** Aggregates consumed by dashboards, recommendations, or downstream pipelines
+- **Constraint:** Same key → same reducer; hot key (e.g. bot user_id) can kill one reducer—design key and use combiner/salting
+- Every later example (including word count) follows the same map–shuffle–reduce model; word count is the minimal instance
+
 ## Sources Used (Reference Only)
 - sources/Lecture 6,7,8.pdf
 - sources/Lecture 6,7,8.pptx
@@ -95,6 +110,12 @@
 - **Conclusion:** map emits (word,1); shuffle groups by word; reduce sums ⇒ word count
 - **Trade-off:** shuffle size = map output size; skew (one word in every line) would overload one reducer
 
+## Cost of Naïve Design (MapReduce)
+- **Naïve choice:** Emit (user_id, 1) for every event; no combiner; “shuffle will handle it”
+- **Cost at scale:** One hot key (bot, default user, null) gets 80% of values ⇒ one reducer OOM or 10× slower than others; shuffle moves full map output (e.g. 200 GB) when combiner could cut it
+- **Real cost:** Job fails or blocks cluster; debugging “which reducer?” and “why so slow?”; re-run with same design fails again
+- **Engineering rule:** Design key for balance; use combiner when reduce is sum/count; use salting for known hot keys. Shuffle size and skew are the first things to reason about
+
 ## MapReduce Pipeline Overview
 - Input (files/blocks) → split → Map tasks (emit (k,v)) → Shuffle (sort & transfer) → Reduce tasks → output
 - Diagram: week6_lecture_slide17_system_overview.puml
@@ -174,15 +195,18 @@
 - **Join:** small table row for k must be replicated to all N reducers (k||1..N) so join still correct
 - **Trade-off:** more reducers and merge logic; avoids OOM and balances load
 
-## Best Practices
+## Best Practices (1/2)
 - Design map output key so that key distribution is balanced; avoid single dominant key
 - Use combiner when reduce is sum/count/max and correctness is preserved
 - Monitor shuffle size and per-partition sizes; alert on skew (max/median ratio)
 - Prefer smaller, bounded reduce groups; use salting for known hot keys
 - Keep map and reduce pure (no shared mutable state); deterministic for replay
+
+## Best Practices (2/2)
 - Minimize map output size: smaller keys and values; filter early in map
 - Test with skewed input (e.g. one key 80% of data) to validate skew handling
 - Document partition function and key design for operators
+- Enforce: reason about shuffle size before running at scale; if one key can dominate, plan combiner or salting from the start
 
 ## MapReduce vs SQL Aggregation
 - SQL: GROUP BY key → aggregate; optimizer chooses plan (hash/sort)
@@ -200,12 +224,11 @@
 - Combine: shuffle groups by key; reduce aggregates per group
 - Pure map/reduce and key design carry over; skew and combiner from Week 3 apply here
 
-## Recap
-- MapReduce: map emits (k,v); shuffle groups by key; reduce aggregates per key
-- Shuffle is often the bottleneck: network and disk I/O; combiners reduce shuffle size
-- Data skew causes one reducer to get most data ⇒ OOM or timeout; use combiners and salting
-- Cost: work, span, shuffle bytes; design keys and use combiners for scale
-- Formal model: same key → same reducer; partition(k,R) = hash(k) mod R
+## Recap (Engineering Judgment)
+- **MapReduce:** Map emits (k,v); shuffle groups by key; reduce aggregates. Same key → same reducer—so key distribution and shuffle size are the main design levers.
+- **Shuffle is the bottleneck.** At 10^9 records, shuffle size dominates wall-clock time. Use a combiner when reduce is sum/count; cut map output size (smaller keys/values, filter early).
+- **Skew is a first-class failure.** One hot key ⇒ one reducer OOM or 10× slower. Design for balance; use salting for known hot keys; monitor max/median partition size and alert.
+- **Cost:** Work, span, shuffle bytes. Before scaling up, compute shuffle size and ask: what if one key has 80% of the data? If you don’t know, add combiner or salting.
 
 ## Pointers to Practice
 - Run full manual MapReduce (map → shuffle → reduce) on 8–12 input records

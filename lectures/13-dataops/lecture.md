@@ -23,6 +23,18 @@
 - Slide 22 → week13_lecture_slide22_test_execution_flow.puml → CI test execution flow (build → test → deploy)
 - Slide 38 → week13_lecture_slide38_failure_silent_regression.puml → failure: silent regression when test gap exists
 
+## The Real Problem This Lecture Solves
+- **Silent regression:** new column or source; no test on it; bad value reaches dashboards and models; trust collapses
+- **No quality gate:** pipeline “succeeds” but output is wrong; promote happens; consumers see bad data
+- **Alert fatigue:** too many alerts or noisy metrics → real incidents ignored; on-call burns out
+- **Production reality:** schema drift, bad rows, and stale data are discovered by users, not by the pipeline
+
+## The System We Are Building
+- Same event pipeline as Weeks 4 (ingestion), 6 (MapReduce), 10 (streaming): raw_events → staging → events_clean
+- **This week:** add CI/CD, data tests on target, and a quality gate before promote
+- **Observability:** row counts, watermark lag, test pass/fail, DLQ size; alert on failure, not on noise
+- **Goal:** catch schema drift, duplicates, and freshness issues before consumers see them
+
 ## Core Concepts (1/2)
 - **DataOps:** CI/CD, automated tests, and monitoring for data pipelines
 - **Data tests:** assertions on pipeline output (schema, rows, freshness, volume)
@@ -64,6 +76,13 @@
 - Flaky tests: ordering or clock skew cause intermittent failure
 - Alert fatigue: too many alerts or noisy metrics → ignored incidents
 - Test gap: new column or source not covered → silent regression
+
+## Cost of Naïve Design (DataOps)
+- **No tests on new columns:** schema allows null; source sends null; dashboard shows “unknown”; no pipeline failure; silent regression
+- **No quality gate:** load “succeeds”; bad data promoted; analysts and models consume wrong data; trust and SLA break
+- **Too many alerts:** every minor drift triggers alert; team mutes or ignores; real incident missed; cost = lost trust and firefighting
+- **Full-table tests at scale:** uniqueness on 1B rows every run ⇒ timeout; CI blocks; team disables test or skips; gap remains
+- **Production cost:** incident-driven; post-mortem shows missing test or missing gate; formalize “good” and enforce before promote
 
 ## DataOps Pipeline Overview (This System)
 - Trigger (schedule/commit) → Extract (with watermark) → Staging → Transform → Load → Target
@@ -182,21 +201,24 @@
 - **Mitigation:** close test gaps; idempotent writes; partition-level resume
 - **Incident:** fail fast, alert, block promote; post-mortem and add tests to prevent recurrence
 
-## Best Practices
+## Best Practices (1/2)
 - Version pipeline and tests together; run tests on every run or at least before promote
 - Test schema, uniqueness, freshness, and critical business rules (e.g. revenue bounds)
 - Keep test suite fast: partition-level or sampled assertions; avoid full-table scan every time
 - Update watermark only after successful load; use MERGE so rerun does not duplicate
+
+## Best Practices (2/2)
 - Route bad rows to DLQ; do not fail entire batch on one bad row; monitor DLQ growth
 - Document expected schema, keys, and SLAs; review tests when schema or sources change
 - Tune alerts: avoid noise; aggregate or route so real incidents get attention
+- After every incident: post-mortem; add test or gate that would have caught it; close the gap
 
-## Recap
-- DataOps: CI/CD, data tests, and monitoring for pipelines; quality gate before promote
-- Data tests: schema, row, freshness, volume, custom; cover every critical column
-- Idempotency and watermark remain essential; tests run after load to validate output
-- Silent regression and test gaps are common; add tests after incidents and for new columns
-- Cost: test runtime and alert volume scale; partition-level and targeted tests help
+## Recap — Engineering Judgment
+- **Quality gate before promote is non-negotiable:** no silent bad data; block deploy when tests fail
+- **Test every critical column and contract:** new column or source ⇒ add test; test gap is the main cause of silent regression
+- **Incident → post-mortem → close gap:** formalize what “good” means; enforce it; avoid repeat failures
+- **Partition-level or sampled tests** to bound runtime; full-table tests at scale hurt CI and get disabled
+- **Tune alerts:** signal over noise; real incidents must get attention; cost of alert fatigue = missed incidents and burnout
 
 ## Pointers to Practice
 - Write assertions for row count, uniqueness, freshness on a given target table

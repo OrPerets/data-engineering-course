@@ -127,6 +127,12 @@
 - **No dedup:** Upstream retry sends same batch twice ⇒ duplicate event_id in target
 - **Diagram:** week4_lecture_bad_architecture.puml (bad path vs correct path)
 
+## Cost of Naïve Design (Ingestion)
+- **Naïve choice:** Plain INSERT; no staging; no watermark; “we’ll just rerun if it fails”
+- **Cost at scale:** Rerun duplicates rows ⇒ finance sees 2× revenue; trust in “the number” collapses; root-cause takes days (which run inserted what?)
+- **Real cost:** Not just re-compute—wrong data drives wrong decisions; governance and audits fail
+- **Engineering rule:** Idempotency and watermark are not optional. Design for rerun from day one
+
 ## Evolution: v1 Full Refresh → v2 Incremental + Idempotent
 - **v1:** Full table read every run; INSERT into target; no watermark
   - Fails at scale: full scan each run; rerun duplicates everything
@@ -287,22 +293,24 @@
 - **Mitigation:** idempotent writes (MERGE/ON CONFLICT); watermark + buffer; partition-level commit
 - **CDC for deletes:** watermark on table scan misses deletes; use log-based CDC if deletes matter
 
-## Best Practices
+## Best Practices (1/2)
 - Use staging for raw load; validate and dedup before target
 - Design for idempotency: MERGE or INSERT ON CONFLICT; key by business key
 - Watermark incremental loads; update only after successful commit
 - Partition target by date (or key range) for pruning and safe rerun
 - Route bad rows to DLQ; do not fail entire batch on one bad row
+
+## Best Practices (2/2)
 - Use transactions so partial write does not leave half-updated state
 - Document schema, keys, and expected volumes for operators
 - Monitor load duration, row counts, and watermark lag
+- Enforce: never advance watermark before commit; never INSERT into keyed target without MERGE/ON CONFLICT
 
-## Recap
-- ETL vs ELT: transform before vs after load; ELT scales with engine
-- Idempotency and watermark are essential for safe reruns and incremental load
-- Staging + dedup + MERGE pattern avoids duplicates and allows reprocessing
-- Partial failure and duplicate source require partition-aware, idempotent design
-- Cost: I/O and network dominate; incremental and compression reduce load
+## Recap (Engineering Judgment)
+- **ETL vs ELT:** Choose ETL when you need clean target and explicit staging; ELT when DWH/lake engine is the transform layer. Default to staging + MERGE so reruns never corrupt.
+- **Idempotency is non-negotiable.** Never plain INSERT into a keyed target; never advance watermark before commit. Partial failure and duplicate source are the norm—design for them.
+- **Cost:** I/O and network dominate; incremental + partition pruning cut scope. At 10× volume, assume 10× time unless you cut scope; index on MERGE key is mandatory.
+- **One bad row must not kill the batch.** Schema-on-read at staging + DLQ keeps pipeline green and gives an audit trail.
 
 ## Pointers to Practice
 - Write SQL: raw → clean with dedup and MERGE; incremental slice by watermark

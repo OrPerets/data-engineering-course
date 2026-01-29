@@ -15,6 +15,20 @@
 - Apply orchestration rules: control table updated only after successful write; single owner per partition
 - Describe at least one mitigation: partition overwrite, salting for hot keys, incremental as_of_ts
 
+## The Real Problem This Lecture Solves
+- **Production failure:** Two teams ran backfills for the same as_of_ts range; both used INSERT ⇒ duplicate rows per (user_id, item_id, as_of_ts); training saw double counts; model metrics invalid
+- **Trigger:** New feature definition required full history; incremental job and backfill job both wrote same partition; no single owner per partition
+- **Root cause:** Backfill overlap without partition overwrite or MERGE; full (user × item × as_of_ts) grid join ⇒ OOM; hot entity in aggregation ⇒ straggler
+- **Takeaway:** Advanced pipelines multiply failure modes: overlap, skew, coupling. This lecture is about idempotent backfill, single owner per partition, and pipeline coupling risks.
+
+## The System We Are Building
+- **Domain:** Multi-entity feature table (user × item × as_of_ts) for recommender; entity features (user clicks_7d, item impressions_7d) → join → derived (ctr_7d); same lineage as Week 11, now with multiple entities and backfill/incremental
+- **Sources:** events (user_id, item_id, event_ts); user_features and item_features (point-in-time); feature_table (user_id, item_id, as_of_ts, …)
+- **Compute:** Entity features per (entity_id, as_of_ts); join on (user_id, item_id, as_of_ts); derived ctr_7d; MERGE or partition overwrite
+- **Consumers:** Training (batch by as_of_ts range); serving (lookup by user_id, item_id, latest)
+- **Orchestration:** Incremental = watermark + new as_of_ts only; backfill = explicit range; single owner per partition; control table updated only after successful write
+- Every later example refers to *this* system unless stated otherwise
+
 ## Sources Used (Reference Only)
 - sources/Lecture 6,7,8.pdf, sources/Spark.pdf (DE context)
 - exercises1.md (ETL/ELT, incremental, MERGE, idempotency, failure/reprocessing)
@@ -39,6 +53,13 @@
 - **Idempotent backfill:** writing the same (entity_id, as_of_ts) range twice yields one row per key; use partition overwrite or MERGE
 - **Single owner per partition:** only one job writes a given as_of_ts partition; prevents duplicate keys from overlapping backfills
 - **What breaks at scale:** backfill overlap → duplicates; skew in aggregation → OOM; schema drift → silent wrong values
+
+## Cost of Naïve Design (Advanced Feature Pipelines)
+- **Backfill with INSERT:** two jobs write same as_of_ts range ⇒ duplicate rows per (user_id, item_id, as_of_ts) ⇒ wrong aggregates and broken training; production cost: invalid metrics and wasted compute
+- **No partition overwrite:** incremental and backfill both write same partition without overwrite ⇒ overlap ⇒ duplicates; single owner per partition and MERGE or overwrite are non-negotiable
+- **Full grid join:** |users| × |items| × |as_of_ts| rows (e.g. 10M × 1M × 365 ⇒ 3.65e12) ⇒ OOM or infeasible; restrict grid to observed (user, item) pairs in window
+- **Hot entity in aggregation:** one user or item gets most events ⇒ one partition/reducer overloaded ⇒ straggler or OOM; mitigate with salting or split
+- **Engineering rule:** MERGE or partition overwrite; control table updated only after successful write; build grid from observed pairs; profile for skew
 
 ## Watermark and Control Table
 - **Watermark:** last_as_of_ts stored in control table; incremental job computes only as_of_ts > last_as_of_ts (e.g. +1 day)
@@ -178,12 +199,12 @@
 - **Skew:** detection = reducer input size profile; mitigation = salting, split hot keys, limit window
 - **Gap (watermark too early):** detection = missing as_of_ts in feature table; mitigation = update control only after successful write
 
-## Recap
-- Advanced pipelines are multi-step DAGs: entity features → join → derived → feature table; ordering and idempotency are critical
-- Backfill vs incremental: backfill for full/range; incremental for daily new as_of_ts; single owner per partition
-- Cost: backfill O(events × range); incremental O(events in window); join cardinality and skew drive memory and time
-- Failure modes: backfill overlap → duplicates; skew → OOM; mitigation: partition overwrite/MERGE, salting, control table after success
-- Best practice: key by (entity, as_of_ts); MERGE/overwrite; update watermark only after write; limit grid size
+## Recap — Engineering Judgment
+- **Backfill vs incremental:** incremental for steady state (watermark + new as_of_ts); backfill for bootstrap or repair; single owner per partition—never two jobs writing same as_of_ts without overwrite
+- **Idempotent write is non-negotiable:** MERGE or partition overwrite on (entity_id, as_of_ts) or (user_id, item_id, as_of_ts); backfill overlap with INSERT ⇒ duplicates ⇒ wrong training
+- **Control table:** update last_as_of_ts only after successful write; otherwise next run skips that as_of_ts (gap)
+- **Cost levers:** backfill O(events × range); incremental O(events in window); join size = limit grid to observed pairs; skew = salting or split hot entities
+- **Pipeline coupling:** ordering (entity → join → derived → write); version feature definitions; validate schema; document backfill and incremental runbooks
 
 ## Pointers to Practice
 - Build multi-step feature pipeline from events to (user_id, item_id, as_of_ts) with point-in-time aggregation and MERGE

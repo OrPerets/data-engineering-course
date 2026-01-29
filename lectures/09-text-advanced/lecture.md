@@ -28,6 +28,17 @@
 - Slide 26 → week9_lecture_slide26_mapreduce_ngram_flow.puml → MapReduce n-gram extraction: Map → Shuffle → Reduce
 - Slide 29 → week9_lecture_slide29_failure_regex_ngram.puml → Failure: regex backtracking and n-gram skew; mitigations
 
+## The Real Problem This Lecture Solves
+- **Vocabulary and shuffle at scale:** N-gram vocabulary grows as \(V^n\); bigrams with V=50k ⇒ up to billions of types; map emits (doc_id, ngram, 1) per instance ⇒ shuffle size and reducer load explode; *data movement* and partition choice determine success.
+- **Regex in production:** One malicious or malformed record with a backtracking-prone pattern can hang a mapper; CPU spike, timeout; pipeline blocked by a single record.
+- **Hot n-gram key:** If a job partitions by ngram (e.g. for df), very common n-grams (e.g. "the_and") send most doc_ids to one reducer → OOM or straggler; same skew story as Week 7–8, different key space.
+
+## Cost of Naïve Design (Advanced Text)
+- **No combiner in n-gram job:** Emit (doc_id, ngram, 1) for every n-gram instance ⇒ shuffle size = total instances; 10^6 docs × 200 terms/doc × bigrams ⇒ ~2×10^8 pairs; combiner cuts to distinct (doc_id, ngram) per partition ⇒ order-of-magnitude reduction.
+- **Partition by ngram for count job:** If you partition by ngram to compute counts, hot n-gram gets most doc_ids ⇒ one reducer OOM; partition by (doc_id, ngram) for per-doc counts; use separate pass for df with cap or filter.
+- **No regex timeout:** Complex pattern on long or adversarial input ⇒ catastrophic backtracking; one record blocks mapper; timeout per record and non-backtracking or possessive patterns are production requirements.
+- **Production cost:** Feature pipeline stalls, SLA misses, on-call; vocabulary cap and partition strategy must be designed up front; regex and encoding validation at ingest prevent one-record failures.
+
 ## Core Concepts (1/3)
 - **Word n-gram:** contiguous sequence of \(n\) tokens (e.g. bigram: "data engineering")
 - **Character n-gram:** contiguous substring of length \(n\) (e.g. "dat", "ata" for "data")
@@ -215,12 +226,11 @@
 - Prefer non-backtracking or possessive regex for untrusted or variable-length input
 - Separate feature pipeline (deterministic) from model training (versioned artifact)
 
-## Recap
-- N-grams: word (sliding \(n\) tokens) and char (substring length \(n\)); vocab \(\leq V^n\) or \(A^n\)
-- Pipeline: tokenize → n-gram extract → (optional) df/N → (optional) TF-IDF or embedding lookup
-- MapReduce: map emit (doc_id, ngram, 1); combiner sum; partition (doc_id, ngram); reduce sum
-- Failures: regex backtracking (timeout), encoding, hot n-gram key (OOM); mitigate with timeout, filter, partition choice
-- Feature vs model: pipeline consumes versioned vocabulary/embeddings; idempotent write by (doc_id, version)
+## Recap — Engineering Judgment
+- **Vocabulary and partition choice:** N-gram vocab grows as \(V^n\); shuffle and reducer load scale with it; partition by (doc_id, ngram) for per-doc counts; avoid partitioning by ngram alone for count job; cap vocabulary (top-K or hash) for bounded size.
+- **Regex and encoding:** Timeout per record and validate encoding at ingest; one bad record must not block the pipeline; use non-backtracking or possessive patterns for untrusted input.
+- **Skew is the same story:** Hot n-gram in df aggregation → one reducer; filter stop-ngrams or high-df n-grams; storage vs compute: sparse (doc_id, ngram, count) and versioned vocabulary.
+- **Feature vs model boundary:** Pipeline consumes versioned vocabulary/embeddings; idempotent write by (doc_id, version); separate feature pipeline (deterministic) from model training (versioned artifact).
 
 ## Pointers to Practice
 - Extract bigrams by hand from 3–5 docs; compute counts and optional TF-IDF

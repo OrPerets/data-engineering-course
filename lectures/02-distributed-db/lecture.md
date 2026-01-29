@@ -20,55 +20,50 @@
 
 ## Core Concepts (1/2)
 
-## Definitions
-- Distributed DB: data and compute spread across nodes
-- Partition: subset of data on one or more nodes
-- Replication: copies of same partition for availability
-- Coordinator: routes requests, may run consensus
+## Constraints, Not Definitions
+- **Constraint:** data and compute must spread across nodes when one machine hits storage or throughput limits
+- **Partition:** subset of data on one or more nodes — **design choice** (how to split) drives scale and failure
+- **Replication:** copies for availability and durability — **cost:** write amplification and consistency trade-offs
+- **Coordinator:** routes requests, may run consensus — **single point of failure** if not designed for it
 
-## Formal Models
-- Relational (SQL): tables, keys, joins, ACID
-- Key-value: get/put by key, no joins
-- Document: nested structures, key or path access
-- Wide-column: partition + clustering keys
+## Formal Models (Access Patterns First)
+- **Relational (SQL):** tables, keys, joins, ACID — **breaks when** cross-partition joins and transactions dominate
+- **Key-value:** get/put by key, no joins — **scales** when access is key-based only
+- **Document / wide-column:** nested or partition+clustering keys — **trade-off:** flexibility vs query predictability
 
-## SQL vs NoSQL (Models, Not Tools)
-- SQL: fixed schema, normalized, declarative queries
-- NoSQL: schema-flexible, denormalized, key-centric
-- Both: can be single-node or distributed
-- Choice: access patterns and guarantees first
+## SQL vs NoSQL — Engineering Choice
+- SQL: fixed schema, normalized, declarative; **good for** complex queries and strong consistency
+- NoSQL: schema-flexible, key-centric; **good for** key-scale and horizontal partitioning
+- **Opinion:** choose from **access patterns and latency/cost**, not from “SQL vs NoSQL” buzzwords
 
 ## Core Concepts (2/2)
 
-## Guarantees
-- ACID: atomicity, consistency, isolation, durability
-- BASE: basically available, soft state, eventual consistency
-- Strong vs eventual: when reads see writes
+## Guarantees — Why Systems Break When You Assume the Wrong One
+- **ACID:** strong consistency; **cost:** cross-partition coordination, blocking, lower throughput
+- **BASE:** basically available, eventual consistency; **cost:** stale reads, conflict resolution
+- **Strong vs eventual:** when reads see writes — **wrong assumption** ⇒ wrong business outcomes (e.g. double-spend, duplicate orders)
 
-## What Breaks at Scale
-- Cross-partition joins: data movement, latency
-- Cross-partition transactions: 2PC, blocking
-- Single partition: hot keys, skew
-- Network: latency, partitions, partial failure
+## What Breaks at Scale (Failure Intuition)
+- **Cross-partition joins:** data movement and latency explode; **single-node mental model fails**
+- **Cross-partition transactions:** 2PC blocks on any failure; **throughput can drop to near zero**
+- **Single partition:** hot keys and skew — one partition throttles; others idle
+- **Network:** latency, partitions, partial failure — **design for split-brain and stale reads**
 
 ## Why Single-Node Databases Break
 
-## Storage Limits
-- Single machine: max ~100 TB disk typical
-- Example: 1B users × 1 KB ≈ 1 TB
-- Growth 10%/month ⇒ 100 GB/month
-- Time to fill: ~8 years; need headroom ⇒ ~10 TB limit
+## Storage Limits (Cost of Naïve “One Big DB”)
+- Single machine: max ~100 TB disk typical; 1B users × 1 KB ≈ 1 TB
+- Growth 10%/month ⇒ 100 GB/month — **time to fill ~8 years; need headroom ⇒ ~10 TB practical limit**
+- **Naïve design:** “we’ll add disk” — then you hit I/O and throughput, not just capacity
 
 ## Throughput Limits
 - Single machine: ~10K writes/sec order of magnitude
-- Example: 100M users, 1 write/user/day ⇒ 1,157 writes/sec avg
-- Peak 5× ⇒ 5,785 writes/sec
-- Single node: insufficient headroom
+- Example: 100M users, 1 write/user/day ⇒ 1,157 writes/sec avg; peak 5× ⇒ ~6K/sec
+- **Single node:** insufficient headroom; **systems break** when load spikes or grows
 
-## Availability Limits
-- Single machine: 99.9% uptime ⇒ 8.76 h/year downtime
-- Example: e-commerce $10K/h loss ⇒ $87,600/year
-- Distributed 99.99% ⇒ $8,760; distribution improves availability
+## Availability Limits (Why Systems Break)
+- Single machine: 99.9% ⇒ 8.76 h/year downtime; e-commerce $10K/h ⇒ **$87,600/year lost**
+- Distributed 99.99% ⇒ $8,760 — **distribution improves availability** but adds network and partial-failure complexity
 
 ## What “Distributed” Really Means
 
@@ -182,6 +177,14 @@
 - CA: not realistic in distributed systems
 - Bank ⇒ CP; social feed ⇒ AP
 
+## Cost of Naïve Design (Distributed DB)
+
+## What Goes Wrong When You Ignore Constraints
+- **Naïve:** “use SQL for everything” — cross-partition joins and 2PC **kill** latency and throughput at scale; **cost:** timeouts, rewrites
+- **Naïve:** “one partition key for all access patterns” — e.g. partition by user_id but query by item_id ⇒ **full scan**, 10–100× slower
+- **Naïve:** ignore hot keys — celebrity user or null bucket **throttles one partition**; rest idle; **systems break** under skew
+- **Takeaway:** access patterns and failure modes drive partitioning and model choice; definitions don’t
+
 ## Running Example — Data & Goal
 
 ## Scenario: Recommendation / Activity Log Service
@@ -286,22 +289,22 @@
 - Mitigation: quorum writes, failover, idempotent producers
 - Run chaos or partition drills in non-prod
 
-## Best Practices
-- Design for failure: assume nodes and links fail
-- Partition to avoid cross-partition joins for hot paths
-- Choose replication factor from durability and read load
-- Prefer single-partition ops for latency-sensitive APIs
-- Use SQL/analytics store for complex ad-hoc queries
-- Monitor latency, throughput, and replica lag
-- Test failover and partition scenarios
-- Document trade-offs (CAP, cost, complexity) for your use case
+## Best Practices (1/2)
+- **Design for failure:** assume nodes and links fail; test failover and partition scenarios
+- **Partition for hot paths:** avoid cross-partition joins for latency-sensitive APIs; choose key from access pattern
+- **Replication factor:** durability and read load; **cost:** write amplification and storage
+- **Single-partition ops** for latency-sensitive APIs — **cross-partition is the enemy of p99**
 
-## Recap
-- Single-node hits storage, throughput, and availability limits
-- Distributed systems add network and partial failure
-- SQL shines for joins and transactions; NoSQL for key-scale and flexibility
-- Partitioning and replication enable scale; both have cost and failure modes
-- CAP forces explicit trade-offs; design for your requirements
+## Best Practices (2/2)
+- Use SQL/analytics store for **complex ad-hoc queries**; use NoSQL for **serving** key-based traffic
+- **Monitor:** latency p99, throughput, replica lag — **you can’t fix what you don’t measure**
+- **Document trade-offs:** CAP, cost, complexity for your use case — avoid “we chose X because it’s popular”
+
+## Recap (Engineering Judgment)
+- Single-node hits **storage, throughput, availability** limits; distributed adds **network and partial failure**
+- **SQL** for joins and transactions; **NoSQL** for key-scale and horizontal partitioning — **choice from constraints, not definitions**
+- Partitioning and replication enable scale; **both have cost and failure modes** (hot keys, split-brain, lag)
+- **CAP:** explicit trade-offs; design for your requirements — **no free lunch**
 
 ## Pointers to Practice
 - Compute partition sizes and counts from data volume and key distribution

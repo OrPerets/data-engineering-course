@@ -29,6 +29,17 @@
 - Slide 24 → week8_lecture_slide24_mapreduce_execution_flow.puml → MapReduce jobs for TF-IDF (Job1–Job3)
 - Slide 26 → week8_lecture_slide26_failure_stopword_skew.puml → Failure: stop-word hot key → one reducer OOM
 
+## The Real Problem This Lecture Solves
+- **At scale:** TF-IDF pipelines fail not from the formula, but from *data distribution*: Job 2 partitions by term; a term that appears in every document (e.g. "the") sends all doc_ids to one reducer → OOM or straggler.
+- **Storage vs compute:** Vocabulary V can be millions; storing dense V-dimensional vectors per doc is infeasible; sparse (doc_id, term, tfidf) is the only option for production.
+- **Engineering:** Multi-job pipeline (counts → df/N → TF-IDF); global stats (N, df) and per-doc TF; skew and sparsity drive cost and failure.
+
+## Cost of Naïve Design (TF-IDF)
+- **No stop list:** Term "the" in all N documents ⇒ Job 2 reducer for "the" receives N (term, doc_id) pairs ⇒ OOM or extreme straggler; indexing job latency = that reducer’s time; stop-word list or df cap is non-negotiable.
+- **Dense vectors when V is large:** Store V floats per doc for vocabulary size V=10^6 ⇒ 4 MB per doc; 10^6 docs ⇒ 4 TB just for vectors; sparse (doc_id, term, tfidf) ⇒ O(terms per doc) per doc; storage vs compute trade-off is decisive.
+- **No smoothing:** df=0 or df=N ⇒ log(0) or division edge cases; \(\log\frac{N+1}{df+1}\) and handle empty docs; numerical robustness is production requirement.
+- **Production cost:** Broken search index, SLA misses, reruns; fixing stop-word skew or storage blow-up post-launch is far more expensive than designing for skew and sparsity up front.
+
 ## Core Concepts (1/2)
 - **Term Frequency (TF):** how often a term appears in a document; raw count or normalized
 - **Document Frequency (df):** number of documents containing the term
@@ -208,11 +219,11 @@
 - **TF-IDF:** multi-job pipeline; Job 1 = word count per (doc, term); Job 2 = df per term; Job 3 = join + TF-IDF
 - **Mitigation:** stop list (filter in Map); combiner in Job 1 when summing counts
 
-## Recap
-- TF-IDF = TF(t,d) × IDF(t); TF = local count or normalized; IDF = log((N+1)/(df+1))
-- Pipeline: tokenize → term counts per doc → doc lengths + df, N → TF-IDF per (doc, term)
-- MapReduce: Job 1 (counts + lengths), Job 2 (df, N), Job 3 (join + TF-IDF); Job 2 skew is main risk
-- Stop-word skew → one reducer OOM; mitigate with stop list or df cap; smooth IDF and handle empty docs
+## Recap — Engineering Judgment
+- **Job 2 skew is the main risk:** Partition by term ⇒ stop-words in every doc send all doc_ids to one reducer; stop list or df cap is non-negotiable; monitor reducer input variance in Job 2.
+- **Sparse over dense when V is large:** Vocabulary drives dimension; dense V floats per doc does not scale; sparse (doc_id, term, tfidf) is the production choice; storage vs compute trade-off is explicit.
+- **Multi-job pipeline:** Counts and doc lengths (Job 1); df and N (Job 2); join + TF-IDF (Job 3); global stats must be computed once and joined; idempotent write by (doc_id, term).
+- **Non-negotiable:** Smooth IDF and handle empty docs; version tokenization; profile term df to catch stop-word-like terms before they become incidents.
 
 ## Pointers to Practice
 - Compute TF, IDF, and TF-IDF by hand for a small corpus (3–5 docs, 5–10 terms)

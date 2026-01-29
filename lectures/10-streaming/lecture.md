@@ -16,6 +16,20 @@
 - Estimate cost: throughput (events/sec), state size, latency; trade latency vs completeness
 - Identify failure modes: late data, duplicate delivery, watermark too tight; mitigate with watermarks and idempotency
 
+## The Real Problem This Lecture Solves
+- **Production failure:** A team built dashboards on processing-time windows; same event stream replayed gave different numbers each run; alerts fired on "spikes" that were just replay order
+- **Trigger:** Reprocessing after a bug fix; out-of-order events from mobile and cross-DC; stakeholders lost trust in "real-time" metrics
+- **Root cause:** Event-time was ignored; no watermark ⇒ non-deterministic windows; at-least-once without idempotent sink ⇒ double-count on replay
+- **Takeaway:** Streaming without event-time and idempotency doesn't scale to production. This lecture is about correct, deterministic streaming and the cost of getting it wrong.
+
+## The System We Are Building
+- **Domain:** Event analytics by user (clicks, spend) in tumbling windows; same lineage as Week 4 ingestion and Week 6 batch aggregation—now in real time
+- **Source:** Event stream (user_id, event_time, amount); e.g. Kafka topic partitioned by user_id; ~1M events/day
+- **Compute:** Tumbling 5-min windows by event_time; watermark to close windows; sum(amount) per user per window
+- **Sink:** Table or API keyed by (window_start, user_id); idempotent upsert so replay does not duplicate
+- **Consumers:** Dashboards, alerts, downstream batch; all expect same numbers on reprocess
+- Every later example refers to *this* system unless stated otherwise
+
 ## Sources Used (Reference Only)
 - sources/Lecture 6,7,8.pdf
 - sources/Lecture 6,7,8.pptx
@@ -64,6 +78,13 @@
 - **Latency:** time from event_time to result; watermark delay + processing delay
 - **State:** grows with distinct keys and allowed lateness; OOM if unbounded
 - **Late data:** watermark too aggressive ⇒ drop late events; too loose ⇒ long delay and large state
+
+## Cost of Naïve Design (Streaming)
+- **Processing-time windows:** same input, different output on replay or out-of-order ⇒ non-deterministic dashboards and broken backtests; production cost: lost trust, useless alerts
+- **No watermark:** windows never close ⇒ unbounded state; one long-running job → OOM; no way to emit "final" result
+- **At-least-once without idempotent sink:** consumer crash ⇒ replay ⇒ same (window, user) written twice ⇒ double-count in revenue or engagement; sink must upsert by (window_start, user_id)
+- **Watermark too tight:** drop valid late events (e.g. mobile batch) ⇒ undercount; too loose ⇒ huge state and delayed results
+- **Engineering rule:** event-time + watermark + idempotent sink by (key, window) are non-negotiable for production streaming
 
 ## Delivery Semantics (Detail)
 - **At-most-once:** emit and forget; no retry; may lose on crash
@@ -231,22 +252,23 @@
 - **Mitigation:** watermark = max_event_time - bounded_delay; allow lateness with side output or retractions; idempotent sink by (business key, window); exactly-once with transactional sink and checkpoint
 - **Trade-off:** bounded delay + drop late ⇒ predictable latency, possible undercount; allow lateness ⇒ correct but more state and complexity
 
-## Best Practices
+## Best Practices (1/2)
 - Use event-time and watermarks for windowing; avoid processing-time for analytics
 - Set watermark delay from domain (e.g. max network delay); monitor late events
 - Design idempotent sink: upsert by (key, window) or dedup by event_id before write
 - Bound state: close windows via watermark; limit allowed lateness or use side output
+
+## Best Practices (2/2)
 - Scale by partitions and parallel consumers; monitor consumer lag and sink latency
 - Checkpoint state and offsets for recovery; test failover and rerun
 - Prefer exactly-once sinks when sink supports it; otherwise at-least-once + idempotent write
 - Document watermark policy and late-data handling in pipeline config
 
-## Recap
-- Streaming = unbounded data; event-time and watermarks for correct, deterministic windows
-- Windows: tumbling, sliding, session; close when watermark ≥ window end
-- At-least-once + idempotent sink avoids double-count; exactly-once needs transactional sink
-- Late data: drop, side output, or allow lateness; trade latency vs completeness
-- Cost: throughput, state size, latency; watermark delay and allowed lateness drive trade-offs
+## Recap — Engineering Judgment
+- **Event-time is non-negotiable:** processing-time windows are non-deterministic; reprocessing and out-of-order break correctness; always window by event_time and use watermarks
+- **Watermark trade-off:** delay too small ⇒ drop late events (undercount); too large ⇒ big state and slow results; set from P99 event lateness and monitor late-event count
+- **Idempotent sink by (key, window):** at-least-once without upsert ⇒ double-count on replay; key = (window_start, user_id) or event_id; same key overwrites
+- **Cost levers:** throughput = min(partition rate); state ∝ keys × active windows; latency = watermark delay + sink; tune watermark and allowed lateness for your completeness vs latency SLA
 
 ## Pointers to Practice
 - Compute window aggregates from concrete event streams (schema + sample events)

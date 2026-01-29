@@ -26,6 +26,18 @@
 - Slide 19 → week14_lecture_slide19_failure_rerun.puml → Failure: partial run and non-idempotent rerun → duplicates
 - Slide 21 → week14_lecture_slide21_exam_request_flow.puml → Exam flow: question → topic → concepts → solution path
 
+## The Real Problem This Course Solved
+- **End-to-end pipeline under constraints:** ingestion, storage, compute, streaming, features, and operations must work together
+- **Failure at any stage breaks the system:** non-idempotent rerun ⇒ duplicates; no partition filter ⇒ full scan; no quality gate ⇒ bad data promoted
+- **Engineering judgment:** decisions under constraints; trade-offs (ETL vs ELT, batch vs streaming, consistency vs latency); cost and failure intuition
+- **Production mindset:** how systems behave at scale; incident-driven; quality gates and observability at each stage
+
+## What We Built End-to-End
+- **One system:** raw_events → extract (watermark) → staging (dedup, DLQ) → MERGE → events_clean → DWH/star → BI/ML
+- **Weeks 4–6–10–13:** same event pipeline; ingestion (idempotency, watermark), MapReduce (shuffle, skew), streaming (event-time, watermark), DataOps (tests, quality gate)
+- **Levers:** partition pruning, combiner, salting, event-time windows, point-in-time features, test coverage
+- **Non-negotiables:** idempotent write; watermark only after success; partition filter in queries; quality gate before promote
+
 ## Core Concepts (1/2)
 - **Data engineering:** collect, store, process data at scale; output for analytics/ML/BI
 - **Pipeline:** source → extract → (staging) → transform → load → target; idempotency required
@@ -90,6 +102,20 @@
 - **Join:** sales_fact → dim_customer (region); **filter:** date_key in December partition only
 - **Engineering:** Partition pruning limits scan; join size = fact rows in range × match rate
 
+## Cost of Naïve Design — Course Summary
+- **Ingestion:** plain INSERT ⇒ duplicate revenue, lost trust; no watermark ⇒ full scan on rerun
+- **DWH/Lake:** no partition key ⇒ full scan; broken dashboards; governance collapse
+- **MapReduce:** no combiner ⇒ huge shuffle; default partition on skewed key ⇒ OOM; no salting ⇒ job fails
+- **Streaming:** processing-time windows ⇒ non-deterministic; no watermark ⇒ OOM; no idempotent sink ⇒ double-count
+- **Features:** no as_of_ts ⇒ leakage; append on rerun ⇒ duplicates; train/serve skew
+- **DataOps:** no tests on new columns ⇒ silent regression; no quality gate ⇒ bad data promoted; alert fatigue ⇒ missed incidents
+
+## How All Pieces Connect
+- **Incident-driven:** one bad pipeline (wrong key, no test, no gate) can break dashboards, models, and trust
+- **Observability at each stage:** row counts, watermark lag, reducer variance, test results, DLQ size
+- **Quality gates:** block promote when tests fail; idempotent write so rerun is safe; partition-level resume
+- **System-wide thinking:** ingestion feeds DWH and streaming; feature pipelines feed models; DataOps validates before consumers see data
+
 ## Cost & Scaling Analysis (1/3)
 - **Time model:** T ∝ (data size / parallelism) + shuffle + reduce; shuffle often dominates
 - **MapReduce:** Shuffle size = sum of map output; reducer input = group size per key
@@ -150,13 +176,15 @@
 - DataOps: schema and row tests; freshness and volume checks; quality gate before promote
 - Trade-off table: ETL (transform before load) vs ELT (load raw then transform); choose by engine and governance
 
-## Recap (1/2)
-- End-to-end pipeline: extract (watermark) → staging → transform/dedup → MERGE → target; tests after load
-- MapReduce: same key → same reducer; shuffle cost and skew drive failure; combiners and salting help
+## Recap — Engineering Judgment (1/2)
+- **Pipeline:** extract (watermark) → staging → transform/dedup → MERGE → target; tests after load; quality gate before promote
+- **MapReduce:** same key → same reducer; shuffle and skew are first-class failure modes; combiner and salting are non-negotiable at scale
+- **DWH:** star schema, partition pruning, join size; partition filter required to avoid full scan; cost ∝ partitions read
 
-## Recap (2/2)
-- DWH: star schema, partition pruning, join size; avoid full scan
-- Failure modes: duplicate on rerun, skew OOM, late data, silent regression; mitigate with idempotency, watermark, tests
+## Recap — Engineering Judgment (2/2)
+- **Failure modes:** duplicate on rerun, skew OOM, late data, silent regression; each has a mitigation (idempotency, salting, watermark, tests)
+- **Trade-offs:** ETL vs ELT, batch vs streaming, consistency vs latency; choose by engine, governance, and latency budget
+- **System-wide:** one pipeline break can break consumers; observability and quality gates at each stage; incident → post-mortem → close gap
 
 ## Pointers to Practice
 - Solve SQL on concrete tables: joins, MERGE, dedup, incremental load and rerun scenario
