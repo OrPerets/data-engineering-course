@@ -40,6 +40,20 @@
 - **Target:** user_features (user_id, as_of_ts, clicks_7d, …)
 - **Consumers:** training (batch); serving (lookup)
 
+## Point-in-Time Correctness
+- Feature for entity \(e\) at time \(t\) uses only historical data
+\[
+f(e,t) = g(\{x \mid x.\text{entity}=e,\ x.\text{ts} \le t\})
+\]
+- Interpretation: no future leakage into features
+- Engineering implication: joins must use as_of_ts filters
+- Training and serving should match
+\[
+f_{\text{train}}(e,t) = f_{\text{serve}}(e,t)
+\]
+- Interpretation: same definition across offline and online
+- Engineering implication: shared feature definitions prevent skew
+
 ## Diagram Manifest
 - Slide 15 → week11_lecture_slide08_feature_pipeline_overview.puml
 - Slide 21 → week11_lecture_slide12_execution_flow.puml

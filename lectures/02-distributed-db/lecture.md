@@ -28,6 +28,20 @@
 - **Coordinator:** routes requests, may run consensus
 - Single point of failure if not designed for it
 
+## Formal Partition and Replication Model
+- Let total data size \(D\), nodes \(N\), replication factor \(r\)
+\[
+S_{\text{node}} = \frac{D \cdot r}{N}
+\]
+- Interpretation: balanced per-node storage target
+- Engineering implication: larger \(r\) increases storage and write cost
+- Node failure probability \(p\) (independent)
+\[
+P_{\text{avail}} \approx 1 - p^r
+\]
+- Interpretation: more replicas improve availability but not free
+- Engineering implication: choose \(r\) to meet SLA vs cost
+
 ## Data Context: E-Commerce Platform
 - Users: 50M rows ≈ 25 GB
 - Orders: 500M rows ≈ 150 GB

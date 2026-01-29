@@ -78,6 +78,28 @@
 - **What breaks at scale:** one key with huge value set
 - **Cost:** shuffle dominates when intermediate data is large
 
+## Combiner Cost Impact
+- Let \(E\) = total map emits, \(s\) = bytes per pair
+\[
+B_{\text{shuffle}}^{\text{no comb}} = E \cdot s
+\]
+- Interpretation: shuffle cost scales with total emits
+- Engineering implication: heavy hitters inflate network and disk
+- With combiner, \(U_m\) = unique keys per mapper \(m\)
+\[
+B_{\text{shuffle}}^{\text{comb}} = \left(\sum_m U_m\right) s
+\]
+- Interpretation: local aggregation reduces bytes if repeats are common
+- Engineering implication: safe only for associative + commutative ops
+
+## Salting Hot Keys
+- Hot key with \(n\) values, salt into \(S\) subkeys
+\[
+\text{Load}_{\text{per reducer}} \approx \frac{n}{S}
+\]
+- Interpretation: salting splits a hot key across reducers
+- Engineering implication: reduces skew at cost of extra combine step
+
 ## Shuffle Anatomy
 - **Partition:** each map output (k,v) sent to reducer `hash(k) mod R`
 - **Sort:** reducer receives key and sorted iterator of values

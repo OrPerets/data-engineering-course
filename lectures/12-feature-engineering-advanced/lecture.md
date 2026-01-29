@@ -44,6 +44,20 @@
 - Join; derived ctr_7d; MERGE or partition overwrite
 - **Orchestration:** incremental = watermark; backfill = explicit range
 
+## Backfill vs Incremental Cost
+- Let \(|D|\) be data per day, \(T\) days in a backfill
+\[
+\text{Work}_{\text{backfill}} = O(|D| \cdot T)
+\]
+- Interpretation: cost grows linearly with history length
+- Engineering implication: schedule backfills off-peak
+- Incremental load on new data \(|\Delta|\)
+\[
+\text{Work}_{\text{incr}} = O(|\Delta|)
+\]
+- Interpretation: steady-state cost depends on new data only
+- Engineering implication: incremental is the production default
+
 ## Diagram Manifest
 - Slide 9 → week12_lecture_slide09_advanced_pipeline_overview.puml
 - Slide 15 → week12_lecture_slide15_execution_flow.puml

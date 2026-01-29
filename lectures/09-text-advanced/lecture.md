@@ -30,6 +30,20 @@
 - Map emits (doc_id, ngram, 1) per instance
 - Shuffle size and reducer load explode
 
+## N-gram Size Model
+- Document length \(L\), n-gram length \(n\)
+\[
+\text{ngrams}(d) = L - n + 1
+\]
+- Interpretation: emissions scale linearly with document length
+- Engineering implication: map output size grows with total tokens
+- Vocabulary size upper bound for word n-grams
+\[
+|V_n| \le V^n
+\]
+- Interpretation: vocabulary grows exponentially with \(n\)
+- Engineering implication: larger \(n\) raises shuffle and storage cost
+
 ## Regex in Production
 - One malformed record with backtracking-prone pattern
 - Can hang a mapper; CPU spike, timeout
