@@ -73,6 +73,42 @@
 - **Guarantees:** deterministic if map/reduce pure
 - **What breaks:** shuffle I/O; skew ⇒ OOM
 
+## Formal Map and Shuffle
+- Map emits zero or more pairs per record
+\[
+\text{map}:(k,v) \rightarrow [(k', v')]
+\]
+- Interpretation: per-record pure transformation
+- Engineering implication: parallelizable without coordination
+- Shuffle groups values by key
+\[
+\text{shuffle}(k') = \{ v' \mid (k', v') \text{ emitted} \}
+\]
+- Interpretation: all values for a key sent to the same reducer
+- Engineering implication: shuffle size drives network cost
+
+## Formal Reduce and Correctness
+- Reducer aggregates with a binary operator \(\oplus\)
+\[
+\text{reduce}(k', [v']) = (k', \bigoplus v')
+\]
+- Interpretation: order of values does not matter
+- Engineering implication: correctness requires associativity + commutativity
+- Communication cost is proportional to shuffle size
+\[
+\text{Comm} = O(|\text{shuffle output}|)
+\]
+- Interpretation: shuffle dominates runtime at scale
+- Engineering implication: use combiner to shrink shuffle
+
+## Data Skew Metric
+- Let \(n_i\) be values sent to reducer \(i\), \(R\) reducers
+\[
+\text{skew} = \frac{\max_i n_i}{\frac{1}{R}\sum_i n_i}
+\]
+- Interpretation: ratio of hottest reducer to average load
+- Engineering implication: skew \(\gg 1\) causes stragglers and OOM
+
 ## Formal Model: Input and Output Types
 - **Input:** (key_in, value_in) or split of raw records
 - **Map:** (k_in, v_in) → list of (k_out, v_out)

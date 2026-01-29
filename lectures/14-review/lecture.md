@@ -14,6 +14,20 @@
 - Identify failure modes: duplicate on rerun, skew OOM, late data
 - State trade-offs: ETL vs ELT, batch vs streaming
 
+## Review: Pipeline Cost Model
+- Batch pipeline stages on the critical path
+\[
+T_{\text{total}} = T_{\text{extract}} + T_{\text{transform}} + T_{\text{load}}
+\]
+- Interpretation: end-to-end latency is the sum of stage runtimes
+- Engineering implication: optimize the slowest stage first
+- MapReduce communication cost
+\[
+\text{Comm} = O(|\text{shuffle output}|)
+\]
+- Interpretation: network dominates when shuffle is large
+- Engineering implication: use combiners and balanced keys
+
 ## Diagram Manifest
 - Slide 11 → week14_lecture_slide11_course_pipeline_overview.puml
 - Slide 19 → week14_lecture_slide19_failure_rerun.puml
