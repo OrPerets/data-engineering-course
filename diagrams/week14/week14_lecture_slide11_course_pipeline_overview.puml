@@ -1,0 +1,63 @@
+@startuml
+'=================================================
+' CANONICAL DIAGRAM TEMPLATE — DATA ENGINEERING
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 30
+skinparam ranksep 40
+
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle { BackgroundColor #F8F9FA; BorderColor #90A4AE; BorderThickness 2; FontColor #263238; FontSize 14; FontStyle bold; Padding 20 }
+skinparam component { BackgroundColor #FFFFFF; BorderColor #78909C; BorderThickness 1.5; FontSize 14; Padding 12 }
+skinparam database { BackgroundColor #ECEFF1; BorderColor #546E7A; BorderThickness 1.5; FontSize 14; FontColor #263238 }
+skinparam arrow { Color #607D8B; Thickness 1.5; FontSize 11; FontColor #546E7A }
+skinparam component<<Agent>> { BorderColor #0288D1; BackgroundColor #E1F5FE; FontColor #01579B }
+skinparam component<<Tool>> { BorderColor #2E7D32; BackgroundColor #E8F5E9; FontColor #1B5E20 }
+
+'========================
+' FULL COURSE PIPELINE OVERVIEW
+'========================
+
+rectangle "SOURCES" #F8F9FA {
+    database "**DB / API**\n<size:10>Operational systems</size>" as SRC1
+    database "**Files / Logs**\n<size:10>CSV, Parquet, events</size>" as SRC2
+}
+
+rectangle "INGESTION (W4)" #F8F9FA {
+    component "**Extract**\n<size:10>Watermark, upper_bound</size>" as EXTRACT <<Tool>>
+    component "**Staging + Dedup**\n<size:10>Schema-on-read, DLQ</size>" as STAGING <<Tool>>
+    component "**Load**\n<size:10>MERGE / idempotent</size>" as LOAD <<Agent>>
+}
+
+rectangle "DWH / LAKE (W5)" #F8F9FA {
+    database "**Target**\n<size:10>Star schema, partitioned</size>" as TARGET
+}
+
+rectangle "PROCESSING (W6–10)" #F8F9FA {
+    component "**MapReduce / Streaming**\n<size:10>Batch or real-time</size>" as PROC <<Tool>>
+}
+
+rectangle "CONSUMERS" #F8F9FA {
+    component "**BI / Analytics / ML**\n<size:10>Reports, features</size>" as CONS <<Agent>>
+}
+
+SRC1 --> EXTRACT
+SRC2 --> EXTRACT
+EXTRACT --> STAGING
+STAGING --> LOAD
+LOAD --> TARGET
+TARGET --> PROC
+PROC --> CONS
+
+note bottom of LOAD : **Idempotent:** Rerun safe. Watermark + MERGE.
+note bottom of TARGET : **Partition pruning.** Avoid full scan.
+
+@enduml
