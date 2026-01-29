@@ -16,7 +16,7 @@ python3 create_prompt.py --week 14 --folder 14-review                   --topic 
 
 
 
-pandoc lectures/01-intro/lecture.md  -o build/01-introduction.pptx     --reference-doc=reference.pptx
+pandoc lectures/01-intro/lecture.md  -o build/01-introduction.pptx     --reference-doc=reference.pptx --resource-path=diagrams/week01 
 pandoc lectures/01-intro/practice.md  -o build/01-practice.pptx     --reference-doc=reference.pptx
 
 pandoc lectures/02-distributed-db/lecture.md  -o build/02-Distributed-DBs.pptx     --reference-doc=reference.pptx

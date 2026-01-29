@@ -132,7 +132,7 @@ skinparam component<<failure>> {
 '=================================================
 
 rectangle "INPUT" #F8F9FA {
-    database "**HDFS / Files**\n<size:10>Splits by block</size>" as INPUT
+    database "**HDFS / Files**\n<size:10>Splits by block</size>" as INP
 }
 
 rectangle "MAP LAYER" #F8F9FA {
@@ -143,7 +143,7 @@ rectangle "MAP LAYER" #F8F9FA {
 
 rectangle "SHUFFLE" #F8F9FA {
     component "**Partition**\n<size:10>hash(k) -> reducer</size>" as PART <<Agent>>
-    component "**Sort / Transfer**\n<size:10>Network I/O</size>" as SHUFFLE <<Tool>>
+    component "**Sort / Transfer**\n<size:10>Network I/O</size>" as SORT_XFER <<Tool>>
 }
 
 rectangle "REDUCE LAYER" #F8F9FA {
@@ -155,15 +155,15 @@ rectangle "OUTPUT" #F8F9FA {
     database "**HDFS / Sink**\n<size:10>Final (k,v')</size>" as OUT
 }
 
-INPUT --> MAP1
-INPUT --> MAP2
-INPUT --> MAP3
+INP --> MAP1
+INP --> MAP2
+INP --> MAP3
 MAP1 --> PART
 MAP2 --> PART
 MAP3 --> PART
-PART --> SHUFFLE
-SHUFFLE --> R1
-SHUFFLE --> R2
+PART --> SORT_XFER
+SORT_XFER --> R1
+SORT_XFER --> R2
 R1 --> OUT
 R2 --> OUT
 

@@ -6,61 +6,78 @@
 - Scale, reliability, and cost as first-class concerns
 
 ## Learning Objectives
-- **Frame** data engineering as constraints (scale, reliability, cost), not definitions
+- **Frame** data engineering as constraints (scale, reliability, cost)
 - Calculate data volume growth and storage requirements
-- Design basic data pipeline architectures and **justify** choices
-- Estimate pipeline costs (time, storage, network) and **spot** cost explosions
-- Identify failure modes and **why systems break** in production
+- Design basic data pipeline architectures
+- Estimate pipeline costs (time, storage, network)
+- Identify failure modes and why systems break
 - Reason about trade-offs: batch vs streaming, SQL vs NoSQL
-- Map business questions to data engineering solutions
-
-## Sources Used (Reference Only)
-- sources/Lecture 1.pptx
-- sources/Introduction & Recap.pdf
-- sources/new/Introduction to BI.pdf
-- sources/new/KDD.pdf
 
 ## What is Data Engineering?
 
 ## Constraints, Not Definitions
-- **Constraint:** data lives in many systems; consumers need one place to read from
-- **Constraint:** volume and velocity grow; single machines and scripts break
-- **Constraint:** failures happen; pipelines must be rerunnable and observable
+- **Constraint:** data lives in many systems; consumers need one place
+- **Constraint:** volume and velocity grow; single machines break
+- **Constraint:** failures happen; pipelines must be rerunnable
 - **Output:** clean, queryable data at the right latency and cost
-- **Not:** building ML models or dashboards — we build the plumbing they depend on
+- **Not:** building ML models or dashboards — we build plumbing
 
 ## Core Problem Statement
 - Data exists in many sources (databases, APIs, files)
 - Consumers need unified, reliable access
-- **Scale:** millions of records, terabytes daily — naïve “one script” design fails
-- **Time:** batch (hours) vs real-time (seconds) — choice drives architecture and cost
-- **Quality:** missing, duplicate, inconsistent data — pipelines must detect and handle, not assume
+- **Scale:** millions of records, terabytes daily
+- **Time:** batch (hours) vs real-time (seconds)
+- **Quality:** missing, duplicate, inconsistent data
 
 ## Business Intelligence Context
 
-## What is Business Intelligence?
-- **Definition:** BI is a set of ideas, methodologies, processes, architectures, and technologies that change raw data into significant and useful data for business purpose
-- **Benefits:** Handle large amounts of data; identify and evolve new opportunities; provide comparable market benefit and long-term stability
-- **Key insight:** Use the technology as a tool — BI enables decision-making, not replaces it
+## What is Business Intelligence? (1/2)
+- **Definition:** methodologies and technologies transforming raw data
+- Converts raw data into significant business information
+- Enables decision-making, not replaces it
+- Use technology as a tool for business purpose
 
-## Data to Wisdom Pyramid
-- **Data:** Raw facts that describe characteristics of an event or object (e.g., 51, 77, 58, 82, 64, 70)
-- **Information:** Data converted into meaningful insights with context (e.g., "Test scores achieved by students; average is 67")
-- **Knowledge:** Skills and experience coupled with information that creates intellectual resources
-- **Wisdom:** Applied knowledge — knowing what to do with the information (e.g., "I better stop the car!" when seeing a red light)
-- **Engineering perspective:** Data engineering builds the pipeline from raw data to information; analytics and BI convert information to knowledge
+## What is Business Intelligence? (2/2)
+- **Benefits:** handle large amounts of data efficiently
+- Identify and evolve new opportunities
+- Provide comparable market benefit and long-term stability
+- Enable data-driven decision making
 
-## Data Mining in Data Engineering
-- **Definition:** Computational process of discovering patterns in large data sets using AI, ML, statistics, and database systems
-- **Tasks in business:** Classification (categorize data), Estimation (response rates, probabilities), Prediction (customer behavior), Affinity Grouping (items purchased together), Description (finding patterns)
-- **Techniques:** Market basket analysis, Cluster analysis, PCA, Decision trees, Regression
-- **Role in DE:** Data engineering provides clean, accessible data that data mining consumes
+## Data to Wisdom Pyramid (1/2)
+- **Data:** raw facts describing event characteristics
+- Example: 51, 77, 58, 82, 64, 70
+- **Information:** data converted into meaningful insights
+- Example: "Test scores; average is 67"
 
-## Knowledge Discovery in Databases (KDD)
-- **Definition:** Automatic extraction of non-obvious, hidden knowledge from large volumes of data
-- **KDD Process:** Data Cleaning → Data Integration → Selection (task-relevant data) → Data Mining → Pattern Evaluation
-- **Main fields intersection:** Databases (store, access), Statistics (infer info), Machine Learning (algorithms that improve through experience)
-- **Data warehouse role:** Integrated data; OLAP (On-Line Analytical Processing) enables KDD at scale
+## Data to Wisdom Pyramid (2/2)
+- **Knowledge:** skills and experience coupled with information
+- Creates intellectual resources from information
+- **Wisdom:** applied knowledge — knowing what to do
+- Example: "I better stop the car!" at red light
+- **DE builds:** pipeline from raw data to information
+
+## Data Mining in Data Engineering (1/2)
+- **Definition:** computational process discovering patterns in data
+- Uses AI, ML, statistics, and database systems
+- Operates on large data sets
+
+## Data Mining in Data Engineering (2/2)
+- **Tasks:** classification, estimation, prediction
+- **Tasks:** affinity grouping, description (finding patterns)
+- **Techniques:** market basket, clustering, PCA, decision trees
+- **Role in DE:** provides clean data that mining consumes
+
+## Knowledge Discovery in Databases (1/2)
+- **Definition:** automatic extraction of hidden knowledge
+- Extracts non-obvious patterns from large data volumes
+- **Process:** Cleaning → Integration → Selection → Mining → Evaluation
+
+## Knowledge Discovery in Databases (2/2)
+- **Intersecting fields:** databases, statistics, machine learning
+- Databases store and provide access
+- Statistics infer information from samples
+- ML provides algorithms that improve through experience
+- **DWH role:** integrated data; OLAP enables KDD at scale
 
 ## Data Engineering vs Data Science
 
@@ -90,7 +107,7 @@
 - Ad-hoc exploration
 - Output: charts, tables, insights
 
-## Data Engineering Focus
+## Data Engineering Focus (Analytics Context)
 - Make analytics possible
 - Provide reliable data infrastructure
 - Automate data preparation
@@ -104,25 +121,31 @@
 
 ## Why Data Engineering Exists
 
-## The Scale Problem (Why Naïve Design Breaks)
-- 2010: 1 TB/day typical company → 2020: 1 PB/day at scale
-- Growth: ~10× every 5 years — **linear scripts and single-node DBs hit a wall**
-- **Cost of naïveté:** “run a nightly job” becomes 20-hour runs, then failures; re-architect under fire
+## The Scale Problem
+- 2010: 1 TB/day typical company
+- 2020: 1 PB/day at scale
+- Growth: ~10× every 5 years
+- Linear scripts and single-node DBs hit a wall
+- **Cost of naïveté:** 20-hour runs, then failures
 
 ## The Variety Problem
-- Sources: databases, APIs, logs, files; formats: JSON, CSV, Parquet, Avro
+- Sources: databases, APIs, logs, files
+- Formats: JSON, CSV, Parquet, Avro
 - Schemas: structured, semi-structured, unstructured
-- **Constraint:** integration is complex and error-prone; schema drift and bad data will happen
+- **Constraint:** integration is complex and error-prone
 
 ## The Velocity Problem
-- Batch: process once per day vs streaming: process in real-time
-- Latency: seconds to hours; throughput: 100K–1M events/sec at scale
-- **Trade-off:** lower latency ⇒ more complexity and cost; choose from requirements, not fashion
+- Batch: process once per day
+- Streaming: process in real-time
+- Latency: seconds to hours; throughput: 100K–1M events/sec
+- **Trade-off:** lower latency ⇒ more complexity and cost
 
-## The Reliability Problem (Why Systems Break)
-- Data: missing, wrong, late; systems: nodes crash, network partitions
-- **Production reality:** pipelines fail; the question is detection, recovery, and blast radius
-- Business impact: wrong decisions, lost revenue — **design for failure from day one**
+## The Reliability Problem
+- Data: missing, wrong, late
+- Systems: nodes crash, network partitions
+- **Production reality:** pipelines fail
+- Business impact: wrong decisions, lost revenue
+- **Design for failure from day one**
 
 ## Data Engineering Lifecycle
 
@@ -138,6 +161,37 @@
 - Replicate for availability
 - Optimize for access patterns
 
+## Data Context: Social Media Platform
+- Posts: 500M rows; 2.1 KB/row
+- Interactions: 10B rows; 33 bytes/row
+- Users: 100M rows; 1.2 KB/row
+- Raw: JSON; Processed: Parquet (5× compression)
+- Retention: 90 days raw; 365 days processed
+- Replication: 3×
+
+## In-Lecture Exercise 1: Storage Sizing Warm-up
+- Compute raw storage for posts, interactions, users
+- Compute Parquet size with 5× compression
+- Compute 90-day raw retention storage
+- Compute total with 3× replication
+
+## In-Lecture Exercise 1: Solution (1/2)
+- Posts raw: 500M × 2.1 KB ≈ 1,050 GB
+- Interactions raw: 10B × 33 B ≈ 330 GB
+- Users raw: 100M × 1.2 KB ≈ 120 GB
+- Total raw ≈ 1,500 GB (1.5 TB)
+
+## In-Lecture Exercise 1: Solution (2/2)
+- Parquet 5×: 1,500 GB / 5 ≈ 300 GB
+- 90-day raw: 27.6 GB/day × 90 ≈ 2.5 TB
+- Replication 3×: raw 7.5 TB; processed 0.9 TB
+- Total with replicas ≈ 8.4 TB
+
+## In-Lecture Exercise 1: Takeaway
+- Storage sizing must include compression, retention, replication
+- Raw and processed layers have very different footprints
+- Early sizing prevents cost surprises later
+
 ## Processing
 - Transform raw to processed
 - Clean, deduplicate, enrich
@@ -151,48 +205,86 @@
 - Feed ML models
 
 ## Lifecycle Diagram
-- Diagram: week1_lecture_slide12_lifecycle.puml
+![](../../diagrams/week01/week1_lecture_slide12_lifecycle.png)
+
 
 ## Core Concepts (1/3)
 
 ## Data Pipeline
 - Sequence of processing steps: Input → Transform → Output
-- Each step: independent, testable — **failure in one step must not leave partial state**
-- **Constraint:** design so reruns produce the same result (idempotency)
+- Each step: independent, testable
+- **Failure in one step must not leave partial state**
+- **Constraint:** design so reruns produce same result (idempotency)
 
 ## ETL vs ELT (1/2)
-- **ETL:** Extract → Transform → Load; transform before load; smaller storage, faster queries
-- **ELT:** Extract → Load → Transform; load raw first; preserve raw data, flexible analytics later
-- **Cost:** ETL = compute up front + less storage; ELT = more storage + compute on demand
+- **ETL:** Extract → Transform → Load
+- Transform before load; smaller storage, faster queries
+- **ELT:** Extract → Load → Transform
+- Load raw first; preserve raw data, flexible analytics later
 
-## ETL vs ELT (2/2) — Engineering Trade-off
-- ETL: good when schema and consumers are stable; **risk:** lose raw data, hard to reprocess
-- ELT: good when requirements change; **risk:** higher storage cost, need discipline on transforms
-- **Opinion:** keep raw immutable; prefer ELT-style raw layer, then derived layers
+## ETL vs ELT (2/2)
+- **ETL cost:** compute up front + less storage
+- **ELT cost:** more storage + compute on demand
+- ETL: good when schema and consumers are stable
+- ELT: good when requirements change
+- **Opinion:** keep raw immutable; prefer ELT-style raw layer
 
 ## Core Concepts (2/3)
 
-## Batch vs Streaming — Scalability Tension
-- **Batch:** chunks; hourly/daily; latency minutes–hours; simpler, cheaper; **breaks when** latency requirement drops to seconds
-- **Streaming:** continuous; real-time; latency ms–sec; complex, expensive; **breaks when** throughput or consistency requirements spike
-- **Hybrid:** batch for history, stream for recent — common in production; choose from **latency and cost**, not hype
+## Batch vs Streaming
+- **Batch:** chunks; hourly/daily; latency minutes–hours
+- Simpler, cheaper; **breaks when** latency drops to seconds
+- **Streaming:** continuous; real-time; latency ms–sec
+- Complex, expensive; **breaks when** throughput spikes
+- **Hybrid:** batch for history, stream for recent
+
+## In-Lecture Exercise 2: Batch vs Streaming Trade-off
+- Trending posts needed within 5 minutes
+- Batch: run every 5 minutes; $0.10 per run
+- Streaming: always on; $2.00 per hour
+- Compute daily cost for batch vs streaming
+- Decide approach if latency < 1 minute
+
+## In-Lecture Exercise 2: Solution (1/2)
+- Batch daily cost: 288 runs × $0.10 = $28.80
+- Streaming daily cost: 24 hours × $2.00 = $48.00
+- Streaming costs $19.20 more per day
+
+## In-Lecture Exercise 2: Solution (2/2)
+- Latency < 1 minute: batch fails; streaming required
+- If cost dominates: batch is cheaper
+- Hybrid: stream recent, batch history for lower cost
+
+## In-Lecture Exercise 2: Takeaway
+- Latency targets can force streaming despite higher cost
+- Cost math makes trade-offs explicit and defensible
+- Hybrid designs often balance speed and budget
 
 ## Schema-on-Write vs Schema-on-Read
-- Schema-on-write: validate at ingestion (warehouse); **fails fast**, rigid
-- Schema-on-read: validate at query time (lake); **flexible**, risk of garbage-in
-- **Trade-off:** strict schema ⇒ fewer surprises and better performance; loose schema ⇒ agility and schema evolution
+- Schema-on-write: validate at ingestion (warehouse)
+- **Fails fast**, rigid
+- Schema-on-read: validate at query time (lake)
+- **Flexible**, risk of garbage-in
+- **Trade-off:** strict schema vs agility
 
-## Core Concepts (3/3) — One Idea
-- **One clear choice per pipeline:** ETL or ELT; batch or stream; schema-on-write or -read
-- Mixing without boundaries leads to **cost overruns and unmaintainable pipelines**
+## Core Concepts (3/3)
+- **One clear choice per pipeline:** ETL or ELT
+- Choose batch or stream; schema-on-write or -read
+- Mixing without boundaries leads to cost overruns
+- Results in unmaintainable pipelines
 
-## Cost of Naïve Design (Why We Need Engineering)
+## Cost of Naïve Design
 
-## What Goes Wrong Without Discipline
-- **Naïve:** “one script, one DB, run nightly” — works until volume doubles; then 20-hour runs, timeouts, no observability
-- **Naïve:** no raw layer — schema change or bug ⇒ cannot reprocess; **cost:** full re-ingestion or lost history
-- **Naïve:** no idempotency — rerun doubles counts; **cost:** wrong reports, loss of trust
-- **Takeaway:** constraints (scale, failure, cost) force pipeline design; definitions don’t
+## What Goes Wrong Without Discipline (1/2)
+- **Naïve:** "one script, one DB, run nightly"
+- Works until volume doubles; then 20-hour runs
+- Timeouts, no observability
+
+## What Goes Wrong Without Discipline (2/2)
+- **Naïve:** no raw layer — cannot reprocess on schema change
+- **Cost:** full re-ingestion or lost history
+- **Naïve:** no idempotency — rerun doubles counts
+- **Takeaway:** constraints force pipeline design
 
 ## Running Example — Data & Goal
 
@@ -224,7 +316,7 @@
 - Output: 10M events, 5 GB
 
 ## Ingestion Diagram
-- Diagram: week1_lecture_slide20_ingestion.puml
+![](../../diagrams/week01/week1_lecture_slide20_ingestion.png)
 
 ## Running Example — Step-by-Step (2/4)
 
@@ -366,8 +458,29 @@ Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 - Step 4 (load): never runs
 - Result: partial data, inconsistent state
 
+## In-Lecture Exercise 3: Failure Impact & Checkpointing
+- Pipeline processes 10,000 posts and 100,000 interactions
+- Failure at 30 minutes; 50% processed, 50% lost
+- Manual investigation + rerun takes 2 hours
+- Add checkpoints every 10 minutes; recompute loss and recovery
+
+## In-Lecture Exercise 3: Solution (1/2)
+- Data loss: 5,000 posts and 50,000 interactions
+- Recovery time: 30 min + 120 min + 60 min = 210 min
+- Hourly cadence delays about 3–4 runs
+
+## In-Lecture Exercise 3: Solution (2/2)
+- Checkpoint at 20 min: 10 minutes of data lost
+- Loss with checkpoints: 1,667 posts; 16,667 interactions
+- Recovery time: resume 40 minutes, no investigation
+
+## In-Lecture Exercise 3: Takeaway
+- Checkpointing cuts loss and recovery time dramatically
+- Failure math drives reliability investment decisions
+- Design for recovery, not just success
+
 ## Failure Propagation Diagram
-- Diagram: week1_lecture_slide35_failure.puml
+![](../../diagrams/week01/week1_lecture_slide35_failure.png)
 
 ## Recovery Strategies
 - Retry: automatic, 3 attempts
@@ -398,55 +511,73 @@ Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 ## Best Practices (1/2)
 
 ## Start with Business Questions
-- What decisions need data? Who consumes it? What latency is acceptable?
-- **Don't build pipelines without purpose** — avoid “data lake as dumping ground”
+- What decisions need data? Who consumes it?
+- What latency is acceptable?
+- **Don't build pipelines without purpose**
 
 ## Store Raw Data & Idempotency
-- **Raw data:** never delete; immutable; enables reprocessing and debugging; cost kept low with compression
-- **Idempotent operations:** rerun ⇒ same output; deterministic transforms; avoid time-dependent logic; test: run twice, compare
+- **Raw data:** never delete; immutable; enables reprocessing
+- Keep cost low with compression
+- **Idempotent operations:** rerun ⇒ same output
+- Deterministic transforms; avoid time-dependent logic
 
 ## Monitor & Version
-- **Monitor:** pipeline success/failure, data quality, latency, cost per run — **you can't fix what you don't measure**
-- **Version:** code (Git), schema (versioned), data (timestamped); enables rollback and debugging
+- **Monitor:** success/failure, data quality, latency, cost
+- **You can't fix what you don't measure**
+- **Version:** code (Git), schema (versioned), data (timestamped)
 
 ## Best Practices (2/2)
 
-## CRISP-DM Methodology
-- **Cross-Industry Standard Process for Data Mining:** Most widely-used analytics model
-- **Six major phases:** Business Understanding → Data Understanding → Data Preparation → Modeling → Evaluation → Deployment
-- **Engineering relevance:** Data preparation (ETL) is often 60-80% of the work; data engineering enables all phases
-- **Iterative nature:** Phases cycle back; data pipelines must support reprocessing and iteration
+## CRISP-DM Methodology (1/2)
+- **Cross-Industry Standard Process for Data Mining**
+- Most widely-used analytics model
+- **Six phases:** Business → Data Understanding → Preparation
+- Continues: Modeling → Evaluation → Deployment
+
+## CRISP-DM Methodology (2/2)
+- Data preparation is often 60-80% of work
+- Data engineering enables all phases
+- **Iterative nature:** phases cycle back
+- Pipelines must support reprocessing and iteration
 
 ## Proof of Concept (POC)
-- **Definition:** Realization of a method or idea to demonstrate feasibility; small and may not be complete
-- **Purpose:** Test feasibility of business concepts; accelerate business innovation goals
-- **Tips for successful POC:**
-  - Use your own data — POC that doesn't use your data doesn't prove anything
-  - Limit scope of data sources; trim data down or use samples
-  - Don't get distracted by pretty visuals — vendors can fake graphics
-  - Address future and present requirements — BI requirements are dynamic
-  - Consult IT professionals even if not directly involved
-  - Demand one solid report running over your data before financial commitment
+- **Definition:** realization demonstrating feasibility
+- Small and may not be complete
+- Test feasibility of business concepts
+- Accelerate business innovation goals
+
+## POC Tips
+- Use your own data — external data proves nothing
+- Limit scope of data sources; use samples
+- Don't get distracted by pretty visuals
+- Address future and present requirements
+- Demand one solid report before financial commitment
 
 ## Test & Design for Failure
-- **Test:** unit (functions), integration (full pipeline), data (outputs), failure (simulate errors)
-- **Design for failure:** assume components fail; retry, checkpoints, recovery procedures — **production breaks; design for it**
+- **Test:** unit (functions), integration (pipeline), data (outputs)
+- Simulate failure scenarios
+- **Design for failure:** assume components fail
+- Retry, checkpoints, recovery procedures
 
 ## Document Assumptions & Optimize Last
-- **Document:** sources, formats, business rules, expected volumes/latencies, failure modes
-- **Optimize last:** first make it work, then reliable, then fast — **premature optimization wastes time and hides bugs**
+- **Document:** sources, formats, business rules
+- Include expected volumes/latencies, failure modes
+- **Optimize last:** first make it work, then reliable, then fast
+- **Premature optimization wastes time and hides bugs**
 
 ## Recap
 
 ## Data Engineering: Constraints, Not Definitions
-- **Constraints:** scale, reliability, cost; output: clean, accessible data at the right latency
-- **Judgment:** ETL vs ELT, batch vs stream, schema-on-write vs -read — each choice has cost and failure modes
+- **Constraints:** scale, reliability, cost
+- **Output:** clean, accessible data at the right latency
+- **Judgment:** ETL vs ELT, batch vs stream
+- Each choice has cost and failure modes
 
 ## Engineering Mindset (Non-Negotiable)
 - **Calculate** costs and trade-offs before scaling
 - **Design for failure** — pipelines and nodes will break
 - **Monitor and measure** — no blind spots
-- **Start simple, optimize later** — avoid premature complexity
+- **Start simple, optimize later**
 
 ## What's Next
 - Distributed databases (Week 2)
@@ -460,3 +591,7 @@ Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 - Identify failure modes and mitigations
 - Choose batch vs streaming based on latency
 - Estimate storage and network costs
+
+## Additional Diagrams
+### Practice: Architecture
+![](../../diagrams/week01/week1_practice_slide15_architecture.png)

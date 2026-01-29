@@ -2,57 +2,103 @@
 
 ## Purpose
 - Synthesize data engineering concepts across the full course
-- Connect theory, cost models, and failure modes for exam readiness
-- Engineering: decisions under constraints, trade-offs, and correctness
+- Connect theory, cost models, and failure modes
+- Engineering: decisions under constraints, trade-offs, correctness
 
 ## Learning Objectives
-- Map exam-style questions to course topics (ingestion, DWH, MapReduce, streaming, DataOps)
-- Apply cost models: time, memory, network, shuffle; partition pruning and join size
-- Design idempotent pipelines: watermark, MERGE, dedup; safe rerun and resume
-- Trace MapReduce: map emits, shuffle groups, reduce output; identify skew and mitigation
-- Reason about DWH: star schema, partition pruning, join cost and cardinality
-- Identify failure modes: duplicate on rerun, skew OOM, late data, silent regression
-- State trade-offs: ETL vs ELT, batch vs streaming, SQL vs NoSQL, consistency vs latency
-
-## Sources Used (Reference Only)
-- sources/Introduction & Recap.pdf
-- sources/Lecture 1.pptx, Lecture 2.pdf, Lecture 2.pptx, Lecture 3.pptx, Lecture 4.pptx, Lecture 5.pptx
-- sources/Lecture 6,7,8.pdf, Lecture 6,7,8.pptx
-- sources/TF-IDF.pdf, Spark.pdf, Regular Expressions.pptx
-- exercises1.md, exercises2.md
+- Map exam-style questions to course topics
+- Apply cost models: time, memory, network, shuffle
+- Design idempotent pipelines: watermark, MERGE, dedup
+- Trace MapReduce: map, shuffle, reduce; identify skew
+- Reason about DWH: star schema, partition pruning, join cost
+- Identify failure modes: duplicate on rerun, skew OOM, late data
+- State trade-offs: ETL vs ELT, batch vs streaming
 
 ## Diagram Manifest
-- Slide 11 → week14_lecture_slide11_course_pipeline_overview.puml → Full course pipeline: sources → ingestion → DWH/Lake → consumers
-- Slide 19 → week14_lecture_slide19_failure_rerun.puml → Failure: partial run and non-idempotent rerun → duplicates
-- Slide 21 → week14_lecture_slide21_exam_request_flow.puml → Exam flow: question → topic → concepts → solution path
+- Slide 11 → week14_lecture_slide11_course_pipeline_overview.puml
+- Slide 19 → week14_lecture_slide19_failure_rerun.puml
+- Slide 21 → week14_lecture_slide21_exam_request_flow.puml
 
 ## The Real Problem This Course Solved
-- **End-to-end pipeline under constraints:** ingestion, storage, compute, streaming, features, and operations must work together
-- **Failure at any stage breaks the system:** non-idempotent rerun ⇒ duplicates; no partition filter ⇒ full scan; no quality gate ⇒ bad data promoted
-- **Engineering judgment:** decisions under constraints; trade-offs (ETL vs ELT, batch vs streaming, consistency vs latency); cost and failure intuition
-- **Production mindset:** how systems behave at scale; incident-driven; quality gates and observability at each stage
+
+## End-to-End Pipeline
+- Ingestion, storage, compute, streaming, features, operations
+- Must work together
+- Failure at any stage breaks the system
+
+## Engineering Judgment
+- Decisions under constraints
+- Trade-offs: ETL vs ELT, batch vs streaming, consistency vs latency
+- Cost and failure intuition
+
+## Production Mindset
+- How systems behave at scale
+- Incident-driven; quality gates and observability
 
 ## What We Built End-to-End
-- **One system:** raw_events → extract (watermark) → staging (dedup, DLQ) → MERGE → events_clean → DWH/star → BI/ML
-- **Weeks 4–6–10–13:** same event pipeline; ingestion (idempotency, watermark), MapReduce (shuffle, skew), streaming (event-time, watermark), DataOps (tests, quality gate)
-- **Levers:** partition pruning, combiner, salting, event-time windows, point-in-time features, test coverage
-- **Non-negotiables:** idempotent write; watermark only after success; partition filter in queries; quality gate before promote
+- **One system:** raw_events → extract → staging → MERGE → events_clean → star → BI
+- **Weeks 4-6-10-13:** same event pipeline
+- Ingestion, MapReduce, streaming, DataOps
+- **Levers:** partition pruning, combiner, salting, event-time windows
+- **Non-negotiables:** idempotent write; watermark only after success
 
 ## Core Concepts (1/2)
-- **Data engineering:** collect, store, process data at scale; output for analytics/ML/BI
-- **Pipeline:** source → extract → (staging) → transform → load → target; idempotency required
-- **Distributed:** partitioning, replication; CAP: consistency vs availability under partition
+- **Data engineering:** collect, store, process data at scale
+- Output for analytics/ML/BI
+- **Pipeline:** source → extract → staging → transform → load → target
+- Idempotency required
+- **Distributed:** partitioning, replication; CAP trade-offs
 
 ## Core Concepts (2/2)
-- **MapReduce:** map (emit (k,v)) → shuffle (group by k) → reduce (aggregate); shuffle cost and skew
-- **DWH/Lake:** star schema, partition pruning, schema-on-read vs schema-on-write
+- **MapReduce:** map (emit (k,v)) → shuffle (group by k) → reduce
+- Shuffle cost and skew
+- **DWH/Lake:** star schema, partition pruning
+- Schema-on-read vs schema-on-write
 - **Streaming:** event-time, watermark, windows; at-least-once + idempotent sink
 
+## Data Context: Review Tables
+- sales_fact partitioned by date_key
+- raw_events has duplicate event_id sample
+- MapReduce input: 4 lines ("a b a", "b a c", "a c", "b b a")
+
+## In-Lecture Exercise 1: DWH Key Check
+- What is the partition key of sales_fact?
+- What is the primary key of sales_fact?
+- Why must BI queries filter by date_key?
+
+## In-Lecture Exercise 1: Solution (1/2)
+- Partition key: date_key
+- Primary key: sale_id
+
+## In-Lecture Exercise 1: Solution (2/2)
+- date_key filter enables partition pruning
+- Without it, full scans cause slow, costly queries
+
+## In-Lecture Exercise 1: Takeaway
+- Partition filters are essential for OLAP performance
+
 ## Formal Formulas to Recall
-- **Partition:** partition_id = hash(k) mod R; same k ⇒ same reducer
-- **Shuffle size:** sum over all map output (k,v) pairs; combiner reduces before shuffle
-- **IDF:** \(\log\frac{N}{df}\); TF-IDF = TF(t,d) × IDF(t)
-- **Join size (upper bound):** |A ⋈ B| ≤ |A| × |B|; with FK often ≈ fact rows
+- **Partition:** partition_id = hash(k) mod R
+- Same k ⇒ same reducer
+- **Shuffle size:** sum over all map output (k,v) pairs
+- Combiner reduces before shuffle
+- **IDF:** \(\log\frac{N}{df}\); TF-IDF = TF × IDF
+- **Join size:** |A ⋈ B| ≤ |A| × |B|; with FK often ≈ fact rows
+
+## In-Lecture Exercise 2: MapReduce Trace
+- Map outputs for 4 lines ("a b a", "b a c", "a c", "b b a")
+- Shuffle groups per key
+- Reduce outputs for a, b, c
+
+## In-Lecture Exercise 2: Solution (1/2)
+- Map: a emits 5, b emits 4, c emits 2 total
+- Shuffle: a→[1,1,1,1,1], b→[1,1,1,1], c→[1,1]
+
+## In-Lecture Exercise 2: Solution (2/2)
+- Reduce: (a,5), (b,4), (c,2)
+
+## In-Lecture Exercise 2: Takeaway
+- Map outputs define shuffle size and reducer load
 
 ## Course Map: Weeks 1–5
 - **W1:** Intro — scale, pipeline, DE vs DS vs analytics
@@ -71,123 +117,197 @@
 - **W13:** DataOps — CI/CD, data tests, quality gates, monitoring
 
 ## Running Example — Data & Goal
-- **Domain:** Event analytics; raw events → clean table → star schema for BI
-- **Source:** raw_events(event_id, user_id, event_type, event_timestamp, details); ~100M rows/day
-- **Target:** events_clean (PK event_id); then sales_fact + dim_customer, dim_product
-- **Goal:** End-to-end: extract with watermark, staging dedup, MERGE; then OLAP query with pruning
+- **Domain:** event analytics; raw events → clean table → star schema
+- **Source:** raw_events (event_id, user_id, event_type, event_timestamp)
+- ~100M rows/day
+- **Target:** events_clean (PK event_id); then sales_fact + dimensions
+- **Goal:** end-to-end with watermark, dedup, MERGE; OLAP with pruning
 
 ## Running Example — Sample Rows
-- **raw_events (sample):** (1,101,'click','2025/12/01 08:00:00','{}'), (2,102,'view','2025-12-01T09:00:00','{}'), (1,101,'click','2025/12/01 08:00:00','{}')
-- **events_clean:** one row per event_id; duplicate event_id 1 → dedup to one row
-- **sales_fact + dim_customer:** join on customer_id; filter date_key for December; sum quantity × unit_price by region
+- **raw_events:** (1,101,'click','2025/12/01 08:00:00','{}')
+- (2,102,'view','2025-12-01T09:00:00','{}')
+- (1,101,'click','2025/12/01 08:00:00','{}') — duplicate
+- **events_clean:** one row per event_id; duplicate deduped
+- **sales_fact + dim_customer:** join on customer_id; filter date_key
+
+## In-Lecture Exercise 3: Partition Pruning Cost
+- Filter date_key IN (20251201, 20251202)
+- Each partition ≈ 27K rows; full table ≈ 10M rows
+- Compute rows scanned with and without filter
+- Compute reduction factor
+
+## In-Lecture Exercise 3: Solution (1/2)
+- With filter: 2 × 27K ≈ 54K rows
+- Without filter: ≈ 10M rows
+
+## In-Lecture Exercise 3: Solution (2/2)
+- Reduction factor: 10,000,000 / 54,000 ≈ 185×
+- Pruning drastically reduces scan cost
+
+## In-Lecture Exercise 3: Takeaway
+- Pruning is the dominant lever for DWH query cost
 
 ## Running Example — Step-by-Step (1/4)
-- **Step 1 — Extract:** Read raw_events where event_timestamp > watermark AND ≤ upper_bound
-- **Upper bound:** NOW() − 5 min (safety buffer for committed transactions)
-- **Watermark:** stored in metadata table; updated only after successful load
-- Diagram: week14_lecture_slide11_course_pipeline_overview.puml
+- **Step 1 — Extract:** read raw_events where event_timestamp > watermark
+- Upper bound: NOW() − 5 min (safety buffer)
+- **Watermark:** stored in metadata table
+- Updated only after successful load
+![](../../diagrams/week14/week14_lecture_slide11_course_pipeline_overview.png)
 
 ## Running Example — Step-by-Step (2/4)
-- **Step 2 — Staging and dedup:** Load into staging (schema-on-read); filter event_type IN ('click','view','purchase')
-- **Dedup:** ROW_NUMBER() OVER (PARTITION BY event_id ORDER BY event_timestamp) AS rn; keep rn = 1
-- **Invalid rows:** WHERE fail validation → DLQ; pipeline does not crash
+- **Step 2 — Staging and dedup:** load into staging (schema-on-read)
+- Filter event_type IN ('click','view','purchase')
+- **Dedup:** ROW_NUMBER() PARTITION BY event_id; keep rn = 1
+- **Invalid rows:** → DLQ; pipeline does not crash
 
 ## Running Example — Step-by-Step (3/4)
 - **Step 3 — Load:** MERGE INTO events_clean USING deduped_staging ON event_id
-- **WHEN MATCHED AND** source.event_timestamp > target.last_updated **THEN** UPDATE
-- **WHEN NOT MATCHED THEN** INSERT; idempotent: rerun yields same result
+- WHEN MATCHED AND source.event_timestamp > target.last_updated THEN UPDATE
+- WHEN NOT MATCHED THEN INSERT
+- Idempotent: rerun yields same result
 
 ## Running Example — Step-by-Step (4/4)
-- **Step 4 — OLAP:** Query revenue by region for December 2025
-- **Join:** sales_fact → dim_customer (region); **filter:** date_key in December partition only
-- **Engineering:** Partition pruning limits scan; join size = fact rows in range × match rate
+- **Step 4 — OLAP:** query revenue by region for December 2025
+- **Join:** sales_fact → dim_customer (region)
+- **Filter:** date_key in December partition only
+- **Engineering:** partition pruning limits scan
 
 ## Cost of Naïve Design — Course Summary
-- **Ingestion:** plain INSERT ⇒ duplicate revenue, lost trust; no watermark ⇒ full scan on rerun
-- **DWH/Lake:** no partition key ⇒ full scan; broken dashboards; governance collapse
-- **MapReduce:** no combiner ⇒ huge shuffle; default partition on skewed key ⇒ OOM; no salting ⇒ job fails
-- **Streaming:** processing-time windows ⇒ non-deterministic; no watermark ⇒ OOM; no idempotent sink ⇒ double-count
-- **Features:** no as_of_ts ⇒ leakage; append on rerun ⇒ duplicates; train/serve skew
-- **DataOps:** no tests on new columns ⇒ silent regression; no quality gate ⇒ bad data promoted; alert fatigue ⇒ missed incidents
+
+## Ingestion
+- Plain INSERT ⇒ duplicate revenue, lost trust
+- No watermark ⇒ full scan on rerun
+
+## DWH/Lake
+- No partition key ⇒ full scan; broken dashboards
+
+## MapReduce
+- No combiner ⇒ huge shuffle
+- Default partition on skewed key ⇒ OOM
+
+## Streaming
+- Processing-time windows ⇒ non-deterministic
+- No idempotent sink ⇒ double-count
+
+## Features
+- No as_of_ts ⇒ leakage; append on rerun ⇒ duplicates
+
+## DataOps
+- No tests on new columns ⇒ silent regression
+- No quality gate ⇒ bad data promoted
 
 ## How All Pieces Connect
-- **Incident-driven:** one bad pipeline (wrong key, no test, no gate) can break dashboards, models, and trust
-- **Observability at each stage:** row counts, watermark lag, reducer variance, test results, DLQ size
-- **Quality gates:** block promote when tests fail; idempotent write so rerun is safe; partition-level resume
-- **System-wide thinking:** ingestion feeds DWH and streaming; feature pipelines feed models; DataOps validates before consumers see data
+- **Incident-driven:** one bad pipeline can break dashboards and trust
+- **Observability at each stage:** row counts, watermark lag, reducer variance
+- **Quality gates:** block promote when tests fail
+- Idempotent write so rerun is safe
+- **System-wide thinking:** ingestion feeds DWH and streaming
+- Feature pipelines feed models; DataOps validates before consumers
 
 ## Cost & Scaling Analysis (1/3)
-- **Time model:** T ∝ (data size / parallelism) + shuffle + reduce; shuffle often dominates
-- **MapReduce:** Shuffle size = sum of map output; reducer input = group size per key
-- **Skew:** max reducer input ≫ mean ⇒ one reducer dominates; OOM or timeout
+- **Time model:** T ∝ (data size / parallelism) + shuffle + reduce
+- Shuffle often dominates
+- **MapReduce:** shuffle size = sum of map output
+- Reducer input = group size per key
+- **Skew:** max reducer input ≫ mean ⇒ OOM or timeout
 
 ## Cost & Scaling Analysis (2/3)
-- **Memory/storage:** Staging holds one batch; target grows; partition count affects metadata
-- **DWH:** Scan cost ∝ partitions read × rows per partition; pruning = skip partitions
-- **Join size:** |A ⋈ B| ≤ |A| × |B|; with FK, often ≈ fact rows when dimension small
+- **Memory/storage:** staging holds one batch; target grows
+- Partition count affects metadata
+- **DWH:** scan cost ∝ partitions read × rows per partition
+- Pruning = skip partitions
+- **Join size:** |A ⋈ B| ≤ |A| × |B|; with FK often ≈ fact rows
 
 ## Cost & Scaling Analysis (3/3)
-- **Network:** Shuffle = all map output over network; combiner reduces bytes per key
-- **Throughput:** events/sec limited by slowest operator; backpressure in streaming
-- **Latency:** Watermark delay + processing; buffer trades latency for consistency
+- **Network:** shuffle = all map output over network
+- Combiner reduces bytes per key
+- **Throughput:** events/sec limited by slowest operator
+- Backpressure in streaming
+- **Latency:** watermark delay + processing; buffer trades latency for consistency
 
 ## Pitfalls & Failure Modes (1/3)
-- **Duplicate on rerun:** Job fails after partial insert; rerun without MERGE or watermark ⇒ 2× data
-- **Full scan:** Query without partition filter on large fact table ⇒ timeout
-- **Skew:** One key has most values ⇒ one reducer OOM or straggler
+- **Duplicate on rerun:** job fails after partial insert
+- Rerun without MERGE or watermark ⇒ 2× data
+- **Full scan:** query without partition filter ⇒ timeout
+- **Skew:** one key has most values ⇒ OOM
 
 ## Pitfalls & Failure Modes (2/3)
-- **Late data:** Watermark too tight ⇒ events dropped; too loose ⇒ long delay and state growth
-- **Silent regression:** New column or source not covered by tests ⇒ bad data promoted
-- **Leakage:** Feature uses future data for training ⇒ model fails in production
-- Diagram: week14_lecture_slide19_failure_rerun.puml
+- **Late data:** watermark too tight ⇒ events dropped
+- Too loose ⇒ long delay and state growth
+- **Silent regression:** new column not covered by tests
+- **Leakage:** feature uses future data for training
+![](../../diagrams/week14/week14_lecture_slide19_failure_rerun.png)
 
 ## Pitfalls & Failure Modes (3/3)
-- **Detection:** Monitor row counts, watermark lag, reducer input variance, test results
-- **Mitigation:** Idempotent MERGE; partition-level resume; watermark with buffer; salting for skew
-- **Quality gate:** Block promote on test failure; DLQ for invalid rows; post-mortem to close gaps
+- **Detection:** row counts, watermark lag, reducer variance, test results
+- **Mitigation:** idempotent MERGE; partition-level resume
+- Watermark with buffer; salting for skew
+- **Quality gate:** block promote on test failure; DLQ for invalid rows
 
 ## Exam Readiness: Question → Topic
-- **SQL/ETL:** Joins, aggregations, window functions, MERGE, dedup, incremental load
-- **MapReduce:** Map/shuffle/reduce trace, word count, skew, combiner, salting
-- **DWH:** Star schema, partition pruning, join cost, fact vs dimensions
-- Diagram: week14_lecture_slide21_exam_request_flow.puml
+- **SQL/ETL:** joins, aggregations, window functions, MERGE, dedup
+- **MapReduce:** map/shuffle/reduce trace, word count, skew, combiner
+- **DWH:** star schema, partition pruning, join cost
+![](../../diagrams/week14/week14_lecture_slide21_exam_request_flow.png)
 
 ## Exam Readiness: Question Types
-- **Design:** "Design an idempotent incremental load" → watermark, staging, MERGE, partition resume
-- **Trace:** "Show map outputs, shuffle, reduce for this input" → list (k,v), then groups, then aggregates
-- **Query:** "Revenue by region for date range" → star join, partition filter, GROUP BY
-- **Reasoning:** "Why did the job fail?" / "How to mitigate skew?" → identify cause, propose fix
+
+## Design Questions
+- "Design an idempotent incremental load"
+- → watermark, staging, MERGE, partition resume
+
+## Trace Questions
+- "Show map outputs, shuffle, reduce for this input"
+- → list (k,v), then groups, then aggregates
+
+## Query Questions
+- "Revenue by region for date range"
+- → star join, partition filter, GROUP BY
+
+## Reasoning Questions
+- "Why did the job fail?" / "How to mitigate skew?"
+- → identify cause, propose fix
 
 ## Exam Readiness: Concepts to Recall
-- **Definitions:** Idempotency, watermark, partition key, shuffle, event-time, point-in-time
-- **Formulas:** Shuffle size; partition(k,R)=hash(k) mod R; IDF = log(N/df); TF-IDF product
-- **Trade-offs:** ETL vs ELT; batch vs streaming; at-most / at-least / exactly-once
+- **Definitions:** idempotency, watermark, partition key, shuffle, event-time
+- **Formulas:** shuffle size; partition(k,R)=hash(k) mod R; IDF = log(N/df)
+- **Trade-offs:** ETL vs ELT; batch vs streaming; at-most/at-least/exactly-once
 
 ## Best Practices (1/2)
-- Design for idempotency: MERGE or partition overwrite; watermark; no duplicate keys on rerun
-- Use staging and DLQ: schema-on-read for landing; invalid rows isolated; pipeline does not fail whole batch
-- Partition fact tables and require partition filter in queries to avoid full scan
-- In MapReduce: balance keys; use combiner when reduce is associative; salt hot keys
+- Design for idempotency: MERGE or partition overwrite; watermark
+- Use staging and DLQ: schema-on-read for landing; isolate invalid rows
+- Partition fact tables and require partition filter
+- In MapReduce: balance keys; use combiner; salt hot keys
 
 ## Best Practices (2/2)
-- In streaming: event-time windows; watermark with buffer; idempotent sink by (key, window)
-- Feature pipelines: point-in-time correctness; key = (entity_id, as_of_ts); test for leakage
-- DataOps: schema and row tests; freshness and volume checks; quality gate before promote
-- Trade-off table: ETL (transform before load) vs ELT (load raw then transform); choose by engine and governance
+- In streaming: event-time windows; watermark with buffer; idempotent sink
+- Feature pipelines: point-in-time correctness; key = (entity_id, as_of_ts)
+- DataOps: schema and row tests; freshness checks; quality gate before promote
+- Trade-off table: ETL vs ELT; choose by engine and governance
 
 ## Recap — Engineering Judgment (1/2)
-- **Pipeline:** extract (watermark) → staging → transform/dedup → MERGE → target; tests after load; quality gate before promote
-- **MapReduce:** same key → same reducer; shuffle and skew are first-class failure modes; combiner and salting are non-negotiable at scale
-- **DWH:** star schema, partition pruning, join size; partition filter required to avoid full scan; cost ∝ partitions read
+- **Pipeline:** extract → staging → transform/dedup → MERGE → target
+- Tests after load; quality gate before promote
+- **MapReduce:** same key → same reducer
+- Shuffle and skew are first-class failure modes
+- Combiner and salting are non-negotiable at scale
+- **DWH:** star schema, partition pruning, join size
+- Partition filter required to avoid full scan
 
 ## Recap — Engineering Judgment (2/2)
-- **Failure modes:** duplicate on rerun, skew OOM, late data, silent regression; each has a mitigation (idempotency, salting, watermark, tests)
-- **Trade-offs:** ETL vs ELT, batch vs streaming, consistency vs latency; choose by engine, governance, and latency budget
-- **System-wide:** one pipeline break can break consumers; observability and quality gates at each stage; incident → post-mortem → close gap
+- **Failure modes:** duplicate on rerun, skew OOM, late data, silent regression
+- Each has a mitigation (idempotency, salting, watermark, tests)
+- **Trade-offs:** ETL vs ELT, batch vs streaming, consistency vs latency
+- Choose by engine, governance, and latency budget
+- **System-wide:** one pipeline break can break consumers
+- Observability and quality gates at each stage
 
 ## Pointers to Practice
-- Solve SQL on concrete tables: joins, MERGE, dedup, incremental load and rerun scenario
-- Trace MapReduce manually: 8–12 input records, map emits, shuffle groups, reduce output; then skew case and salting
-- DWH: star schema query with partition filter; reason about join size and scan cost
-- Combine topics: ingestion + idempotency + DWH query in one end-to-end scenario
+- Solve SQL on concrete tables: joins, MERGE, dedup, incremental load
+- Trace MapReduce: 8–12 input records; map, shuffle, reduce; skew and salting
+- DWH: star schema query with partition filter; join size and scan cost
+- Combine topics: ingestion + idempotency + DWH query end-to-end
+
+## Additional Diagrams
+### Practice: Reasoning Pipeline Choice
+![](../../diagrams/week14/week14_practice_slide18_reasoning_pipeline_choice.png)

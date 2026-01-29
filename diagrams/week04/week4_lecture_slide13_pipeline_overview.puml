@@ -138,33 +138,33 @@ rectangle "SOURCES" #F8F9FA {
 }
 
 rectangle "EXTRACT" #F8F9FA {
-    component "**Extract**\n<size:10>Read + filter</size>" as EXTRACT <<Tool>>
+    component "**Extract**\n<size:10>Read + filter</size>" as EXTRACT_STEP <<Tool>>
 }
 
 rectangle "STAGING" #F8F9FA {
-    database "**Staging**\n<size:10>Raw / schema-on-read</size>" as STAGING
+    database "**Staging**\n<size:10>Raw / schema-on-read</size>" as STG
 }
 
 rectangle "TRANSFORM" #F8F9FA {
-    component "**Transform**\n<size:10>Dedup / cast / validate</size>" as TRANSFORM <<Tool>>
+    component "**Transform**\n<size:10>Dedup / cast / validate</size>" as TRANSFORM_STEP <<Tool>>
 }
 
 rectangle "LOAD" #F8F9FA {
-    component "**Load**\n<size:10>MERGE / upsert</size>" as LOAD <<Agent>>
+    component "**Load**\n<size:10>MERGE / upsert</size>" as LOAD_STEP <<Agent>>
 }
 
 rectangle "TARGET" #F8F9FA {
-    database "**Target**\n<size:10>DWH / lake</size>" as TARGET
+    database "**Target**\n<size:10>DWH / lake</size>" as TGT
 }
 
-SRC1 --> EXTRACT
-SRC2 --> EXTRACT
-EXTRACT --> STAGING
-STAGING --> TRANSFORM
-TRANSFORM --> LOAD
-LOAD --> TARGET
+SRC1 --> EXTRACT_STEP
+SRC2 --> EXTRACT_STEP
+EXTRACT_STEP --> STG
+STG --> TRANSFORM_STEP
+TRANSFORM_STEP --> LOAD_STEP
+LOAD_STEP --> TGT
 
-note bottom of STAGING : **Staging:** Validate before target. DLQ for bad rows.
-note bottom of LOAD : **Idempotent:** MERGE / ON CONFLICT. No duplicates on rerun.
+note bottom of STG : **Staging:** Validate before target. DLQ for bad rows.
+note bottom of LOAD_STEP : **Idempotent:** MERGE / ON CONFLICT. No duplicates on rerun.
 
 @enduml

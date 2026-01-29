@@ -133,7 +133,7 @@ skinparam component<<failure>> {
 
 ' MAPREDUCE N-GRAM EXTRACTION FLOW
 rectangle "MAP" #F8F9FA {
-    component "**Map**\n(doc_id, text) -> tokenize\nemit ((doc_id, ngram), 1)" as MAP
+    component "**Map**\n(doc_id, text) -> tokenize\nemit ((doc_id, ngram), 1)" as MAP_FN
 }
 
 rectangle "SHUFFLE" #F8F9FA {
@@ -148,10 +148,10 @@ rectangle "OUTPUT" #F8F9FA {
     database "**N-gram counts**\n(doc_id, ngram, count)" as OUT
 }
 
-MAP --> PART : "(doc_id, ngram), 1"
+MAP_FN --> PART : "(doc_id, ngram), 1"
 PART --> RED : "group by key"
 RED --> OUT : "(doc_id, ngram, count)"
 
-note bottom of MAP : Combiner: sum 1s per (doc_id, ngram) before shuffle to cut network.
+note bottom of MAP_FN : Combiner: sum 1s per (doc_id, ngram) before shuffle to cut network.
 
 @enduml

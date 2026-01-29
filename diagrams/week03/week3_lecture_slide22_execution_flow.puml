@@ -134,7 +134,7 @@ skinparam component<<failure>> {
 ' MAP-SHUFFLE-REDUCE EXECUTION FLOW
 rectangle "MAP" #F8F9FA {
     database "**Records**\n<size:10>r1, r2, r3...</size>" as RECS
-    component "**Map**\n<size:10>emit (k,v)</size>" as MAP <<Tool>>
+    component "**Map**\n<size:10>emit (k,v)</size>" as MAP_FN <<Tool>>
 }
 
 rectangle "SHUFFLE" #F8F9FA {
@@ -143,17 +143,17 @@ rectangle "SHUFFLE" #F8F9FA {
 }
 
 rectangle "REDUCE" #F8F9FA {
-    component "**Reduce**\n<size:10>aggregate per key</size>" as REDUCE <<Tool>>
+    component "**Reduce**\n<size:10>aggregate per key</size>" as RED <<Tool>>
     database "**Output**\n<size:10>(k, result)</size>" as OUT
 }
 
-RECS --> MAP : "read"
-MAP --> SORT_XFER : "(k,v) pairs"
+RECS --> MAP_FN : "read"
+MAP_FN --> SORT_XFER : "(k,v) pairs"
 SORT_XFER --> GROUPS : "same key -> same node"
-GROUPS --> REDUCE : "iterator"
-REDUCE --> OUT : "write"
+GROUPS --> RED : "iterator"
+RED --> OUT : "write"
 
-note bottom of MAP : Pure function per record. No cross-record state.
+note bottom of MAP_FN : Pure function per record. No cross-record state.
 note bottom of SHUFFLE : **Bottleneck:** network I/O. Most expensive phase.
 
 @enduml

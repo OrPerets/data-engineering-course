@@ -133,7 +133,7 @@ skinparam component<<failure>> {
 
 ' PARALLEL PIPELINE OVERVIEW (MAPREDUCE)
 rectangle "INPUT" #F8F9FA {
-    database "**Input Data**\n<size:10>Split into chunks</size>" as INPUT
+    database "**Input Data**\n<size:10>Split into chunks</size>" as INP
 }
 
 rectangle "DIVIDE" #F8F9FA {
@@ -147,7 +147,7 @@ rectangle "PARALLEL WORKERS" #F8F9FA {
 }
 
 rectangle "COMBINE" #F8F9FA {
-    component "**Shuffle / Group**\n<size:10>Same key -> same reducer</size>" as SHUFFLE <<Agent>>
+    component "**Shuffle / Group**\n<size:10>Same key -> same reducer</size>" as SORT_XFER <<Agent>>
 }
 
 rectangle "REDUCE" #F8F9FA {
@@ -156,20 +156,20 @@ rectangle "REDUCE" #F8F9FA {
 }
 
 rectangle "OUTPUT" #F8F9FA {
-    database "**Result**\n<size:10>Aggregated output</size>" as OUTPUT
+    database "**Result**\n<size:10>Aggregated output</size>" as OUT
 }
 
-INPUT --> SPLIT
+INP --> SPLIT
 SPLIT --> W1 : "chunk 1"
 SPLIT --> W2 : "chunk 2"
 SPLIT --> W3 : "chunk 3"
-W1 --> SHUFFLE
-W2 --> SHUFFLE
-W3 --> SHUFFLE
-SHUFFLE --> R1 : "key group A"
-SHUFFLE --> R2 : "key group B"
-R1 --> OUTPUT
-R2 --> OUTPUT
+W1 --> SORT_XFER
+W2 --> SORT_XFER
+W3 --> SORT_XFER
+SORT_XFER --> R1 : "key group A"
+SORT_XFER --> R2 : "key group B"
+R1 --> OUT
+R2 --> OUT
 
 note bottom of SPLIT : **Divide:** Independent chunks. No shared state.
 note bottom of SHUFFLE : **Conquer:** Group by key. Network cost.

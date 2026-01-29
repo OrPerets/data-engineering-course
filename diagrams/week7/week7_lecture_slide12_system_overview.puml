@@ -133,7 +133,7 @@ skinparam component<<failure>> {
 
 ' MAPREDUCE SYSTEM OVERVIEW
 rectangle "INPUT" #F8F9FA {
-    database "**HDFS / Files**\n<size:10>Splits by block</size>" as INPUT
+    database "**HDFS / Files**\n<size:10>Splits by block</size>" as INP
 }
 
 rectangle "MAP LAYER" #F8F9FA {
@@ -156,9 +156,9 @@ rectangle "OUTPUT" #F8F9FA {
     database "**HDFS / Sink**\n<size:10>Final (k,v')</size>" as OUT
 }
 
-INPUT --> MAP1
-INPUT --> MAP2
-INPUT --> MAP3
+INP --> MAP1
+INP --> MAP2
+INP --> MAP3
 MAP1 --> PART
 MAP2 --> PART
 MAP3 --> PART

@@ -141,7 +141,7 @@ rectangle "READ" #F8F9FA {
 }
 
 rectangle "TRANSFORM" #F8F9FA {
-    component "**Transform**\n<size:10>Dedup / cast</size>" as TRANSFORM <<Tool>>
+    component "**Transform**\n<size:10>Dedup / cast</size>" as TRANSFORM_STEP <<Tool>>
 }
 
 rectangle "WRITE" #F8F9FA {
@@ -153,8 +153,8 @@ rectangle "STATE" #F8F9FA {
 }
 
 TRIGGER --> READ : "1"
-READ --> TRANSFORM : "2"
-TRANSFORM --> WRITE : "3"
+READ --> TRANSFORM_STEP : "2"
+TRANSFORM_STEP --> WRITE : "3"
 WRITE --> STATE : "4 Update watermark\n(after success)"
 
 note right of READ : **Watermark:** Only new/changed rows. upper_bound = NOW() - buffer.

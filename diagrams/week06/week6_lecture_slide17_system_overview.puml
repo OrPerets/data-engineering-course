@@ -133,30 +133,30 @@ skinparam component<<failure>> {
 
 ' MAPREDUCE PIPELINE OVERVIEW
 rectangle "INPUT" #F8F9FA {
-    database "**Files / Splits**\n<size:10>Blocks or ranges</size>" as INPUT
+    database "**Files / Splits**\n<size:10>Blocks or ranges</size>" as INP
 }
 
 rectangle "MAP" #F8F9FA {
-    component "**Map tasks**\n<size:10>emit (k,v) per record</size>" as MAP <<Tool>>
+    component "**Map tasks**\n<size:10>emit (k,v) per record</size>" as MAP_FN <<Tool>>
 }
 
 rectangle "SHUFFLE" #F8F9FA {
-    component "**Sort & Transfer**\n<size:10>Group by key -> reducers</size>" as SHUFFLE <<Agent>>
+    component "**Sort & Transfer**\n<size:10>Group by key -> reducers</size>" as SORT_XFER <<Agent>>
 }
 
 rectangle "REDUCE" #F8F9FA {
-    component "**Reduce tasks**\n<size:10>aggregate per key</size>" as REDUCE <<Tool>>
+    component "**Reduce tasks**\n<size:10>aggregate per key</size>" as RED <<Tool>>
 }
 
 rectangle "OUTPUT" #F8F9FA {
-    database "**Result**\n<size:10>(k, aggregate)</size>" as OUTPUT
+    database "**Result**\n<size:10>(k, aggregate)</size>" as OUT
 }
 
-INPUT --> MAP : "read splits"
-MAP --> SHUFFLE : "(k,v) pairs"
-SHUFFLE --> REDUCE : "grouped by key"
-REDUCE --> OUTPUT : "write"
+INP --> MAP_FN : "read splits"
+MAP_FN --> SORT_XFER : "(k,v) pairs"
+SORT_XFER --> RED : "grouped by key"
+RED --> OUT : "write"
 
-note bottom of SHUFFLE : **Bottleneck:** network + disk I/O. Often dominates job time.
+note bottom of SORT_XFER : **Bottleneck:** network + disk I/O. Often dominates job time.
 
 @enduml

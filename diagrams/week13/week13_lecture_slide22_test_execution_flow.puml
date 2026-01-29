@@ -136,7 +136,7 @@ rectangle "Request" #F8F9FA {
 }
 
 rectangle "Build & Test" #F8F9FA {
-    component "**Build**\n<size:10>Compile / package</size>" as BUILD <<Tool>>
+    component "**Build**\n<size:10>Compile / package</size>" as BUILD_STEP <<Tool>>
     component "**Unit Tests**\n<size:10>Code / logic</size>" as UNIT <<Tool>>
     component "**Data Pipeline**\n<size:10>Run transform + load</size>" as PIPE <<Tool>>
     component "**Data Tests**\n<size:10>Assertions on output</size>" as DTEST <<Tool>>
@@ -147,8 +147,8 @@ rectangle "Outcome" #F8F9FA {
     component "**Fail**\n<size:10>Block + alert</size>" as FAIL <<Tool>>
 }
 
-REQ --> BUILD
-BUILD --> UNIT
+REQ --> BUILD_STEP
+BUILD_STEP --> UNIT
 UNIT --> PIPE
 PIPE --> DTEST
 DTEST --> PASS

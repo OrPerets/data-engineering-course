@@ -136,7 +136,7 @@ rectangle "Input" #F8F9FA {
 }
 
 rectangle "Load" #F8F9FA {
-    component "**Transform + MERGE**\n<size:10>Dedup / idempotent</size>" as LOAD <<Agent>>
+    component "**Transform + MERGE**\n<size:10>Dedup / idempotent</size>" as LOAD_STEP <<Agent>>
 }
 
 rectangle "Target" #F8F9FA {
@@ -149,8 +149,8 @@ rectangle "Quality Gate" #F8F9FA {
     component "**Freshness**\n<size:10>max(event_time)</size>" as Q3 <<Tool>>
 }
 
-INP --> LOAD
-LOAD --> TGT
+INP --> LOAD_STEP
+LOAD_STEP --> TGT
 TGT --> Q1
 TGT --> Q2
 TGT --> Q3
