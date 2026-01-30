@@ -22,22 +22,15 @@ skinparam arrow {
 
 title <size:22><b>Data Engineering vs Analytics</b></size>\n<size:14>Producer-Consumer Relationship</size>
 
-card "⚙️ **DATA ENGINEERING**\n\n<size:15><b>Role: Data Producer</b></size>\n\n<size:14><b>Responsibilities:</b>\n• Build infrastructure\n• Design pipelines\n• Ensure data quality\n• Maintain reliability\n• Optimize performance</size>\n\n<size:13><i>\"Make data available\"</i></size>" as DE #E3F2FD {
-}
+card "⚙️ **DATA ENGINEERING**\n\n<size:15><b>Role: Data Producer</b></size>\n\n<size:14><b>Responsibilities:</b>\n• Build infrastructure\n• Design pipelines\n• Ensure data quality\n• Maintain reliability\n• Optimize performance</size>\n\n<size:13><i>\"Make data available\"</i></size>" as DE #E3F2FD
 
-card "🔄 **RELATIONSHIP**\n\n<size:15><b>Symbiotic Connection:</b></size>\n\n<size:14>• Analytics <b>consumes</b> DE output\n• Analytics <b>provides</b> requirements\n• Iterative collaboration\n• Shared data contracts\n• Common metrics</size>\n\n<size:13>⚖️ Balance: Self-service vs governance</size>" as R #FFF9C4 {
-}
+card "🔄 **RELATIONSHIP**\n\n<size:15><b>Symbiotic Connection:</b></size>\n\n<size:14>• Analytics <b>consumes</b> DE output\n• Analytics <b>provides</b> requirements\n• Iterative collaboration\n• Shared data contracts\n• Common metrics</size>\n\n<size:13>⚖️ Balance: Self-service vs governance</size>" as R #FFF9C4
 
-card "📊 **ANALYTICS**\n\n<size:15><b>Role: Data Consumer</b></size>\n\n<size:14><b>Responsibilities:</b>\n• Create reports\n• Build dashboards\n• Define KPIs\n• Answer business questions\n• Tell data stories</size>\n\n<size:13><i>\"Turn data into decisions\"</i></size>" as A #F3E5F5 {
-}
+card "📊 **ANALYTICS**\n\n<size:15><b>Role: Data Consumer</b></size>\n\n<size:14><b>Responsibilities:</b>\n• Create reports\n• Build dashboards\n• Define KPIs\n• Answer business questions\n• Tell data stories</size>\n\n<size:13><i>\"Turn data into decisions\"</i></size>" as A #F3E5F5
 
-DE -[#1976D2,thickness=3.5]-> R : <size:13><color:#0D47A1>**Provides**\nClean data</color></size>
-R -[#7B1FA2,thickness=3.5]-> A : <size:13><color:#4A148C>**Enables**\nInsights</color></size>
+DE -[#1976D2,thickness=3]-> R : <size:13><color:#0D47A1>**Provides**\nClean data</color></size>
+R -[#7B1FA2,thickness=3]-> A : <size:13><color:#4A148C>**Enables**\nInsights</color></size>
 A -[#F57C00,thickness=2,dashed]-> R : <size:12><color:#E65100>Feedback\nneeds</color></size>
 R -[#F57C00,thickness=2,dashed]-> DE : <size:12><color:#E65100>Requirements</color></size>
-
-note bottom
-  <size:14><b>💡 Success Factor:</b> Clear communication between teams</size>
-end note
 
 @enduml

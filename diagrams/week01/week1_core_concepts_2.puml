@@ -23,21 +23,14 @@ skinparam arrow {
 title <size:22><b>Processing Models</b></size>\n<size:14>Batch vs Streaming vs Hybrid</size>
 
 package "Processing Paradigms" {
-    card "📦 **BATCH PROCESSING**\n\n<size:14><b>Characteristics:</b>\n• Process in chunks\n• Hourly / Daily schedules\n• High throughput\n• Lower cost per record\n\n<b>Use Cases:</b>\nHistorical analysis, ETL</size>" as B #E3F2FD {
-    }
+    card "📦 **BATCH PROCESSING**\n\n<size:14><b>Characteristics:</b>\n• Process in chunks\n• Hourly / Daily schedules\n• High throughput\n• Lower cost per record\n\n<b>Use Cases:</b>\nHistorical analysis, ETL</size>" as B #E3F2FD
 
-    card "⚡ **STREAM PROCESSING**\n\n<size:14><b>Characteristics:</b>\n• Continuous flow\n• Real-time / sub-second\n• Low latency\n• Event-driven\n\n<b>Use Cases:</b>\nAlerts, live dashboards</size>" as S #C8E6C9 {
-    }
+    card "⚡ **STREAM PROCESSING**\n\n<size:14><b>Characteristics:</b>\n• Continuous flow\n• Real-time / sub-second\n• Low latency\n• Event-driven\n\n<b>Use Cases:</b>\nAlerts, live dashboards</size>" as S #C8E6C9
 }
 
-card "🔄 **HYBRID ARCHITECTURE**\n\n<size:15><b>Best of Both Worlds:</b></size>\n\n<size:14>• Batch for historical data & aggregates\n• Stream for recent & real-time events\n• Lambda or Kappa architecture\n• Unified serving layer</size>\n\n<size:13><i>Example: Last 2 years batch + last 24h streaming</i></size>" as H #FFF9C4 {
-}
+card "🔄 **HYBRID ARCHITECTURE**\n\n<size:15><b>Best of Both Worlds:</b></size>\n\n<size:14>• Batch for historical data & aggregates\n• Stream for recent & real-time events\n• Lambda or Kappa architecture\n• Unified serving layer</size>\n\n<size:13><i>Example: Last 2 years batch + last 24h streaming</i></size>" as H #FFF9C4
 
 B -[#1976D2,thickness=3]-> H : <size:12><color:#0D47A1>Historical\naccuracy</color></size>
 S -[#388E3C,thickness=3]-> H : <size:12><color:#1B5E20>Real-time\nfreshness</color></size>
-
-note bottom of H
-  <size:13>⚖️ Trade-off: Complexity vs flexibility</size>
-end note
 
 @enduml
