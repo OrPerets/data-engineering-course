@@ -186,15 +186,4 @@ AGGREGATE -[#388E3C,thickness=3]-> WAREHOUSE : <color:#1B5E20><b>5 MB</b>\naggre
 WAREHOUSE -[#1976D2,thickness=3]-> DASHBOARD : <color:#0D47A1>Query\nresults</color>
 WAREHOUSE -[#388E3C,thickness=3]-> ML : <color:#2E7D32>Features</color>
 
-note right of RAW
-  <size:13><b>💡 Compression:</b>
-  1000x reduction
-  from source to warehouse</size>
-end note
-
-note bottom of WAREHOUSE
-  <size:14><b>🎯 Two Consumption Paths:</b></size>
-  <size:13>• <b>Analytics:</b> Business insights & KPIs\n• <b>ML:</b> Predictive models & automation</size>
-end note
-
 @enduml

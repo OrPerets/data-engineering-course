@@ -16,28 +16,13 @@ skinparam arrow {
 
 title <size:20><b>Data Pipeline Architecture</b></size>
 
-storage "📥 **INPUT**\n\n<size:14>Raw data sources:\n• CSV files\n• JSON APIs\n• Database dumps\n• Event streams</size>" as I #ECEFF1 {
-}
+storage "📥 **INPUT**\n\n<size:14>Raw data sources:\n• CSV files\n• JSON APIs\n• Database dumps\n• Event streams</size>" as I #ECEFF1
 
-component "🔄 **TRANSFORM**\n\n<size:14><b>Data Processing:</b>\n• Clean nulls & outliers\n• Deduplicate records\n• Enrich with metadata\n• Normalize formats</size>" as T #E3F2FD {
-}
+component "🔄 **TRANSFORM**\n\n<size:14><b>Data Processing:</b>\n• Clean nulls & outliers\n• Deduplicate records\n• Enrich with metadata\n• Normalize formats</size>" as T #E3F2FD
 
-database "✅ **OUTPUT**\n\n<size:14>Ready for use:\n• Validated schema\n• Consistent format\n• Quality checked\n• Partitioned</size>" as O #C8E6C9 {
-}
+database "✅ **OUTPUT**\n\n<size:14>Ready for use:\n• Validated schema\n• Consistent format\n• Quality checked\n• Partitioned</size>" as O #C8E6C9
 
 I -[#1976D2,thickness=4]-> T : <size:13><color:#0D47A1>**Ingest**</color></size>
 T -[#388E3C,thickness=4]-> O : <size:13><color:#1B5E20>**Write**</color></size>
-
-note top of T #FFFDE7
-  <size:14><b>⚠️ Key Property: Idempotency</b></size>
-  ─────────────────────
-  <size:13>Rerunning pipeline with same input
-  produces same output every time</size>
-end note
-
-note bottom of O
-  <size:13>Data is now clean,
-  consistent & reliable</size>
-end note
 
 @enduml

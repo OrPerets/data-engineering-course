@@ -21,24 +21,13 @@ skinparam arrow {
     FontStyle italic
 }
 
-storage "📊 **Data Sources**\n<size:14>Databases · APIs · Files\nStreaming · Batch</size>" as S #E3F2FD {
-}
+storage "📊 **Data Sources**\n<size:14>Databases · APIs · Files\nStreaming · Batch</size>" as S #E3F2FD
 
-component "⚙️ **ETL Pipeline**\n<size:14>Extract → Transform → Load\nCleaning · Validation · Enrichment</size>" as P #FFF9C4 {
-}
+component "⚙️ **ETL Pipeline**\n<size:14>Extract → Transform → Load\nCleaning · Validation · Enrichment</size>" as P #FFF9C4
 
-database "✅ **Output**\n<size:14>Clean, Structured Data\nQueryable · Accessible · Reliable</size>" as O #C8E6C9 {
-}
+database "✅ **Output**\n<size:14>Clean, Structured Data\nQueryable · Accessible · Reliable</size>" as O #C8E6C9
 
 S -[#1976D2,thickness=3]-> P : <size:12><color:#1565C0>**Raw Data**</color></size>
 P -[#388E3C,thickness=3]-> O : <size:12><color:#2E7D32>**Processed**</color></size>
-
-note top of S
-  <size:12>Multiple formats,\nvarying quality</size>
-end note
-
-note bottom of O
-  <size:12>Ready for analysis,\nML, dashboards</size>
-end note
 
 @enduml
