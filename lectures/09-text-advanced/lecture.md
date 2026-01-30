@@ -185,6 +185,13 @@ $$
 - Or hash n-grams to fixed buckets
 - **Reproducibility:** fix n, tokenization, and vocabulary filter
 
+## Approximate Vocabulary Guarantees
+- **Hashing:** map n-grams to \(B\) buckets
+- **Guarantee:** memory bounded by \(B\)
+- **Limit:** collisions merge counts across n-grams
+- **Sampling:** estimate df from a sample
+- **Limit:** rare n-grams have high relative error
+
 ## Regex in Pipelines
 - **Use:** clean (strip tags), extract (dates, IDs), validate (format)
 - **Engine:** PCRE / Java regex; greedy matching and backtracking
