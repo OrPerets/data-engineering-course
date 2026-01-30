@@ -131,32 +131,33 @@ skinparam component<<failure>> {
 
 '=================================================
 
-' FAILURE: DATA SKEW (HOT KEY -> ONE REDUCER)
-package "SHUFFLE OUTPUT" #F8F9FA {
-    component "**Partition by hash(key)**\n<size:10>Keys -> Reducers</size>" as PART
+' FAILURE: DATA SKEW (HOT KEY -> ONE REDUCER) - Mixed layout for PPTX
+
+component "**Partition by hash(key)**\n<size:10>Keys -> Reducers</size>" as PART
+
+rectangle "REDUCERS" #F8F9FA {
+    component "**R1**\n<size:10>10 keys, 1M vals</size>" as R1 <<Tool>>
+    component "**R2**\n<size:10>10 keys, 1M vals</size>" as R2 <<Tool>>
+    component "**R3 (HOT)**\n<size:10>1 key, 800M vals</size>" as R3 <<Bad>>
+    R1 -[hidden]right- R2
+    R2 -[hidden]right- R3
 }
 
-package "REDUCERS" #F8F9FA {
-    component "**R1**\n<size:10>10 keys\n1M values</size>" as R1 <<Tool>>
-    component "**R2**\n<size:10>10 keys\n1M values</size>" as R2 <<Tool>>
-    component "**R3 (HOT)**\n<size:10>1 key\n800M values</size>" as R3 <<Tool>>
+together {
+    database "**Done**" as D1 <<up>>
+    database "**Done**" as D2 <<up>>
+    component "**OOM / Timeout**\n<size:10>Overloaded</size>" as FAIL <<failure>>
 }
 
-package "FAILURE" #F8F9FA {
-    component "**OOM / Timeout**\n<size:10>Single reducer overloaded</size>" as FAIL
-    component "**Mitigation**\n<size:10>salting / combiner / custom partitioner</size>" as FIX <<Agent>>
-}
+component "**Mitigation**\n<size:10>salting / combiner</size>" as FIX <<Agent>>
 
-database "**Done**" as D1
-database "**Done**" as D2
+PART -down-> R1 : "balanced"
+PART -down-> R2 : "balanced"
+PART -down-> R3 : "hot key"
 
-PART --> R1 : "balanced"
-PART --> R2 : "balanced"
-PART --> R3 : "hot key\nall values"
-
-R1 --> D1
-R2 --> D2
-R3 --> FAIL : "crash or stall"
-FAIL --> FIX : "rebalance keys"
+R1 -down-> D1
+R2 -down-> D2
+R3 -down-> FAIL : "crash"
+FAIL -down-> FIX : "rebalance"
 
 @enduml

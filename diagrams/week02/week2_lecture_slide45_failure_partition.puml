@@ -131,34 +131,34 @@ skinparam component<<failure>> {
 
 '=================================================
 
-' FAILURE: NETWORK PARTITION (SPLIT-BRAIN)
-package "**Partition A**" #E3F2FD {
-    component "**Client A**\n<size:10>Writes continue</size>" as CA
+' FAILURE: NETWORK PARTITION (SPLIT-BRAIN) - Mixed layout for PPTX
+
+rectangle "**Partition A**" #E3F2FD {
+    component "**Client A**\n<size:10>Writes</size>" as CA
     database "**Node A**\n<size:10>Accepts writes</size>" as NA <<up>>
+    CA -down-> NA : "writes"
 }
 
-package "**Partition B**" #FFF3E0 {
-    component "**Client B**\n<size:10>Writes continue</size>" as CB
+rectangle "**Partition B**" #FFF3E0 {
+    component "**Client B**\n<size:10>Writes</size>" as CB
     database "**Node B**\n<size:10>Accepts writes</size>" as NB <<up>>
     database "**Node C**\n<size:10>Replica</size>" as NC <<up>>
-    NB -[hidden]left- NC
+    CB -down-> NB : "writes"
+    NB -right- NC : "replicate"
 }
 
-component "**Network partition**\n<size:10>No sync between sides</size>" as PART <<failure>>
-component "**Conflict resolution**\n<size:10>Quorum / LWW / manual</size>" as RESOLVE <<Agent>>
-database "**Merged state**\n<size:10>Reconciled data</size>" as MERGED
+component "**Network partition**\n<size:10>No sync</size>" as PART <<failure>>
 
-CA --> NA : "writes"
-CB --> NB : "writes"
-NB <--> NC : "replicate"
+together {
+    component "**Conflict resolution**\n<size:10>Quorum / LWW / manual</size>" as RESOLVE <<Agent>>
+    database "**Merged state**\n<size:10>Reconciled</size>" as MERGED
+}
 
-NA -[#C62828].. PART
-NB -[#C62828].. PART
-NC -[#C62828].. PART
+NA -[#C62828]right.. PART
+NB -[#C62828]left.. PART
 
-NA --> RESOLVE : "divergent updates"
-NB --> RESOLVE : "divergent updates"
-NC --> RESOLVE : "divergent updates"
-RESOLVE --> MERGED : "reconcile"
+NA -down-> RESOLVE : "divergent"
+NB -down-> RESOLVE : "divergent"
+RESOLVE -right-> MERGED : "reconcile"
 
 @enduml

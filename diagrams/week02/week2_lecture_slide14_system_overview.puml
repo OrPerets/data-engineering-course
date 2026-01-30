@@ -131,33 +131,31 @@ skinparam component<<failure>> {
 
 '=================================================
 
-' DISTRIBUTED DB SYSTEM OVERVIEW
-package "CLIENTS" #F8F9FA {
-    component "**App / Query**\n<size:10>Read / Write</size>" as CLIENT
-}
+' DISTRIBUTED DB SYSTEM OVERVIEW - Mixed layout for PPTX
 
-package "COORDINATION" #F8F9FA {
-    component "**Router / Coordinator**\n<size:10>Route to partition</size>" as ROUTER
+together {
+    component "**App / Query**\n<size:10>Read / Write</size>" as CLIENT
+    component "**Router**\n<size:10>Route to partition</size>" as ROUTER
     component "**Partition Map**\n<size:10>hash(key) mod N</size>" as PMAP <<Config>>
 }
 
-package "DATA NODES" #F8F9FA {
+rectangle "DATA NODES" #F8F9FA {
     database "**Node 1**\n<size:10>P0, P3</size>" as N1
     database "**Node 2**\n<size:10>P1, P4</size>" as N2
     database "**Node 3**\n<size:10>P2, P5</size>" as N3
+    N1 -[hidden]right- N2
+    N2 -[hidden]right- N3
 }
 
-package "REPLICATION" #F8F9FA {
-    component "**Replication**\n<size:10>Sync / async</size>" as REPL <<Agent>>
-}
+component "**Replication**\n<size:10>Sync / async</size>" as REPL <<Agent>>
 
-CLIENT --> ROUTER : "request"
-ROUTER --> PMAP : "lookup"
-ROUTER --> N1 : "partition P0/P3"
-ROUTER --> N2 : "partition P1/P4"
-ROUTER --> N3 : "partition P2/P5"
-N1 --> REPL : "replicate"
-N2 --> REPL : "replicate"
-N3 --> REPL : "replicate"
+CLIENT -right-> ROUTER : "request"
+ROUTER -right-> PMAP : "lookup"
+ROUTER -down-> N1 : "P0/P3"
+ROUTER -down-> N2 : "P1/P4"
+ROUTER -down-> N3 : "P2/P5"
+N1 -down-> REPL : "sync"
+N2 -down-> REPL : "sync"
+N3 -down-> REPL : "sync"
 
 @enduml

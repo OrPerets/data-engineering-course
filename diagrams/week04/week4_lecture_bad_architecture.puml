@@ -131,27 +131,28 @@ skinparam component<<failure>> {
 
 '=================================================
 
-' BAD ARCHITECTURE vs CORRECT
+' BAD ARCHITECTURE vs CORRECT - Mixed layout for PPTX
+
 rectangle "BAD (fails in production)" #FFEBEE {
     database "**Source**\n<size:10>raw_events</size>" as SRC_BAD
-    component "**INSERT**\n<size:10>No staging, no MERGE</size>" as INS_BAD <<Bad>>
-    database "**Target**\n<size:10>Duplicates on rerun</size>" as TGT_BAD <<down>>
+    component "**INSERT**\n<size:10>No staging</size>" as INS_BAD <<Bad>>
+    database "**Target**\n<size:10>Duplicates</size>" as TGT_BAD <<down>>
+    SRC_BAD -right-> INS_BAD : "full"
+    INS_BAD -right-> TGT_BAD : "2× rows"
 }
-SRC_BAD --> INS_BAD : "full or slice"
-INS_BAD --> TGT_BAD : "rerun = 2× rows"
 
-rectangle "CORRECT" #F8F9FA {
+rectangle "CORRECT" #E8F5E9 {
     database "**Source**\n<size:10>raw_events</size>" as SRC_OK
     component "**Extract**\n<size:10>Watermark</size>" as EXT <<Tool>>
-    database "**Staging**\n<size:10>Dedup + DLQ</size>" as STG
-    component "**MERGE**\n<size:10>Idempotent upsert</size>" as MERGE <<Agent>>
-    database "**Target**\n<size:10>events_clean</size>" as TGT_OK
+    database "**Staging**\n<size:10>Dedup</size>" as STG
+    component "**MERGE**\n<size:10>Idempotent</size>" as MERGE <<Agent>>
+    database "**Target**\n<size:10>clean</size>" as TGT_OK
     database "**Control**\n<size:10>watermark</size>" as CTRL
+    SRC_OK -right-> EXT
+    EXT -right-> STG
+    STG -right-> MERGE
+    MERGE -right-> TGT_OK
+    MERGE -down-> CTRL : "update"
 }
-SRC_OK --> EXT
-EXT --> STG
-STG --> MERGE
-MERGE --> TGT_OK
-MERGE --> CTRL : "update after success"
 
 @enduml

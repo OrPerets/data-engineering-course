@@ -131,25 +131,28 @@ skinparam component<<failure>> {
 
 '=================================================
 
-' INCREMENTAL LOAD + RERUN (NO DUPLICATES)
-package "CONTROL" #F8F9FA {
-    database "**Control table**\n<size:10>last_loaded_at</size>" as CTRL
-}
+' INCREMENTAL LOAD + RERUN (NO DUPLICATES) - Mixed layout for PPTX
 
-component "**Read watermark**\n<size:10>Get last_loaded_at</size>" as READ <<Tool>>
-component "**Extract slice**\n<size:10>WHERE ts > watermark</size>" as EXTRACT <<Tool>>
-component "**Transform + Dedup**\n<size:10>Staging</size>" as TRANSFORM <<Tool>>
-component "**MERGE target**\n<size:10>ON CONFLICT DO NOTHING</size>" as MERGE <<Tool>>
+database "**Control**\n<size:10>watermark</size>" as CTRL <<Config>>
+
+component "**Read watermark**\n<size:10>Get last_ts</size>" as READ <<Tool>>
 
 database "**Source**\n<size:10>Partitioned</size>" as SRC
-database "**Target**\n<size:10>No duplicates</size>" as TGT
 
-CTRL --> READ : "1"
-READ --> EXTRACT : "2"
-SRC --> EXTRACT
-EXTRACT --> TRANSFORM : "3"
-TRANSFORM --> MERGE : "4"
-MERGE --> TGT
-MERGE --> CTRL : "5 Update watermark\n(after success)"
+component "**Extract slice**\n<size:10>WHERE ts > wm</size>" as EXTRACT <<Tool>>
+
+component "**Transform**\n<size:10>Dedup</size>" as TRANSFORM <<Tool>>
+
+component "**MERGE**\n<size:10>ON CONFLICT</size>" as MERGE <<Agent>>
+
+database "**Target**\n<size:10>No dups</size>" as TGT
+
+CTRL -right-> READ : "1"
+READ -right-> EXTRACT : "2"
+SRC -down-> EXTRACT
+EXTRACT -right-> TRANSFORM : "3"
+TRANSFORM -right-> MERGE : "4"
+MERGE -right-> TGT
+MERGE -down-> CTRL : "5 update"
 
 @enduml

@@ -131,31 +131,32 @@ skinparam component<<failure>> {
 
 '=================================================
 
-' SKEW MITIGATION: SALTING FLOW (Reasoning)
-package "BEFORE (Skew)" #F8F9FA {
-    component "**Large table**\n<size:10>key 888 -> 1B rows</size>" as LARGE
-    component "**Shuffle**\n<size:10>all to one reducer</size>" as SHUFFLE1
-    component "**Reducer**\n<size:10>OOM / timeout</size>" as REDUCE1
+' SKEW MITIGATION: SALTING FLOW (Reasoning) - Mixed layout for PPTX
+
+rectangle "BEFORE (Skew)" #FFEBEE {
+    component "**Large table**\n<size:10>key 888 -> 1B rows</size>" as LARGE1
+    component "**Shuffle**\n<size:10>one reducer</size>" as SHUFFLE1
+    component "**Reducer**\n<size:10>OOM</size>" as REDUCE1 <<Bad>>
+    LARGE1 -right-> SHUFFLE1
+    SHUFFLE1 -right-> REDUCE1
 }
 
-package "SALTING" #F8F9FA {
-    component "**Map: append salt**\n<size:10>key -> key-salt</size>" as SALT
-    component "**Small table: replicate**\n<size:10>key -> key-1..key-N</size>" as REPL
+rectangle "SALTING SOLUTION" #E8F5E9 {
+    component "**Large table**\n<size:10>key 888 -> 1B rows</size>" as LARGE2
+    component "**Map: salt**\n<size:10>key-1..key-N</size>" as SALT
+    component "**Small table**\n<size:10>replicate</size>" as REPL
+    LARGE2 -right-> SALT
 }
 
-package "AFTER (Balanced)" #F8F9FA {
-    component "**Shuffle**\n<size:10>key-salt -> reducer</size>" as SHUFFLE2
-    component "**N Reducers**\n<size:10>each ~1B/N rows</size>" as REDUCE2
-    component "**Second MR / merge**\n<size:10>merge back by key</size>" as MERGE
+rectangle "AFTER (Balanced)" #E8F5E9 {
+    component "**Shuffle**\n<size:10>key-salt</size>" as SHUFFLE2
+    component "**N Reducers**\n<size:10>~1B/N each</size>" as REDUCE2 <<success>>
+    component "**Merge**\n<size:10>by key</size>" as MERGE
+    SHUFFLE2 -right-> REDUCE2
+    REDUCE2 -right-> MERGE
 }
 
-LARGE --> SHUFFLE1
-SHUFFLE1 --> REDUCE1
-
-LARGE --> SALT
-SALT --> SHUFFLE2
-REPL --> SHUFFLE2
-SHUFFLE2 --> REDUCE2
-REDUCE2 --> MERGE
+SALT -down-> SHUFFLE2
+REPL -down-> SHUFFLE2
 
 @enduml
