@@ -1,445 +1,363 @@
 # Week 6: MapReduce Fundamentals
 
 ## Purpose
-- MapReduce is the execution model for distributed batch processing
-- Shuffle cost and data skew dominate failure at scale
-- Engineering: design keys, minimize shuffle, handle skew
+- MapReduce is the computational model for distributed batch processing
+- Formalizes divide-and-conquer for data-parallel computation
+- Engineering: shuffle cost and data skew dominate failure at scale
 
 ## Learning Objectives
-- Define MapReduce: map, shuffle, reduce
-- Write map and reduce functions for aggregation
-- Trace a full job: map emits, shuffle groups, reduce aggregates
-- Compute shuffle size and reducer input size
-- Identify data skew and hot keys as failure modes
-- Describe combiner and salting
-- Reason about cost: work, span, network
+- Define MapReduce formally: map, shuffle, reduce as operators
+- State the computational model and constraints
+- Analyze shuffle complexity and network cost
+- Identify why exact global aggregation fails at scale
+- Design keys for balanced partitioning
+- Describe combiner correctness requirements
 
-## The Real Problem This Lecture Solves
+---
 
-## Production Failure
-- Team ran "clicks per user_id" at 1B events
-- One bot user_id had 800M clicks
-- Hash partitioning sent that user_id to one reducer
+# Part I: The Computational Problem
 
-## Consequences
-- Reducer received ~800M values; OOM
-- Job failed or blocked the cluster
-- No combiner; shuffle moved 800M pairs
-- **Root cause:** naïve key design; no combiner; no salting
+## The Problem We Are Solving
+- **Input:** Dataset $D$ with $n$ records distributed across $M$ machines
+- **Goal:** Compute aggregate $A = \bigoplus_{r \in D} f(r)$ for associative $\oplus$
+- **Constraint:** No single machine can hold all of $D$
+- **Output:** Result available at coordinator or distributed across reducers
 
-## Takeaway
-- MapReduce scales only if key distribution designed for it
-- Skew and shuffle cost are main failure modes at scale
+## Why Exact Centralized Solutions Fail
 
-## Problem Framing: Global Aggregation Cost
-- Global aggregation forces like keys to meet
-- Let \(E\) = map emits, \(s\) = bytes per pair
+## The Impossibility Argument
+- Dataset size $|D| = n$ records, each of size $s$ bytes
+- Total data: $n \cdot s$ bytes
+- Single machine memory: $M_{\text{max}}$ bytes
+- **Constraint:** $n \cdot s \gg M_{\text{max}}$
+- **Consequence:** Cannot load all data into one machine's memory
+
+## Concrete Example
+- $n = 10^{12}$ records (1 trillion events)
+- $s = 100$ bytes per record
+- Total: $10^{14}$ bytes = 100 TB
+- Single machine RAM: $10^{12}$ bytes = 1 TB
+- **Gap:** 100× larger than memory
+- **Conclusion:** Must process in parallel across machines
+
+## The Communication Bottleneck
+- Even if we had infinite compute, data must move
+- Network bandwidth $B$ bytes/second
+- Moving 100 TB at 10 Gbps: $\frac{10^{14}}{1.25 \times 10^9} \approx 80{,}000$ seconds
+- **Insight:** Minimizing data movement is the optimization target
+
+---
+
+# Part II: Formal MapReduce Model
+
+## MapReduce: Formal Definition
+- **Map:** $\text{map}: (k_1, v_1) \rightarrow [(k_2, v_2)]$
+- Per-record function; emits zero or more key-value pairs
+- **Shuffle:** $\text{shuffle}(k_2) = \{v_2 \mid (k_2, v_2) \text{ emitted}\}$
+- Groups all values by key; same key → same reducer
+- **Reduce:** $\text{reduce}: (k_2, [v_2]) \rightarrow [(k_3, v_3)]$
+- Aggregates values per key
+
+## The Shuffle as Distributed GROUP BY
+- Shuffle implements: `GROUP BY key`
+- **Partition function:** $\pi(k) = h(k) \mod R$
+- $h$: hash function; $R$: number of reducers
+- **Guarantee:** All $(k, v)$ with same $k$ reach same reducer
+- **Cost:** All map outputs cross the network
+
+## Formal Constraints
+- **Map:** No cross-record state; pure function
+- **Reduce:** Receives complete group for one key
+- **Memory:** Reducer must hold all values for one key
+- **Determinism:** Same input → same output (enables retry)
+
+## Diagram: MapReduce Pipeline
+- Input splits → Map tasks → Shuffle (partition + sort) → Reduce tasks → Output
+- (see Diagram: week6_lecture_slide17_system_overview.puml)
+
+---
+
+# Part III: Cost Model and Complexity
+
+## Cost Model: Work, Span, Communication
+- **Work $W$:** Total computation across all machines
+- **Span $S$:** Critical path (longest sequential chain)
+- **Communication $C$:** Total bytes transferred in shuffle
+
+## Shuffle Cost Formula
+- Let $E$ = total map emissions (key-value pairs)
+- Let $s$ = average size per pair (bytes)
 $$
-B_{\text{shuffle}} = E \cdot s
+C_{\text{shuffle}} = E \cdot s
 $$
-- Interpretation: communication grows with emits, not reducers
-- Engineering implication: reduce emits via combiner or smaller keys
+- **Interpretation:** Communication cost scales with map output size
+- **Engineering:** Reduce $E$ via filtering, combining, smaller keys
 
-## The System We Are Building
-
-## Domain Overview
-- **Domain:** event analytics (clicks, views, purchases)
-- Aggregate by key for BI and product
-- **Input:** event log or ETL output (events_clean)
-- (event_id, user_id, event_type, event_time, …); partitioned by date
-
-## Job Design
-- **Map:** emits (user_id, 1) or (session_id, 1)
-- **Shuffle:** groups by key
-- **Reduce:** sums ⇒ (user_id, count)
-- **Output:** aggregates for dashboards and downstream pipelines
-- Same key → same reducer; hot key can kill one reducer
-
-## Diagram Manifest
-- Slide 17 → week6_lecture_slide17_system_overview.puml
-- Slide 20 → week6_lecture_slide20_execution_flow.puml
-- Slide 29 → week6_lecture_slide29_failure_skew.puml
-
-## Why MapReduce in Data Engineering
-- Batch processing at scale: single node cannot process TB
-- MapReduce: divide input; map in parallel; shuffle; reduce
-- Foundation for Hadoop, Spark, and distributed SQL
-- Enables aggregation, join, and indexing at cluster scale
-
-## Core Concepts (1/2)
-- **MapReduce:** programming model
-- Map (emit (k,v)) → Shuffle (group by k) → Reduce (aggregate)
-- **Map:** pure function per record; no cross-record state
-- Emits zero or more (key, value) pairs
-- **Shuffle:** framework sends same key to same reducer
-- Sort/group by key
-
-## Core Concepts (2/2)
-- **Reduce:** receives one key and iterator of values
-- Emits final (key, aggregate)
-- **Key constraint:** same key lands on one reducer
-- hash(key) mod R determines reducer
-- **Guarantees:** deterministic if map/reduce pure
-- **What breaks:** shuffle I/O; skew ⇒ OOM
-
-## Formal Map and Shuffle
-- Map emits zero or more pairs per record
+## Time Complexity
+- **Map phase:** $T_{\text{map}} = O\left(\frac{n}{P_m}\right)$ with $P_m$ mappers
+- **Shuffle phase:** $T_{\text{shuffle}} = O\left(\frac{E \cdot s}{B}\right)$ with bandwidth $B$
+- **Reduce phase:** $T_{\text{reduce}} = O\left(\frac{E}{P_r}\right)$ with $P_r$ reducers
 $$
-\text{map}:(k,v) \rightarrow [(k', v')]
+T_{\text{total}} = T_{\text{map}} + T_{\text{shuffle}} + T_{\text{reduce}}
 $$
-- Interpretation: per-record pure transformation
-- Engineering implication: parallelizable without coordination
-- Shuffle groups values by key
+- **Bottleneck:** Shuffle dominates at scale
+
+## Space Complexity
+- **Map:** $O(|split|)$ per mapper + output buffer
+- **Reduce:** $O(\max_k |values(k)|)$ — must hold all values for one key
+- **Failure mode:** One key with $10^9$ values → reducer OOM
+
+---
+
+# Part IV: Why Exact Solutions Require Full Shuffle
+
+## The Aggregation Problem
+- **Goal:** Compute $\sum_{i=1}^{n} x_i$ where $x_i$ distributed across machines
+- **Exact solution:** All $x_i$ must reach the aggregator
+- **Communication:** $\Omega(n)$ — cannot do better for exact result
+
+## The Distinct Count Problem
+- **Goal:** Count distinct elements in stream $S$
+- **Exact solution:** Must track all seen elements
+- **Space:** $\Omega(|S|)$ for exact count
+- **MapReduce:** Shuffle all (element, 1) → reducer counts unique keys
+- **Cost:** Still $\Omega(n)$ communication
+
+## The Join Problem
+- **Tables:** $R$ with $|R|$ rows, $S$ with $|S|$ rows
+- **Join:** $R \bowtie_k S$ on key $k$
+- **Shuffle:** All of $R$ and $S$ must be grouped by $k$
 $$
-\text{shuffle}(k') = \{ v' \mid (k', v') \text{ emitted} \}
+C_{\text{join}} = |R| \cdot s_R + |S| \cdot s_S
 $$
-- Interpretation: all values for a key sent to the same reducer
-- Engineering implication: shuffle size drives network cost
+- **Skew:** If one key $k^*$ appears in 80% of $S$, one reducer gets 80% of data
 
-## Formal Reduce and Correctness
-- Reducer aggregates with a binary operator \(\oplus\)
+## The Fundamental Trade-off
+- **Exact computation** → Full data movement
+- **Reduced communication** → Approximation or pre-aggregation
+- **Engineering choice:** Combiner for associative operations
+
+---
+
+# Part V: Data Skew and Partitioning
+
+## Data Skew: Formal Definition
+- Let $n_i$ = values sent to reducer $i$, total $R$ reducers
+- Total values: $N = \sum_i n_i$
 $$
-\text{reduce}(k', [v']) = (k', \bigoplus v')
+\text{Skew} = \frac{\max_i n_i}{\frac{N}{R}} = \frac{R \cdot \max_i n_i}{N}
 $$
-- Interpretation: order of values does not matter
-- Engineering implication: correctness requires associativity + commutativity
-- Communication cost is proportional to shuffle size
+- **Interpretation:** Ratio of hottest reducer to average load
+- **Balanced:** Skew $\approx 1$
+- **Skewed:** Skew $\gg 1$ (e.g., 100×)
+
+## Skew Causes Stragglers
+- Job completion time: $T = \max_i T_i$
+- If reducer $i^*$ has $100\times$ average load:
 $$
-\text{Comm} = O(|\text{shuffle output}|)
+T_{i^*} \approx 100 \cdot T_{\text{avg}}
 $$
-- Interpretation: shuffle dominates runtime at scale
-- Engineering implication: use combiner to shrink shuffle
+- **Result:** Job takes 100× longer than balanced case
+- **Or:** Reducer $i^*$ runs out of memory → job fails
 
-## Data Skew Metric
-- Let \(n_i\) be values sent to reducer \(i\), \(R\) reducers
+## Why Skew Happens
+- **Zipf's Law:** Frequency $f(r) \propto r^{-\alpha}$ for rank $r$
+- Top 1% of keys may contain 80% of values
+- **Real example:** Bot user_id has 800M clicks; others have 1K
+
+## Skew Detection
+- Monitor partition sizes after shuffle
+- Alert if $\frac{\max_i n_i}{\text{median}_i n_i} > \theta$ (e.g., $\theta = 10$)
+
+---
+
+# Part VI: Combiner — Local Pre-Aggregation
+
+## Combiner: Formal Definition
+- **Combiner:** $\text{combine}: (k, [v_1, v_2, \ldots]) \rightarrow (k, v')$
+- Applied on map output before shuffle
+- **Correctness requirement:** $\oplus$ must be associative and commutative
 $$
-\text{skew} = \frac{\max_i n_i}{\frac{1}{R}\sum_i n_i}
+v_1 \oplus v_2 \oplus v_3 = (v_1 \oplus v_2) \oplus v_3 = v_1 \oplus (v_2 \oplus v_3)
 $$
-- Interpretation: ratio of hottest reducer to average load
-- Engineering implication: skew \(\gg 1\) causes stragglers and OOM
 
-## Formal Model: Input and Output Types
-- **Input:** (key_in, value_in) or split of raw records
-- **Map:** (k_in, v_in) → list of (k_out, v_out)
-- k_out is the grouping key for reduce
-- **Shuffle:** groups all (k_out, v_out) by k_out
-- **Reduce:** (k, list of v) → one or more (k, result)
+## Combiner Impact on Shuffle
+- Without combiner: emit $E$ pairs, shuffle $E \cdot s$ bytes
+- With combiner: emit $U_m$ unique keys per mapper $m$
+$$
+C_{\text{with combiner}} = \left(\sum_m U_m\right) \cdot s
+$$
+- **Reduction ratio:** $\frac{\sum_m U_m}{E}$
+- **Example:** 1M occurrences of 10K words → 10K pairs after combine
 
-## Formal Model: Key and Partitioning
-- **Partition function:** partition(k, R) = hash(k) mod R
-- R = number of reducers
-- Same k ⇒ same partition ⇒ same reducer
-- **Implication:** design k so load is balanced
-- Hot k ⇒ one partition overloaded
+## When Combiner is Valid
+| Operation | Associative? | Commutative? | Combiner Valid? |
+|-----------|--------------|--------------|-----------------|
+| Sum       | ✓            | ✓            | ✓               |
+| Count     | ✓            | ✓            | ✓               |
+| Max/Min   | ✓            | ✓            | ✓               |
+| Average   | ✗            | ✗            | ✗ (use sum,count) |
+| Median    | ✗            | ✗            | ✗               |
+| Distinct  | ✗            | ✗            | ✗ (needs set)   |
 
-## Pseudocode: Map and Reduce (Word Count)
-- **Map:** `map(line_id, text): for word in split(text): emit(word, 1)`
-- **Reduce:** `reduce(word, values): emit(word, sum(values))`
-- Map: no cross-line state
-- Reduce: one key, aggregate over values; deterministic
+---
 
-## Data Context: Sales by Product (10 Records)
-- Records: (transaction_id, product_id, amount)
-- product_id keys: 101, 102, 103
-- Goal: total sales per product_id
+# Part VII: Manual Execution Example
 
-## In-Lecture Exercise 1: Sales Map and Shuffle
-- Write map outputs (product_id, amount)
-- Group by product_id after shuffle
+## Running Example — Word Count
+- **Input:** 4 lines of text
+- **Goal:** Count occurrences of each word
 
-## In-Lecture Exercise 1: Solution (1/2)
-- Map emits amounts keyed by product_id
-- 101→[10.0,7.5,2.0,11.0]
-- 102→[5.5,4.5,6.0]
-- 103→[3.0,8.0,1.5]
+## Input Data
 
-## In-Lecture Exercise 1: Solution (2/2)
-- Three shuffle groups: 101, 102, 103
-- Total map emits = 10 (one per record)
+| line_id | text      |
+|--------:|-----------|
+| 1       | a b a     |
+| 2       | b a c     |
+| 3       | a c       |
+| 4       | b b a     |
 
-## In-Lecture Exercise 1: Takeaway
-- Map output key defines the reduce grouping
-- Shuffle groups are the reducer inputs
+- Total tokens: 11
+- Distinct words: 3 (a, b, c)
 
-## Running Example — Data & Goal
-- **Input:** log lines (record = line)
-- Sample 4 lines: "a b a", "b a c", "a c", "b b a"
-- **Goal:** word count — (word, count)
-- **Schema:** input (line_id, text); map emits (word, 1)
+## Step 1: Map Phase
+- **Map function:** `map(line_id, text) → [(word, 1) for word in split(text)]`
+- Line 1: (a,1), (b,1), (a,1) — 3 emissions
+- Line 2: (b,1), (a,1), (c,1) — 3 emissions
+- Line 3: (a,1), (c,1) — 2 emissions
+- Line 4: (b,1), (b,1), (a,1) — 3 emissions
+- **Total map emissions:** 11 pairs
 
-## Running Example — Input Table
+## Step 2: Shuffle Phase (No Combiner)
+- Partition by $h(\text{word}) \mod 3$
+- All (a, 1) → reducer 0; (b, 1) → reducer 1; (c, 1) → reducer 2
+- **Shuffle groups:**
+  - a → [1, 1, 1, 1, 1] — 5 values
+  - b → [1, 1, 1, 1] — 4 values
+  - c → [1, 1] — 2 values
+- **Shuffle size:** 11 pairs × 20 B = 220 B
 
-| line_id | text    |
-|--------:|---------|
-| 1       | a b a   |
-| 2       | b a c   |
-| 3       | a c     |
-| 4       | b b a   |
-
-- Distinct keys after map: a, b, c
-- Total map emits = 11
-
-## Running Example — Step-by-Step (1/4)
-- **Step 1: Map** — each line independently; emit (word, 1)
-- R1: (a,1),(b,1),(a,1)
-- R2: (b,1),(a,1),(c,1)
-- R3: (a,1),(c,1)
-- R4: (b,1),(b,1),(a,1)
-- Total map emits: 3+3+2+3 = 11 pairs
-
-## Running Example — Step-by-Step (2/4)
-- **Step 2: Shuffle** — group by key
-- All (a,1) → reducer for "a"; same for "b", "c"
-- **Grouped:** a→[1,1,1,1,1], b→[1,1,1,1], c→[1,1]
-- Shuffle moves 11 (k,v) pairs over network
-![](../../diagrams/week06/week6_lecture_slide20_execution_flow.png)
-
-## Running Example — Step-by-Step (3/4)
-- **Step 3: Reduce** — each reducer gets one key and values
-- Sum the values
-- Reducer "a": sum([1,1,1,1,1]) = 5
-- Reducer "b": 4; Reducer "c": 2
+## Step 3: Reduce Phase
+- **Reduce function:** `reduce(word, values) → (word, sum(values))`
+- Reducer 0: a → sum([1,1,1,1,1]) = 5
+- Reducer 1: b → sum([1,1,1,1]) = 4
+- Reducer 2: c → sum([1,1]) = 2
 - **Output:** (a, 5), (b, 4), (c, 2)
 
-## Running Example — Step-by-Step (4/4)
-- **Result:** word-count table; correct and deterministic
-- **Conclusion:** map emits (word,1); shuffle groups; reduce sums
-- **Trade-off:** shuffle size = map output size
-- Skew would overload one reducer
+## With Combiner: Cost Reduction
+- **Combiner on each mapper:** sum 1s for same word
+- Line 1 after combine: (a, 2), (b, 1)
+- Line 2 after combine: (a, 1), (b, 1), (c, 1)
+- Line 3 after combine: (a, 1), (c, 1)
+- Line 4 after combine: (a, 1), (b, 2)
+- **Total after combine:** 8 pairs (down from 11)
+- **Shuffle size:** 8 × 20 B = 160 B (27% reduction)
 
-## Cost of Naïve Design (MapReduce)
+---
 
-## Naïve Choices
-- **Naïve:** emit (user_id, 1) for every event; no combiner
-- "Shuffle will handle it"
-- **Cost:** hot key gets 80% of values
-- One reducer OOM or 10× slower
+# Part VIII: Joins in MapReduce
 
-## Real Cost
-- Job fails or blocks cluster
-- Debugging "which reducer?" and "why so slow?"
-- Re-run with same design fails again
-- **Engineering rule:** design key for balance; use combiner
+## Reduce-Side Join: Algorithm
+- **Input:** Tables $R(k, v_R)$ and $S(k, v_S)$
+- **Map (R):** emit $(k, (\text{"R"}, v_R))$
+- **Map (S):** emit $(k, (\text{"S"}, v_S))$
+- **Shuffle:** Group by $k$
+- **Reduce:** For each $k$, cross-product $R$ values with $S$ values
 
-## MapReduce Pipeline Overview
-- Input (files/blocks) → split → Map tasks
-- Map emits (k,v) → Shuffle (sort & transfer) → Reduce tasks → output
-![](../../diagrams/week06/week6_lecture_slide17_system_overview.png)
-
-## Execution Flow: Map Phase
-- Each map task reads one split (block or line range)
-- For each record, map emits (k,v) pairs to buffer
-- Buffer may spill to local disk; sorted by k
-- No communication between map tasks
-- Parallelism = number of splits
-
-## Execution Flow: Shuffle Phase
-- Map output partitioned by key (hash(k) mod R)
-- Each partition sent to one reducer
-- On reducer side: fetch from all mappers; merge-sort by key
-- **Cost:** network = total map output size
-- Disk I/O for sort and spill
-
-## Execution Flow: Reduce Phase
-- Reducer receives merged stream of (k, iterator of values)
-- Reduce function aggregates and writes output
-- One output partition per reducer
-![](../../diagrams/week06/week6_lecture_slide20_execution_flow.png)
-
-## Cost & Scaling Analysis (1/3)
-- **Time model:**
+## Reduce-Side Join: Cost
 $$
-T_{\text{job}} \approx T_{\text{map}} + T_{\text{shuffle}} + T_{\text{reduce}}
+C_{\text{shuffle}} = |R| \cdot s_R + |S| \cdot s_S
 $$
-- Interpretation: shuffle adds directly to total runtime
-- Engineering implication: shrink shuffle before adding workers
-- **Work W:** total CPU over all tasks
-- **Span S:** critical path
-- **Speedup:** upper bound min(workers, map_tasks)
+- **Both tables shuffled entirely**
+- **Skew risk:** Hot key $k^*$ sends most of $R$ and $S$ to one reducer
 
-## Cost & Scaling Analysis (2/3)
-- **Memory:** map task: input chunk + output buffer
-- Reducer: one key's value list (skew risk)
-- **Storage:** map output and shuffle spill on disk
-- Output = reduce write
-- **Reducer OOM:** one key with huge value list
+## Map-Side Join (Broadcast)
+- **Condition:** One table fits in memory (e.g., $|R| < M$)
+- **Algorithm:** Broadcast $R$ to all mappers; stream $S$
+- **Cost:** $C = |R| \cdot P_m$ (replicate to each mapper)
+- **No shuffle of $S$**
+- **When to use:** $|R| \ll |S|$ and $|R| < \text{mapper memory}$
 
-## Cost & Scaling Analysis (3/3)
-- **Network / shuffle:** bytes shuffled ≈ map output
-- **Formula:**
-$$
-B_{\text{shuffle}} \approx N_{\text{emits}} \times \text{avg\_size}
-$$
-- Interpretation: bytes scale linearly with emits
-- Engineering implication: filter early, compress, combine
-- **Latency:** shuffle often bottleneck
+## Join Cost Comparison
 
-## Shuffle Size Calculation
-- **Example:** 10^9 records, 10 words each ⇒ 10^10 emits
-- 20 B per (word, count) ⇒ 200 GB shuffle
-- At 10 Gbps: 200 GB / 1.25 GB/s ≈ 160 s minimum
-- **Reduction:** combiner cuts map output
+| Join Type | Shuffle Cost | Skew Risk | Memory Requirement |
+|-----------|--------------|-----------|-------------------|
+| Reduce-side | $\|R\| + \|S\|$ | High | $O(\max_k \|R_k\| \cdot \|S_k\|)$ |
+| Map-side (broadcast) | $0$ | None | $O(\|R\|)$ per mapper |
 
-## In-Lecture Exercise 2: Shuffle Size Math
-- 4 lines, 15 map emits total
-- Each (word,1) pair is 20 bytes
-- Compute total shuffle size
-- With 3 reducers, estimate bytes per reducer
-- "the" appears in 3 lines: how many pairs for that key?
+---
 
-## In-Lecture Exercise 2: Solution (1/2)
-- Total map output: 15 × 20 B = 300 B
-- Shuffle size equals map output: 300 B
-- Even split: 300 / 3 ≈ 100 B per reducer
+# Part IX: Production Failure Case Study
 
-## In-Lecture Exercise 2: Solution (2/2)
-- "the" appears 3 times ⇒ 3 (k,v) pairs
-- All 3 pairs go to one reducer for key "the"
+## The Problem
+- **Job:** Count clicks per user_id on 1B events
+- **Key design:** Emit $(user\_id, 1)$ for each click
+- **Reducers:** 1,000
 
-## In-Lecture Exercise 2: Takeaway
-- Shuffle size scales with number of map emits
-- Hot keys concentrate bytes on one reducer
-- Even distribution is a best-case assumption
+## What Happened
+- Bot user_id 888 generated 800M clicks
+- $h(888) \mod 1000 = 42$
+- Reducer 42 received 800M values
+- **Memory:** $800M \times 100$ B = 80 GB
+- **Result:** OOM crash
 
-## Reducer Memory and Skew
-- Each reducer holds one key's value list in memory
-- **Skew:** one key has 10^9 values ⇒ list size huge ⇒ OOM
-- Key frequency is random; heavy-tail makes hot keys likely
-- **Mitigation:** spread hot key (salting); increase memory
+## Root Cause Analysis
+- **Skew:** $\frac{800M}{1M} = 800$ (vs. average 1M per reducer)
+- **No combiner:** All 800M (888, 1) pairs shuffled
+- **No salting:** Hot key not distributed
 
-## Pitfalls & Failure Modes (1/3)
-- **Data skew:** one key has most records
-- One reducer gets most data ⇒ OOM or timeout
-- **Non-deterministic map/reduce:** breaks replay and debugging
-- **Shuffle storm:** too many/large map outputs; no combiner
+## The Fix
+1. **Combiner:** Map-side sum reduces 800M to 1 pair per mapper
+2. **Salting:** Emit $(user\_id || salt, 1)$ with $salt \in [0, 99]$
+3. **Two-phase:** First reduce by salted key; second reduce by original key
 
-## Pitfalls & Failure Modes (2/3)
-- **Hot key:** e.g. user_id 888 (bot) has 1B clicks
-- hash(888) mod R → one reducer
-- That reducer receives ~1B records; others finish quickly
-![](../../diagrams/week06/week6_lecture_slide29_failure_skew.png)
+---
 
-## Pitfalls & Failure Modes (3/3)
-- **Detection:** partition sizes after shuffle; reducer runtimes
-- Alert if max ≫ median
-- **Combiner:** local pre-aggregation before shuffle
-- **Salting:** append random suffix; replicate small side in join
+# Part X: Best Practices and Engineering Judgment
 
-## Failure: Hot Reducer (Skew)
-- Hash partitioning sends same key to same reducer
-- Hot key ⇒ one reducer gets huge input
-- That reducer: OOM or timeout
-![](../../diagrams/week06/week6_lecture_slide29_failure_skew.png)
-
-## In-Lecture Exercise 4: Hot Key Skew
-- user_id 888 has 1B clicks; others < 1K
-- Hash partition to 1,000 reducers
-- Each click is 100 B
-- Compute data volume for reducer handling 888
-- Why does it fail?
-
-## In-Lecture Exercise 4: Solution (1/2)
-- Reducer for 888 gets ~1B records
-- Data size: 1B × 100 B = 100 GB
-
-## In-Lecture Exercise 4: Solution (2/2)
-- 100 GB exceeds reducer memory and spill budgets
-- One reducer becomes the straggler and times out
-
-## In-Lecture Exercise 4: Takeaway
-- Hot keys create single-reducer bottlenecks
-- Detect skew early and apply salting or custom partitioning
-
-## Combiner: When and Why
-- **When:** reduce function is associative and commutative
-- E.g. sum, count, max
-- **Effect:** combine (k,v1),(k,v2) on map side → (k, v1+v2)
-- **Correctness:** same as running reduce on full value list
-- Trade-off: extra map CPU, less network traffic
-- **Trade-off:** not all reducers support (e.g. median)
-
-## In-Lecture Exercise 3: Combiner Impact
-- Word count: 15 map emits drop to 8 after combining
-- Each (k,v) is 20 bytes
-- Compute new shuffle size
-- Why does the final reduce output stay correct?
-
-## In-Lecture Exercise 3: Solution (1/2)
-- New shuffle size: 8 × 20 B = 160 B
-- Reduction from 300 B to 160 B
-
-## In-Lecture Exercise 3: Solution (2/2)
-- Sum is associative and commutative
-- Local sums equal global sum after shuffle
-
-## In-Lecture Exercise 3: Takeaway
-- Combiners reduce shuffle without changing results
-- Use only with associative, commutative reduces
-
-## Custom Partitioner and Salting
-
-## Custom Partitioner
-- **Default:** hash(k) mod R; even spread only if key distribution even
-- **Custom:** override to control which reducer gets which keys
-- E.g. range partition, avoid known hot keys
-- **Contract:** deterministic; same key always same partition
-
-## Salting
-- For hot key k, emit (k||salt, v) with random salt
-- N reducers get 1/N of hot key
-- **Join:** small table row replicated to all salt buckets
-- Second pass to combine results per original key
-- **Trade-off:** more reducers and merge logic
-
-## Best Practices (1/2)
+## Key Design Principles
 - Design map output key for balanced distribution
-- Avoid single dominant key
-- Use combiner when reduce is sum/count/max
-- Monitor shuffle size and per-partition sizes
-- Alert on skew (max/median ratio)
-- Prefer smaller, bounded reduce groups
+- Use combiner when reduce is associative + commutative
+- Monitor shuffle size and partition variance
+- Test with skewed input (synthetic hot key)
 
-## Best Practices (2/2)
-- Keep map and reduce pure (no shared mutable state)
-- Deterministic for replay
-- Minimize map output size: smaller keys/values; filter early
-- Test with skewed input (one key 80% of data)
-- Document partition function and key design
+## Cost Optimization Checklist
+| Lever | Action | Impact |
+|-------|--------|--------|
+| Filter early | Drop irrelevant records in map | Reduce $E$ |
+| Smaller keys | Use hash or ID instead of string | Reduce $s$ |
+| Combiner | Pre-aggregate before shuffle | Reduce $E$ |
+| Broadcast join | Load small table in memory | Eliminate shuffle |
 
-## MapReduce vs SQL Aggregation
-- SQL: GROUP BY key → aggregate; optimizer chooses plan
-- MapReduce: map emits (k,v); shuffle = distributed group by
-- Reduce = aggregate
-- Same logical result; MapReduce explicit about shuffle cost
-- Use MapReduce when: scale beyond single node; need control
+## Failure Detection
+- **Metric:** $\frac{\max \text{ reducer input}}{\text{median reducer input}}$
+- **Alert:** Ratio > 10 indicates skew
+- **Action:** Investigate key distribution; apply salting
 
-## Summary: Phases and Cost
-- **Map:** read split, emit (k,v); cost ∝ input size
-- **Shuffle:** group by key, transfer; cost ∝ map output; bottleneck
-- **Reduce:** aggregate per key; skew ⇒ one reducer slow
+---
 
-## Relation to Parallelism (Week 3)
-- Divide: split input into chunks (splits)
-- Conquer: map per chunk in parallel
-- Combine: shuffle groups by key; reduce aggregates
-- Pure map/reduce and key design carry over
-- Skew and combiner from Week 3 apply here
+# Summary
 
-## Recap (Engineering Judgment)
-- **MapReduce:** Map emits (k,v); shuffle groups; reduce aggregates
-- Same key → same reducer; key distribution is main design lever
-- **Shuffle is the bottleneck:** at 10^9 records, shuffle dominates
-- Use combiner when reduce is sum/count
-- **Skew is first-class failure:** one hot key ⇒ OOM
-- Design for balance; use salting for hot keys
-- **Cost:** work, span, shuffle bytes
+## Recap — Engineering Judgment
+- **MapReduce:** Formal model for distributed batch computation
+- Map emits $(k, v)$; shuffle groups by $k$; reduce aggregates
+- **Communication dominates:** $C = E \cdot s$; minimize shuffle
+- **Skew is first-class failure:** One key with most values → OOM
+- **Combiner:** Valid only for associative + commutative ops
+- **Join cost:** $|R| + |S|$ for reduce-side; $0$ for broadcast
 
 ## Pointers to Practice
-- Run full manual MapReduce on 8–12 input records
-- Compute shuffle size and reducer input size
-- Solve one skew case: hot key and mitigation
-- Diagram required
+- Trace full MapReduce on 8–12 records by hand
+- Compute shuffle size with and without combiner
+- Identify skew scenario and propose mitigation
+- Draw execution flow diagram
 
 ## Additional Diagrams
+### System Overview
+![](../../diagrams/week06/week6_lecture_slide17_system_overview.png)
+### Execution Flow
+![](../../diagrams/week06/week6_lecture_slide20_execution_flow.png)
+### Failure: Skew
+![](../../diagrams/week06/week6_lecture_slide29_failure_skew.png)
 ### Practice: Skew Mitigation
 ![](../../diagrams/week06/week6_practice_slide18_skew_mitigation.png)
