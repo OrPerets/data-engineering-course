@@ -1,390 +1,450 @@
-# Week 9: Advanced Text Processing Techniques
+# Week 9: Advanced Text Processing — N-grams, Regex, and Embeddings
 
 ## Purpose
-- Beyond TF-IDF: n-grams, regex, embeddings as features
-- Engineering view: feature vs model; vocabulary growth
-- Pipelines must scale to large corpora and remain reproducible
+- Beyond TF-IDF: capture word order and context with n-grams
+- Vocabulary explosion: formal bounds on n-gram space complexity
+- Engineering: regex safety, embedding versioning, feature pipelines
 
-## Learning Objectives (1/2)
-- Define word n-grams and character n-grams
-- State vocabulary size growth: \(O(V^n)\) for word n-grams
-- Use regex in pipelines for cleaning and extraction
-- Know catastrophic backtracking risk
+## Learning Objectives
+- Define word and character n-grams formally
+- Derive vocabulary size bounds: $O(V^n)$ for word n-grams
+- Analyze MapReduce cost for n-gram extraction
+- Identify regex catastrophic backtracking and mitigations
+- Distinguish feature computation from model training
+- Design reproducible text feature pipelines
 
-## Learning Objectives (2/2)
-- Describe embeddings as dense vectors (lookup, dimension, versioning)
-- Distinguish feature pipeline from model training
-- Design MapReduce-style flow for n-gram extraction
-- Identify failure modes: regex timeout, encoding errors, hot n-gram
+---
 
-## Diagram Manifest
-- Slide 20 → week9_lecture_slide20_advanced_text_pipeline_overview.puml
-- Slide 26 → week9_lecture_slide26_mapreduce_ngram_flow.puml
-- Slide 29 → week9_lecture_slide29_failure_regex_ngram.puml
+# Part I: The N-gram Problem
 
-## The Real Problem This Lecture Solves
+## Motivation: Word Order Matters
+- TF-IDF treats documents as bags of words
+- "not good" vs "good" have same unigram weights
+- **N-grams:** Capture local word order
 
-## Vocabulary and Shuffle at Scale
-- N-gram vocabulary grows as \(V^n\)
-- Bigrams with V=50k ⇒ up to billions of types
-- Map emits (doc_id, ngram, 1) per instance
-- Shuffle size and reducer load explode
-
-## N-gram Size Model
-- Document length \(L\), n-gram length \(n\)
+## Formal Definition: Word N-gram
+- **Token sequence:** $w_1, w_2, \ldots, w_L$ (document of length $L$)
+- **N-gram:** Contiguous subsequence of length $n$
 $$
-\text{ngrams}(d) = L - n + 1
+g_i = (w_i, w_{i+1}, \ldots, w_{i+n-1}) \quad \text{for } i \in [1, L-n+1]
 $$
-- Interpretation: emissions scale linearly with document length
-- Engineering implication: map output size grows with total tokens
-- Vocabulary size upper bound for word n-grams
+- **Number of n-grams per document:**
 $$
-|V_n| \le V^n
+|G_n(d)| = L - n + 1
 $$
-- Interpretation: vocabulary grows exponentially with \(n\)
-- Engineering implication: larger \(n\) raises shuffle and storage cost
 
-## Regex in Production
-- One malformed record with backtracking-prone pattern
-- Can hang a mapper; CPU spike, timeout
-- Pipeline blocked by single record
+## Example: Bigrams
+- Text: "data engineering is fun"
+- Tokens: [data, engineering, is, fun], $L = 4$
+- Bigrams ($n=2$): (data, engineering), (engineering, is), (is, fun)
+- Count: $4 - 2 + 1 = 3$
 
-## Hot N-gram Key
-- If job partitions by ngram for df
-- Very common n-grams send most doc_ids to one reducer
+## Formal Definition: Character N-gram
+- **String:** $s = c_1 c_2 \ldots c_m$ (length $m$)
+- **Character n-gram:** Substring of length $n$
+$$
+g_i = c_i c_{i+1} \ldots c_{i+n-1} \quad \text{for } i \in [1, m-n+1]
+$$
+- **Example:** "data" with $n=3$: "dat", "ata"
 
-## Cost of Naïve Design (Advanced Text)
+---
 
-## No Combiner in N-gram Job
-- Emit (doc_id, ngram, 1) for every instance
-- Shuffle size = total instances
-- 10^6 docs × 200 terms × bigrams ⇒ ~2×10^8 pairs
-- Combiner cuts to distinct (doc_id, ngram) per partition
+# Part II: Vocabulary Size — Complexity Analysis
 
-## In-Lecture Exercise 3: Shuffle Size at Scale
-- 1M docs, 200 terms/doc, bigrams
-- Estimate map output pairs without combiner
-- With combiner, assume 10^7 distinct (doc_id, ngram)
-- Compare orders of magnitude
+## Word N-gram Vocabulary Bound
+- **Unigram vocabulary:** $|V_1| = V$ distinct words
+- **Bigram vocabulary (theoretical):** $|V_2| \leq V^2$
+- **General bound:**
+$$
+|V_n| \leq V^n
+$$
+- **Interpretation:** Exponential growth with $n$
 
-## In-Lecture Exercise 3: Solution (1/2)
-- Without combiner: ≈ 1M × 199 ≈ 2×10^8 pairs
-- Shuffle cost proportional to 2×10^8 emissions
+## Practical Vocabulary Size
+- Theoretical bound is loose due to sparsity
+- Not all word combinations occur
+- **Observed bigrams:** Typically $|V_2| \approx 10^6$ to $10^7$
+- **Theoretical max:** $V = 10^5 \Rightarrow V^2 = 10^{10}$
 
-## In-Lecture Exercise 3: Solution (2/2)
-- With combiner: ≈ 10^7 distinct pairs
-- ~20× reduction in shuffle volume
+## Example: Vocabulary Growth
 
-## In-Lecture Exercise 3: Takeaway
-- Combiners turn instance counts into distinct key counts
-- Bigram pipelines must minimize shuffle volume
+| N-gram | Theoretical Max | Typical Observed |
+|--------|-----------------|------------------|
+| Unigram ($n=1$) | $V = 10^5$ | $10^5$ |
+| Bigram ($n=2$) | $10^{10}$ | $10^6 - 10^7$ |
+| Trigram ($n=3$) | $10^{15}$ | $10^7 - 10^8$ |
 
-## Partition by N-gram for Count Job
-- Hot n-gram gets most doc_ids ⇒ one reducer OOM
-- Partition by (doc_id, ngram) for per-doc counts
-- Separate pass for df with cap or filter
+- **Engineering implication:** Vocabulary must be bounded for tractability
 
-## No Regex Timeout
-- Complex pattern on long input ⇒ catastrophic backtracking
-- One record blocks mapper
-- Timeout per record and non-backtracking patterns required
+## Character N-gram Vocabulary Bound
+- **Alphabet size:** $A$ (e.g., $A = 26$ for lowercase English)
+- **Character n-gram vocabulary:**
+$$
+|V_n^{\text{char}}| \leq A^n
+$$
+- **Example:** Trigrams: $26^3 = 17{,}576$
+- **Much smaller** than word n-gram vocabulary
 
-## Core Concepts (1/3)
-- **Word n-gram:** contiguous sequence of n tokens
-- E.g. bigram: "data engineering"
-- **Character n-gram:** contiguous substring of length n
-- E.g. "dat", "ata" for "data"
-- **Use:** word n-grams capture context; char n-grams handle typos
+## Map Emission Analysis
+- **Document length:** $L$ tokens
+- **N-grams per doc:** $L - n + 1 \approx L$ for small $n$
+- **Total map emissions:**
+$$
+E = \sum_{d \in D} (|d| - n + 1) \approx \sum_{d \in D} |d| = T
+$$
+- **Where $T$:** Total tokens in corpus
 
-## Core Concepts (2/3)
-- **Vocabulary size (word):** distinct n-grams ≤ \(V^n\)
-- V = unigram vocabulary; bigrams ≈ \(V^2\)
-- **Vocabulary size (char):** bounded by alphabet size^n
-- Smaller than word n-grams for small n
-- **What breaks:** very common n-grams → hot key
+## Why This Matters for MapReduce
+- Job emits one pair per n-gram occurrence
+- Shuffle size: $E \times s$ bytes
+- **Example:** $10^9$ tokens, 30 B/pair → 30 GB shuffle
+- **Combiner:** Reduces to unique (doc, ngram) pairs
 
-## Core Concepts (3/3)
-- **Feature pipeline:** raw text → tokenize → n-grams / TF-IDF / embedding
-- **Model:** training produces embeddings; pipeline consumes them
-- **Engineering:** version tokenization and embedding table
-- **Trade-off:** n-gram counts are interpretable; embeddings are opaque
+---
 
-## Data Context: 10-Doc Corpus
-- Tokenize: lowercase, split on whitespace
-- Use word bigrams (n=2) for examples
-- String example: "data"
+# Part III: N-gram TF-IDF — Distributed Computation
 
-## In-Lecture Exercise 1: N-gram Basics
-- Define word n-gram and character n-gram
-- List character trigrams for "data"
+## N-gram TF-IDF Pipeline
+- Same structure as unigram TF-IDF
+- **Job 1:** N-gram counts per document
+- **Job 2:** Document frequency per n-gram
+- **Job 3:** TF-IDF computation
 
-## In-Lecture Exercise 1: Solution (1/2)
-- Word n-gram: contiguous sequence of n tokens
-- Character n-gram: contiguous substring of length n
+## Job 1: N-gram Extraction and Counting
 
-## In-Lecture Exercise 1: Solution (2/2)
-- "data" trigrams: "dat", "ata"
+### Map
+```
+map(doc_id, text):
+    tokens = tokenize(text)
+    for i in range(len(tokens) - n + 1):
+        ngram = tuple(tokens[i:i+n])
+        emit((doc_id, ngram), 1)
+```
 
-## In-Lecture Exercise 1: Takeaway
-- Word n-grams capture context; char n-grams handle typos
+### Reduce
+- Sum counts: emit $(doc\_id, ngram, count)$
 
-## N-gram Definitions (Formal)
-- **Word n-gram:** \(w_i \ldots w_{i+n-1}\) from token sequence
-- i ∈ [1, m-n+1]
-- **Character n-gram:** substring of length n
-- **Sliding window:** one n-gram per position; overlapping
-- **Example:** "data engineering" → bigram: ("data", "engineering")
+### Combiner
+- Valid: sum is associative + commutative
 
-## Data Context: Docs 1–3
-- D1: "data engineering data"
-- D2: "engineering systems"
-- D3: "data data data"
+## Job 1 Cost Analysis
+- **Without combiner:**
+$$
+C_1 = \sum_d (|d| - n + 1) \times s \approx T \times s
+$$
+- **With combiner:**
+$$
+C_1^{\text{comb}} = \sum_d |\{ngrams(d)\}| \times s
+$$
+- **Reduction:** Factor of average n-gram repetition per doc
 
-## In-Lecture Exercise 2: Bigram Counts by Hand
-- List bigrams per doc for D1–D3
-- Compute count per (doc_id, ngram)
-- How many distinct (doc_id, ngram) pairs?
+## Job 2: The Hot N-gram Problem
+- Common n-grams: "of the", "in the", "to the"
+- Appear in nearly all documents
+- **Skew:** Reducer for "of the" gets $\approx N$ values
 
-## In-Lecture Exercise 2: Solution (1/2)
-- D1 bigrams: data_engineering, engineering_data
-- D2 bigram: engineering_systems
-- D3 bigram: data_data (count 2)
+## Example: Bigram Skew
+- $N = 10^6$ documents
+- "of the" in 70% → 700K documents
+- Reducer memory: $700K \times 8 = 5.6$ MB
+- At $N = 10^9$: 5.6 GB for one reducer
 
-## In-Lecture Exercise 2: Solution (2/2)
-- Counts: (1,data_engineering,1), (1,engineering_data,1)
-- (2,engineering_systems,1), (3,data_data,2)
-- Distinct pairs: 4
+## Mitigation Strategies
+1. **Stop-bigram filtering:** Skip n-grams containing stop words
+2. **DF threshold:** Drop n-grams with $\text{df} > \theta N$
+3. **Partition by (doc, ngram):** Avoid aggregation by ngram alone
 
-## In-Lecture Exercise 2: Takeaway
-- Bigrams are sliding windows over tokens
-- Counts aggregate per (doc_id, ngram)
+---
 
-## Word vs Character N-grams
+# Part IV: Manual N-gram Computation
 
-## Word N-grams
-- Need tokenizer; vocab \(V^n\)
-- Good for phrases and local word order
+## Example Corpus
 
-## Character N-grams
-- No tokenizer; vocab ≈ 26^n (English)
-- Good for prefixes/suffixes, typos
-- **Storage:** word bigrams often 10^5–10^7 types
-- Char trigrams 26^3 ≈ 17k
+| doc_id | text |
+|--------|------|
+| D1 | data engineering data |
+| D2 | engineering systems |
+| D3 | data data data |
 
-## N-gram Vocabulary Size (1/2)
-- **Upper bound (word):** \(|V_n| \leq |V_1|^n\)
-- In practice \(\ll |V_1|^n\) (sparsity)
-- **Bigram example:** V=50k ⇒ up to 2.5×10^9 bigrams
-- Actual distinct often 10^6–10^7
-- **Cost:** Map emits (doc_id, ngram, 1); shuffle ∝ instances
+## Step 1: Extract Bigrams
+- **D1:** (data, engineering), (engineering, data) — 2 bigrams
+- **D2:** (engineering, systems) — 1 bigram
+- **D3:** (data, data), (data, data) — 2 occurrences of 1 unique bigram
 
-## N-gram Vocabulary Size (2/2)
-- **Character n-gram:** alphabet size A; distinct ≤ A^n
-- A=26 ⇒ 26^3=17576 for trigrams
-- **Engineering:** cap vocabulary (top-K by df)
-- Or hash n-grams to fixed buckets
-- **Reproducibility:** fix n, tokenization, and vocabulary filter
+## Step 2: Count per (doc, bigram)
 
-## Approximate Vocabulary Guarantees
-- **Hashing:** map n-grams to \(B\) buckets
-- **Guarantee:** memory bounded by \(B\)
-- **Limit:** collisions merge counts across n-grams
-- **Sampling:** estimate df from a sample
-- **Limit:** rare n-grams have high relative error
+| doc | bigram | count |
+|-----|--------|-------|
+| D1 | data_engineering | 1 |
+| D1 | engineering_data | 1 |
+| D2 | engineering_systems | 1 |
+| D3 | data_data | 2 |
 
-## Regex in Pipelines
-- **Use:** clean (strip tags), extract (dates, IDs), validate (format)
-- **Engine:** PCRE / Java regex; greedy matching and backtracking
-- **Risk:** nested quantifiers (e.g. \((a+)+b\)) on long input
-- ⇒ catastrophic backtracking
-- **Mitigation:** non-backtracking engine; timeout per record
+## Step 3: Document Frequency
+- df(data_engineering) = 1
+- df(engineering_data) = 1
+- df(engineering_systems) = 1
+- df(data_data) = 1
+- **All bigrams unique to one doc** → IDF = $\log(3/1) = 1.10$
 
-## Regex Catastrophic Backtracking
+## Step 4: TF and TF-IDF
+- D3 has 2 bigram slots, data_data appears 2 times
+- $\text{tf}(\text{data\_data}, D3) = 2/2 = 1.0$
+- $\text{tfidf} = 1.0 \times 1.10 = 1.10$
 
-## Example
-- **Pattern:** \((a+)+b\) expects one or more 'a' then 'b'
-- **Input:** "aaaaaaaaaaaaaaaaac" (no 'b')
-- Engine backtracks over all splits of 'a'+ → exponential time
-- **Result:** CPU spike; job timeout; one record blocks pipeline
+---
 
-## Fix
-- Possessive \((a++)+b\) or atomic group
-- Or match \([a]+b\) and avoid nested quantifiers
+# Part V: Regex in Data Pipelines
 
-## Embeddings: Engineering View (1/2)
-- **Embedding:** term → fixed-size dense vector (e.g. 300 dim)
-- **Lookup:** vocabulary maps term_id → vector
-- Doc = aggregate (e.g. mean) of term vectors
-- **Source:** pre-trained (Word2Vec, GloVe, FastText) or model output
+## Use Cases
+- **Cleaning:** Strip HTML tags, normalize whitespace
+- **Extraction:** Dates, phone numbers, email addresses
+- **Validation:** Format checking before processing
 
-## Embeddings: Engineering View (2/2)
-- **Storage:** V × d floats; V=10^5, d=300 ⇒ 30M floats ≈ 120 MB
-- **Versioning:** embedding table has version
-- Feature pipeline records (doc_id, version, vector)
-- **OOV:** missing term in table ⇒ use default vector or skip
+## Regex Complexity: The Backtracking Problem
+- **Greedy matching:** Try longest match first; backtrack on failure
+- **Nested quantifiers:** $O(2^n)$ time for pathological cases
 
-## Feature vs Model
-- **Feature pipeline:** deterministic transform: text → tokenize → features
-- **Model training:** produces embeddings or weights; separate job
-- **Boundary:** pipeline reads model artifact; does not train
-- **Engineering:** same code path for batch and online
+## Catastrophic Backtracking Example
+- **Pattern:** `(a+)+b`
+- **Input:** "aaaaaaaaaaaaaac" (no 'b' at end)
+- **Behavior:** Engine tries all partitions of 'a's
+- **Partitions:** $2^{n-1}$ for $n$ 'a's
+- **n = 30:** $2^{29} \approx 500$ million backtracks
 
-## Skip-grams and Co-occurrence
+## Formal Analysis
+- Pattern with nested quantifiers on input of length $n$
+- **Time complexity:** $O(2^n)$ in worst case
+- **Practical impact:** Single record blocks mapper for minutes/hours
 
-## Definitions
-- **Skip-gram:** pair of terms within a window with gap
-- E.g. "data" and "systems" with gap 2
-- **Co-occurrence:** count (term_i, term_j) in same window
-- Used for PMI or embedding training
+## Mitigation Strategies
 
-## Engineering
-- More pairs than n-grams; shuffle size grows
-- Same skew risk (hot term pair)
-- Use: word2vec-style training; PMI matrix
+### 1. Timeout per Record
+```python
+def safe_regex(pattern, text, timeout_ms=100):
+    # Kill match after timeout
+    with timeout(timeout_ms):
+        return re.match(pattern, text)
+```
 
-## Running Example — Data & Goal
-- **Corpus:** 3 short documents
-- D1: "data engineering data"
-- D2: "engineering systems"
-- D3: "data data data"
-- **Goal:** (doc_id, ngram, count) for bigrams
+### 2. Non-Backtracking Patterns
+- Replace `(a+)+` with `a+` (semantically equivalent)
+- Use possessive quantifiers: `(a++)b` (no backtrack)
+- Use atomic groups: `(?>a+)b`
 
-## Running Example — Pipeline Overview
-- Documents → tokenize → sliding window n=2 → (doc_id, ngram, 1)
-- Shuffle by (doc_id, ngram); reduce sum → (doc_id, ngram, count)
-- Optional: df(ngram), IDF; then TF-IDF per (doc_id, ngram)
-![](../../diagrams/week9/week9_lecture_slide20_advanced_text_pipeline_overview.png)
+### 3. Input Validation
+- Limit input length before regex
+- Reject inputs exceeding threshold
 
-## Running Example — Step-by-Step (1/4)
-- **Step 1: Tokenize**
-- D1: [data, engineering, data]
-- D2: [engineering, systems]
-- D3: [data, data, data]
+## Regex Complexity Classes
 
-## Running Example — Step-by-Step (2/4)
-- **Step 2: Bigrams**
-- D1: (data_engineering, 1), (engineering_data, 1)
-- D2: (engineering_systems, 1)
-- D3: (data_data, 2)
-- **Convention:** ngram as "w1_w2"
+| Pattern Type | Time Complexity | Safe? |
+|--------------|-----------------|-------|
+| Literal match | $O(n)$ | ✓ |
+| Single quantifier | $O(n)$ | ✓ |
+| Alternation | $O(nm)$ | ✓ |
+| Nested quantifiers | $O(2^n)$ | ✗ |
+| Backreferences | NP-complete | ✗ |
 
-## Running Example — Step-by-Step (3/4)
-- **Step 3: Counts (after reduce)**
-- (1, data_engineering, 1), (1, engineering_data, 1)
-- (2, engineering_systems, 1), (3, data_data, 2)
-- **Step 4: Document frequency (optional)**
-- All bigrams in one doc only ⇒ same IDF for all
+---
 
-## Running Example — Step-by-Step (4/4)
-- **Output:** (doc_id, ngram, count) or (doc_id, ngram, tfidf)
-- **Interpretation:** D3 has repeated "data data" ⇒ high count
-- **Scale:** N docs × T terms ⇒ up to N × (T-n+1) n-gram instances
+# Part VI: Embeddings — Engineering View
 
-## Cost & Scaling Analysis (1/3)
-- **Time model:** T = T_map + T_shuffle + T_reduce
-- **Map:** one pass per doc; tokenize O(|d|)
-- Emit (doc_id, ngram, 1) per position
-- **Shuffle:** size = total emitted
-- With combiner: (doc_id, ngram, count)
+## What Are Embeddings?
+- **Definition:** Mapping from discrete tokens to dense vectors
+$$
+\text{embed}: V \rightarrow \mathbb{R}^d
+$$
+- **Dimension:** $d$ typically 50–300
+- **Example:** "data" → [0.12, -0.45, 0.78, ...]
 
-## Cost & Scaling Analysis (2/3)
-- **Memory (map):** per-doc token list and buffer; O(|d|)
-- **Memory (reduce):** one key and list per (doc_id, ngram)
-- **Storage:** output sparse; size ∝ distinct (doc_id, ngram)
-- **Vocabulary:** store V_n or top-K n-grams
+## Embedding Table
+- **Vocabulary:** $V$ tokens
+- **Matrix:** $E \in \mathbb{R}^{V \times d}$
+- **Lookup:** $\vec{v}_t = E[idx(t)]$
 
-## Cost & Scaling Analysis (3/3)
-- **Network:** shuffle dominates
-- Combiner reduces (doc_id, ngram, 1) to (doc_id, ngram, count)
-- **Throughput:** limited by shuffle bandwidth
-- **Latency:** single job for counts; add job for df/N if TF-IDF
+## Storage Analysis
+- $V = 10^5$ tokens, $d = 300$ dimensions
+- **Size:** $10^5 \times 300 \times 4$ bytes = 120 MB
+- **Fits in memory** for lookup at inference time
 
-## Cost Example (Numeric)
-- **Input:** 1M docs, 200 terms/doc avg, bigrams
-- 100 mappers, 100 reducers
-- **Map output (no combiner):** 1M × 199 ≈ 2×10^8 pairs
-- ~16 B per pair ⇒ ~3.2 GB
-- **With combiner:** distinct (doc_id, ngram) ⇒ ~1.6 GB shuffle
+## Document Embedding
+- **Aggregation:** Mean, sum, or weighted average of token embeddings
+$$
+\vec{d} = \frac{1}{|d|} \sum_{t \in d} \vec{v}_t
+$$
+- **Alternative:** TF-weighted average
+$$
+\vec{d} = \sum_{t \in d} \text{tf}(t, d) \cdot \vec{v}_t
+$$
 
-## MapReduce for N-gram Extraction
-- **Map:** input (doc_id, text) → tokenize → emit ((doc_id, ngram), 1)
-- **Combiner:** same as reduce: sum 1s
-- **Partition:** by (doc_id, ngram)
-- **Reduce:** sum → emit (doc_id, ngram, total_count)
-![](../../diagrams/week9/week9_lecture_slide26_mapreduce_ngram_flow.png)
+## OOV (Out-of-Vocabulary) Handling
+- **Problem:** Query term not in embedding table
+- **Solutions:**
+  1. Skip OOV terms
+  2. Use default/zero vector
+  3. Character n-gram fallback (FastText)
+  4. Subword tokenization (BPE, WordPiece)
 
-## Shuffle Size (N-gram Job)
-- **No combiner:** map emits one (key, 1) per instance
-- Shuffle size = total instances
-- **With combiner:** shuffle size = distinct (doc_id, ngram)
-- **Skew:** if partition by ngram only, common n-gram → one reducer
+---
 
-## Pitfalls & Failure Modes (1/3)
-- **Regex catastrophic backtracking:** CPU explosion, timeout
-- **Encoding:** non-UTF-8 ⇒ replacement chars or crash
-- **Empty or short docs:** |d| < n ⇒ no n-grams
-- **OOV in embeddings:** term not in table ⇒ default or skip
+# Part VII: Feature Pipeline vs Model Training
 
-## Pitfalls & Failure Modes (2/3)
-- **Hot n-gram key:** if aggregating by ngram
-- Very frequent n-gram → one reducer gets most pairs
-- **Failure:** OOM or straggler
-- **Mitigation:** filter stop-ngrams; partition by (doc_id, ngram)
-![](../../diagrams/week9/week9_lecture_slide29_failure_regex_ngram.png)
+## The Boundary
+- **Feature pipeline:** Deterministic transform; no learning
+  - Input: raw text
+  - Output: numerical features (TF-IDF, n-grams, embeddings)
+- **Model training:** Learns parameters from data
+  - Input: features + labels
+  - Output: model weights
 
-## Pitfalls & Failure Modes (3/3)
-- **Detection:** reducer input size variance; regex timeout metrics
-- **Idempotency:** feature write keyed by (doc_id, version)
-- **Tokenization drift:** change in lowercase/stem/stop list
-- **Best practice:** timeout per record; encoding validation
+## Why Separation Matters
+- **Reproducibility:** Same text → same features (deterministic)
+- **Versioning:** Feature version independent of model version
+- **Debugging:** Isolate feature bugs from model bugs
 
-## Failure Scenario — Regex and N-gram Skew
+## Feature Pipeline Contract
+```
+Input: (doc_id, text)
+Output: (doc_id, feature_version, feature_vector)
+```
+- **Idempotent:** Rerun produces identical output
+- **Versioned:** Feature schema and parameters recorded
 
-## Regex Failure
-- \((a+)+b\) on "a" repeated 50 times + "c"
-- Backtracking takes seconds or hangs
-- Single record blocks mapper
+## Embedding Version Control
+- **Version string:** `embedding_v2_300d_20240115`
+- **Stored with features:** $(doc\_id, version, \vec{v})$
+- **Model trained on:** specific feature version
+- **Inference:** Must use same embedding version
 
-## N-gram Skew
-- Job partitions by ngram for df
-- "the_and" in 80% of docs ⇒ one reducer gets 0.8×N doc_ids
-- **Mitigation:** simplify regex; timeout; filter high-df n-grams
+---
 
-## Best Practices (1/2)
-- Version tokenization and embedding table
-- Use combiner in n-gram count job
-- Partition by (doc_id, ngram) for per-doc counts
-- Validate encoding (UTF-8) and input length before regex
-- Cap vocabulary: top-K by df or hash to fixed buckets
+# Part VIII: Cost Model for Text Features
 
-## Best Practices (2/2)
-- Store features keyed by (doc_id, version)
-- Monitor: reducer variance, regex time, OOV rate
-- Filter stop-ngrams or high-df n-grams when computing df
-- Prefer non-backtracking regex for untrusted input
-- Separate feature pipeline from model training
+## Unigram TF-IDF Cost
+$$
+C_{\text{unigram}} = O(T) \text{ tokens processed}
+$$
+$$
+\text{Storage} = O(D \times \bar{u}) \text{ where } \bar{u} = \text{avg unique terms/doc}
+$$
+
+## Bigram TF-IDF Cost
+$$
+C_{\text{bigram}} = O(T) \text{ bigrams extracted}
+$$
+$$
+\text{Storage} = O(D \times \bar{b}) \text{ where } \bar{b} = \text{avg unique bigrams/doc}
+$$
+- **Note:** $\bar{b} \approx \bar{u}$ to $2\bar{u}$ (less repetition in bigrams)
+
+## Embedding Lookup Cost
+$$
+C_{\text{embed}} = O(T \times d)
+$$
+- Lookup: $O(1)$ per token
+- Aggregation: $O(|d| \times d)$ per document
+
+## Cost Comparison
+
+| Feature Type | Extraction | Storage per Doc | Vocabulary |
+|--------------|------------|-----------------|------------|
+| Unigram TF-IDF | $O(\|d\|)$ | $O(\bar{u})$ sparse | $V$ |
+| Bigram TF-IDF | $O(\|d\|)$ | $O(\bar{b})$ sparse | $V^2$ (bounded) |
+| Embedding | $O(\|d\| \times d)$ | $O(d)$ dense | $V$ |
+
+---
+
+# Part IX: Vocabulary Bounding Strategies
+
+## Problem: Unbounded Vocabulary
+- New terms appear continuously (typos, neologisms, names)
+- Vocabulary grows without bound
+- **Risk:** OOM in df table; model size explosion
+
+## Strategy 1: Frequency Threshold
+- Keep only terms with $\text{df}(t) \geq k$
+- **Effect:** Drops rare terms (many unique but infrequent)
+- **Trade-off:** Loses long-tail information
+
+## Strategy 2: Top-K by Document Frequency
+- Keep top $K$ terms by df
+- **Guarantee:** Bounded vocabulary at $K$
+- **Typical $K$:** $10^4$ to $10^6$
+
+## Strategy 3: Feature Hashing
+- Hash terms to $B$ buckets: $h(t) \mod B$
+- **Guarantee:** Exactly $B$ features
+- **Trade-off:** Collisions merge different terms
+
+### Collision Analysis
+- $V$ terms, $B$ buckets
+- Expected collisions: $V - B(1 - (1-1/B)^V) \approx V - B$ for $V \gg B$
+- **For $V = 10^6$, $B = 2^{18}$:** ~750K collisions
+
+## Strategy 4: Subword Tokenization
+- BPE, WordPiece, SentencePiece
+- Fixed vocabulary of subword units
+- **Advantage:** Handles OOV; bounded; captures morphology
+
+---
+
+# Part X: Production Best Practices
+
+## Text Processing Checklist
+1. **Encoding:** Validate UTF-8; handle/reject invalid
+2. **Tokenization:** Consistent rules (lowercase, stemming, stop words)
+3. **Regex:** Timeout per record; avoid nested quantifiers
+4. **Vocabulary:** Bound by frequency, top-K, or hashing
+5. **Versioning:** Record tokenizer version with features
+
+## N-gram Pipeline Checklist
+1. Filter n-grams containing stop words
+2. Use combiner (sum is associative)
+3. Partition by (doc_id, ngram) for counts
+4. Threshold df for TF-IDF computation
+5. Store sparse: (doc_id, ngram, value)
+
+## Embedding Pipeline Checklist
+1. Load embedding table once; share across mappers
+2. Handle OOV explicitly (skip, default, subword)
+3. Record embedding version in output
+4. Validate dimension consistency
+
+## Monitoring
+
+| Metric | Healthy | Investigate |
+|--------|---------|-------------|
+| Regex timeout rate | < 0.01% | > 0.1% |
+| OOV rate | < 5% | > 20% |
+| Vocabulary growth | Stable | Unbounded |
+| Encoding errors | < 0.001% | > 0.01% |
+
+---
+
+# Summary
 
 ## Recap — Engineering Judgment
-- **Vocabulary and partition choice:** n-gram vocab grows as V^n
-- Partition by (doc_id, ngram) for counts
-- Cap vocabulary for bounded size
-- **Regex and encoding:** timeout per record; validate at ingest
-- **Skew is the same story:** hot n-gram → one reducer
-- Filter stop-ngrams; sparse (doc_id, ngram, count)
-- **Feature vs model boundary:** pipeline consumes versioned artifacts
+- **N-gram vocabulary:** $|V_n| \leq V^n$; exponential growth
+- Practical vocabulary much smaller due to sparsity
+- **Shuffle cost:** $O(T)$ n-gram occurrences; combiner essential
+- **Hot n-gram skew:** Same as TF-IDF; filter stop-n-grams
+- **Regex danger:** Nested quantifiers → $O(2^n)$; timeout required
+- **Embeddings:** Dense $d$-dimensional; version with features
+- **Feature vs model:** Pipeline is deterministic; training is not
 
 ## Pointers to Practice
-- Extract bigrams by hand from 3–5 docs; compute counts
-- MapReduce walkthrough: 8–12 input lines
-- Cost: estimate map output and shuffle size
-- One failure case: hot n-gram or regex timeout; diagram mitigation
+- Extract bigrams by hand; count unique per document
+- Estimate shuffle size for n-gram MapReduce
+- Identify catastrophic backtracking pattern
+- Design vocabulary bounding strategy
 
 ## Additional Diagrams
-### Advanced Text Pipeline Overview (slide 16)
-![](../../diagrams/week9/week9_lecture_slide16_advanced_text_pipeline_overview.png)
-### Failure Regex N-gram (slide 33)
-![](../../diagrams/week9/week9_lecture_slide33_failure_regex_ngram.png)
-### Practice: N-gram Pipeline Reasoning (slide 19)
+### Advanced Text Pipeline Overview
+![](../../diagrams/week9/week9_lecture_slide20_advanced_text_pipeline_overview.png)
+### MapReduce N-gram Flow
+![](../../diagrams/week9/week9_lecture_slide26_mapreduce_ngram_flow.png)
+### Failure: Regex and N-gram Skew
+![](../../diagrams/week9/week9_lecture_slide29_failure_regex_ngram.png)
+### Practice: N-gram Pipeline Reasoning
 ![](../../diagrams/week9/week9_practice_slide19_ngram_pipeline_reasoning.png)
-### Practice: N-gram Pipeline Reasoning (slide 22)
-![](../../diagrams/week9/week9_practice_slide22_ngram_pipeline_reasoning.png)
