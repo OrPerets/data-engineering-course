@@ -167,12 +167,12 @@
 **Goal:** Enforce streaming model, approximation rationale, and guarantees.
 
 **Todo**
-- [ ] State streaming constraints: one pass, bounded memory.
-- [ ] Add formal models for Morris counter and Flajolet–Martin.
-- [ ] Provide expected value/error bounds and intuition.
-- [ ] Contrast exact vs approximate feasibility.
-- [ ] Add engineering interpretation: when errors are acceptable.
-- [ ] Keep slides split if math-heavy.
+- [x] State streaming constraints: one pass, bounded memory.
+- [x] Add formal models for Morris counter and Flajolet–Martin.
+- [x] Provide expected value/error bounds and intuition.
+- [x] Contrast exact vs approximate feasibility.
+- [x] Add engineering interpretation: when errors are acceptable.
+- [x] Keep slides split if math-heavy.
 
 ---
 

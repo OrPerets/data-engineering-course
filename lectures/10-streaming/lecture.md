@@ -68,33 +68,42 @@
 - **At-least-once:** retry on failure; duplicates possible
 - **Exactly-once:** no loss, no duplicate; transactional sink
 
+## Streaming Model: Constraints
+- **One pass:** events cannot be rewound
+- **Bounded memory:** state << stream size
+- **Per-event update:** \(O(1)\) or \(O(\log n)\)
+- **Approximation:** trade exactness for feasibility
+- **Guarantee:** error bounds or confidence stated
+
 ## Morris Counter (Approximate Counting)
 - Counter state \(X\) increments with probability \(2^{-X}\)
 $$
 P(\text{inc}) = 2^{-X}
 $$
-- Interpretation: large counts advance the counter slowly
-- Engineering implication: \(O(1)\) space for massive streams
+- Interpretation: large counts advance slowly
+- Engineering implication: \(O(1)\) space, one pass
 - Estimator uses the counter value
 $$
 \hat{n} = 2^{X} - 1
 $$
-- Interpretation: \(E[2^{X}-1] = n\)
-- Engineering implication: average multiple counters to reduce error
+- Interpretation: unbiased estimate, \(E[\hat{n}] = n\)
+- Error intuition: variance is high for one counter
+- Engineering implication: average \(k\) counters ⇒ error \(\propto 1/\sqrt{k}\)
 
 ## Flajolet–Martin Cardinality
 - Hash each item, track max trailing-zero count \(\rho(h(x))\)
 $$
 R = \max_x \rho(h(x))
 $$
-- Interpretation: more distinct items → larger \(R\)
-- Engineering implication: constant memory for huge sets
+- Interpretation: more distinct items ⇒ larger \(R\)
+- Engineering implication: constant memory, one pass
 - Cardinality estimate
 $$
 \hat{N} = 2^{R}
 $$
-- Interpretation: unbiased up to a constant factor
-- Engineering implication: use multiple registers to reduce variance
+- Interpretation: accurate up to a constant factor
+- Error intuition: variance high for one register
+- Engineering implication: \(m\) registers ⇒ error \(\propto 1/\sqrt{m}\)
 
 ## HyperLogLog (Intuition)
 - FM with many small registers and harmonic mean aggregation
