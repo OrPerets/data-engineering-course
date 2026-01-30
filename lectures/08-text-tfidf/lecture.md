@@ -40,6 +40,20 @@
 - Global stats (N, df) and per-doc TF
 - Skew and sparsity drive cost and failure
 
+## Formal Inputs and Outputs
+- **Input:** corpus \(D = \{d_1,\ldots,d_N\}\)
+- **Vocabulary:** \(V = \bigcup_{d \in D} \text{tokens}(d)\)
+- **Output:** sparse triples \((d, t, \text{tfidf})\)
+- **Guarantee:** deterministic given tokenization rules
+- **Limit:** changing tokenizer ⇒ different V and scores
+
+## Dimensionality and Sparsity Constraints
+- Document vector length = \(|V|\)
+- Typical document uses \(\ll |V|\) terms
+- **Constraint:** dense storage is infeasible at scale
+- **Implication:** store only non-zero TF-IDF entries
+- **Risk:** long documents inflate TF counts without normalization
+
 ## TF and IDF Definitions
 - Term frequency for term \(t\) in document \(d\)
 $$
@@ -67,6 +81,27 @@ $$
 $$
 - Interpretation: sparse representation dominates feasibility
 - Engineering implication: store (doc_id, term, tfidf) tuples
+
+## Exact vs Approximate Statistics
+- **Exact:** full scan for df and N each batch
+- **Approximate:** sample documents for df estimate
+- Estimator: \(\widehat{df}(t) = \frac{df_{\text{sample}}(t)}{p}\)
+- **Guarantee:** unbiased estimate for sampled corpus
+- **Limit:** sampling error for rare terms
+
+## Hashing and Collision Limits
+- Hash terms into \(B\) buckets to bound memory
+- Collision merges counts from different terms
+- **Upper bound:** \(\widehat{df}(t) \le df(t) + \epsilon N\)
+- **Guarantee:** bounded over-count with fixed \(B\)
+- **Limit:** frequent terms can mask rare ones
+
+## Batch Cost and Latency Trade-offs
+- **Batch recompute:** consistent df and TF-IDF
+- **Latency:** multi-job pipeline adds hours at scale
+- **Incremental option:** update tf per doc, refresh df nightly
+- **Trade-off:** freshness vs consistent global statistics
+- **Decision:** choose based on ranking SLA
 
 ## Cost of Naïve Design (TF-IDF)
 

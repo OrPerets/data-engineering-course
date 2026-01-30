@@ -154,12 +154,12 @@
 **Goal:** Formalize vector-space model and justify approximation/compute costs.
 
 **Todo**
-- [ ] Define input documents, vocabulary, and TF‑IDF output.
-- [ ] Formalize sparsity and dimensionality growth constraints.
-- [ ] Contrast exact counts vs approximate statistics.
-- [ ] Justify batch computation costs and latency trade-offs.
-- [ ] Add guarantees/limits (e.g., sampling error, hash collisions).
-- [ ] Keep math to ≤2 equations per slide with bullets.
+- [x] Define input documents, vocabulary, and TF‑IDF output.
+- [x] Formalize sparsity and dimensionality growth constraints.
+- [x] Contrast exact counts vs approximate statistics.
+- [x] Justify batch computation costs and latency trade-offs.
+- [x] Add guarantees/limits (e.g., sampling error, hash collisions).
+- [x] Keep math to ≤2 equations per slide with bullets.
 
 ---
 
