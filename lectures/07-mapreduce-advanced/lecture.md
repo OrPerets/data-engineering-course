@@ -161,6 +161,7 @@ $$
 - Some keys have far more values than others
 - **Zipfian:** many real distributions are heavy-tail
 - Few keys dominate
+- Key counts are random; heavy-tail implies imbalance
 - **Metric:** max reducer size / mean → high implies skew
 
 ## In-Lecture Exercise 3: Skew Case — Clicks Join
