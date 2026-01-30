@@ -137,7 +137,7 @@ rectangle "INPUT" #F8F9FA {
 }
 
 rectangle "DIVIDE" #F8F9FA {
-    component "**Split / Partition**\n<size:10>By key or range</size>" as SPLIT
+    component "**Split / Partition**\n<size:10>Independent chunks</size>" as SPLIT
 }
 
 rectangle "PARALLEL WORKERS" #F8F9FA {
@@ -147,7 +147,7 @@ rectangle "PARALLEL WORKERS" #F8F9FA {
 }
 
 rectangle "COMBINE" #F8F9FA {
-    component "**Shuffle / Group**\n<size:10>Same key -> same reducer</size>" as SORT_XFER <<Agent>>
+    component "**Shuffle / Group**\n<size:10>Network by key</size>" as SORT_XFER <<Agent>>
 }
 
 rectangle "REDUCE" #F8F9FA {
@@ -170,8 +170,5 @@ SORT_XFER --> R1 : "key group A"
 SORT_XFER --> R2 : "key group B"
 R1 --> OUT
 R2 --> OUT
-
-note bottom of SPLIT : **Divide:** Independent chunks. No shared state.
-note bottom of SHUFFLE : **Conquer:** Group by key. Network cost.
 
 @enduml

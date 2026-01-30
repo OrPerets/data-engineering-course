@@ -154,9 +154,7 @@ rectangle "Output" #F8F9FA {
 
 DOCS --> TOK
 TOK --> NGRAM
-NGRAM --> AGG
+NGRAM --> AGG : "vocab ~ V^2; skew if hot n-gram"
 AGG --> OUT
-
-note bottom of NGRAM : Bigram vocab ~ V^2; skew if df(ngram) aggregated by ngram key.
 
 @enduml

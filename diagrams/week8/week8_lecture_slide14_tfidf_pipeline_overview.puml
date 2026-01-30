@@ -164,7 +164,6 @@ TF --> IDF : "(doc, term)"
 LEN --> TFIDF : "|d|"
 IDF --> TFIDF : "idf(t)"
 TFIDF --> OUT : "scores"
-
-note bottom of TFIDF : TF = count/|d|; IDF = log((N+1)/(df+1))
+TFIDF --> OUT : "TF=count/|d|; IDF=log((N+1)/(df+1))"
 
 @enduml

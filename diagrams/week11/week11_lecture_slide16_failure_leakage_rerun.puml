@@ -153,7 +153,7 @@ rectangle "FIX" #E8F5E9 {
     component "**Upsert key**\n<size:10>(entity_id, as_of_ts)</size>" as KEY <<Agent>>
 }
 
-note bottom of BAD : **Detection:** audit feature logic; no future data.
-note bottom of DUP : **Mitigation:** MERGE/OVERWRITE on (entity_id, as_of_ts).
+note bottom of BAD : **Detection:**\naudit logic;\nno future data.
+note bottom of DUP : **Mitigation:**\nMERGE/OVERWRITE\n(entity_id, as_of_ts).
 
 @enduml

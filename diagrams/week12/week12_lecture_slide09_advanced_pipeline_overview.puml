@@ -162,7 +162,7 @@ JOIN --> DERIVED
 DERIVED --> FT
 FT --> CONS
 
-note bottom of JOIN : **Order matters:** entity features before join; idempotent write per key.
-note bottom of FT : **Key:** (user_id, item_id, as_of_ts); MERGE to avoid backfill duplicates.
+note bottom of JOIN : **Order:** entity features\nbefore join;\nidempotent per key.
+note bottom of FT : **Key:** (user_id,item_id,as_of_ts);\nMERGE avoids backfill dupes.
 
 @enduml

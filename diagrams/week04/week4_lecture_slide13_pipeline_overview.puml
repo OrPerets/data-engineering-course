@@ -142,7 +142,7 @@ rectangle "EXTRACT" #F8F9FA {
 }
 
 rectangle "STAGING" #F8F9FA {
-    database "**Staging**\n<size:10>Raw / schema-on-read</size>" as STG
+    database "**Staging**\n<size:10>Raw, validate, DLQ</size>" as STG
 }
 
 rectangle "TRANSFORM" #F8F9FA {
@@ -150,7 +150,7 @@ rectangle "TRANSFORM" #F8F9FA {
 }
 
 rectangle "LOAD" #F8F9FA {
-    component "**Load**\n<size:10>MERGE / upsert</size>" as LOAD_STEP <<Agent>>
+    component "**Load**\n<size:10>MERGE / upsert (idempotent)</size>" as LOAD_STEP <<Agent>>
 }
 
 rectangle "TARGET" #F8F9FA {
@@ -163,8 +163,5 @@ EXTRACT_STEP --> STG
 STG --> TRANSFORM_STEP
 TRANSFORM_STEP --> LOAD_STEP
 LOAD_STEP --> TGT
-
-note bottom of STG : **Staging:** Validate before target. DLQ for bad rows.
-note bottom of LOAD_STEP : **Idempotent:** MERGE / ON CONFLICT. No duplicates on rerun.
 
 @enduml

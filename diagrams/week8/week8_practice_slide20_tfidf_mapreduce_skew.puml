@@ -140,8 +140,8 @@ rectangle "JOB 2" #F8F9FA {
 }
 
 rectangle "MITIGATION" #F8F9FA {
-    component "**Stop list**\nfilter \"the\" in Job 1 Map" as STOP
-    note right of STOP : No (\"the\", doc_id) emitted -> Job 2 never sees \"the\"; no hot reducer for \"the\"
+    component "**Stop list**\n<size:10>filter \"the\" in Job 1 Map</size>" as STOP
+    component "**Effect**\n<size:10>no (\"the\", doc_id) in Job 2</size>" as EFFECT
 }
 
 M --> S
@@ -149,5 +149,6 @@ S --> R_HOT
 S --> R_DATA
 
 STOP .. M : "drop \"the\""
+STOP --> EFFECT : "remove hot key"
 
 @enduml

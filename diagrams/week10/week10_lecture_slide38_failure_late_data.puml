@@ -152,7 +152,7 @@ e2 --> out
 wm --> out : watermark ≥ 10:05 -> close W1
 e3 --> late : arrives at 10:06 (processing time)
 
-note bottom of out : **Correctness:** W1 already emitted. e3 event_time=10:01 belongs to W1.
-note bottom of late : **Options:** drop / side output / allow Lateness (delay watermark). Trade: completeness vs latency.
+note bottom of out : **Correct:** W1 emitted;\ne3 (10:01) in W1.
+note bottom of late : **Options:** drop /\nside output /\nallow Lateness.\nTrade: completeness vs latency.
 
 @enduml

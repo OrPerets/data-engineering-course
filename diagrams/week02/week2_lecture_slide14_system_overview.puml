@@ -137,37 +137,27 @@ package "CLIENTS" #F8F9FA {
 }
 
 package "COORDINATION" #F8F9FA {
-    component "**Router / Coordinator**\n<size:10>Partition key -> Node</size>" as ROUTER
+    component "**Router / Coordinator**\n<size:10>Route to partition</size>" as ROUTER
+    component "**Partition Map**\n<size:10>hash(key) mod N</size>" as PMAP <<Config>>
 }
 
 package "DATA NODES" #F8F9FA {
-    database "**Node 1**\n<size:10>P0, P3\nReplicas: 2</size>" as N1
-    database "**Node 2**\n<size:10>P1, P4\nReplicas: 2</size>" as N2
-    database "**Node 3**\n<size:10>P2, P5\nReplicas: 2</size>" as N3
+    database "**Node 1**\n<size:10>P0, P3</size>" as N1
+    database "**Node 2**\n<size:10>P1, P4</size>" as N2
+    database "**Node 3**\n<size:10>P2, P5</size>" as N3
 }
 
-package "NETWORK" #F8F9FA {
-    component "**Replication**\n<size:10>Async / Sync</size>" as REPL
+package "REPLICATION" #F8F9FA {
+    component "**Replication**\n<size:10>Sync / async</size>" as REPL <<Agent>>
 }
 
-CLIENT --> ROUTER : "Request"
-ROUTER --> N1 : "P0, P3"
-ROUTER --> N2 : "P1, P4"
-ROUTER --> N3 : "P2, P5"
-N1 <-[#2E7D32]-> REPL
-N2 <-[#2E7D32]-> REPL
-N3 <-[#2E7D32]-> REPL
-
-note bottom of ROUTER
-  **Partitioning**
-  hash(key) mod N -> node
-  Data split by key
-end note
-
-note bottom of N1
-  **Storage**
-  Independent disks
-  No shared storage
-end note
+CLIENT --> ROUTER : "request"
+ROUTER --> PMAP : "lookup"
+ROUTER --> N1 : "partition P0/P3"
+ROUTER --> N2 : "partition P1/P4"
+ROUTER --> N3 : "partition P2/P5"
+N1 --> REPL : "replicate"
+N2 --> REPL : "replicate"
+N3 --> REPL : "replicate"
 
 @enduml

@@ -144,10 +144,7 @@ P1 --> TARGET : "OK"
 P2 --> TARGET : "OK"
 P3 --> TARGET : "FAIL"
 
-note bottom of P3
-  **Failure:** Job fails
-  before P3 written
-end note
+note bottom of P3 : **Failure:**\njob fails before P3.
 
 package "RUN 2 (Rerun, no idempotency)" #F8F9FA {
     component "**Full rerun**\n<size:10>P1, P2, P3 again</size>" as RERUN <<Agent>>
@@ -155,10 +152,6 @@ package "RUN 2 (Rerun, no idempotency)" #F8F9FA {
 
 RERUN --> TARGET : "P1, P2 inserted AGAIN\n⇒ Duplicates"
 
-note bottom of TARGET
-  **Wrong:** 2× rows for P1, P2
-  **Fix:** MERGE or partition resume
-  Watermark; skip already loaded
-end note
+note bottom of TARGET : **Wrong:** 2× P1,P2.\n**Fix:** MERGE or\npartition resume.
 
 @enduml

@@ -150,7 +150,7 @@ a3 --> w1
 late --> w1b
 w1 --> w1b : retract + update or side output
 
-note bottom of w1 : **Idempotent sink:** key = (window, user). Upsert so late event updates same row.
-note bottom of w1b : **Trade-off:** allow Lateness -> correct sum but delayed result and more state.
+note bottom of w1 : **Idempotent:** key=(window,user);\nupsert; late updates row.
+note bottom of w1b : **Trade-off:** allow Lateness\n→ correct sum;\ndelayed + more state.
 
 @enduml

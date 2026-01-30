@@ -152,10 +152,4 @@ TRANSFORM --> MERGE : "4"
 MERGE --> TGT
 MERGE --> CTRL : "5 Update watermark\n(after success)"
 
-note bottom of MERGE
-  **Rerun:** Same slice -> MERGE
-  inserts only new keys
-  Idempotent
-end note
-
 @enduml

@@ -70,29 +70,29 @@
 
 ## Morris Counter (Approximate Counting)
 - Counter state \(X\) increments with probability \(2^{-X}\)
-\[
+$$
 P(\text{inc}) = 2^{-X}
-\]
+$$
 - Interpretation: large counts advance the counter slowly
 - Engineering implication: \(O(1)\) space for massive streams
 - Estimator uses the counter value
-\[
+$$
 \hat{n} = 2^{X} - 1
-\]
+$$
 - Interpretation: \(E[2^{X}-1] = n\)
 - Engineering implication: average multiple counters to reduce error
 
 ## Flajolet–Martin Cardinality
 - Hash each item, track max trailing-zero count \(\rho(h(x))\)
-\[
+$$
 R = \max_x \rho(h(x))
-\]
+$$
 - Interpretation: more distinct items → larger \(R\)
 - Engineering implication: constant memory for huge sets
 - Cardinality estimate
-\[
+$$
 \hat{N} = 2^{R}
-\]
+$$
 - Interpretation: unbiased up to a constant factor
 - Engineering implication: use multiple registers to reduce variance
 
@@ -103,15 +103,15 @@ R = \max_x \rho(h(x))
 
 ## Count-Min Sketch (Frequency Estimation)
 - Let \(N\) be total updates, estimate \(\hat{f}(x)\)
-\[
+$$
 \hat{f}(x) \le f(x) + \epsilon N
-\]
+$$
 - Interpretation: overestimation bounded by \(\epsilon N\)
 - Engineering implication: choose width by \(\epsilon\) tolerance
 - Probability of meeting the error bound
-\[
+$$
 P(\hat{f}(x) \le f(x) + \epsilon N) \ge 1-\delta
-\]
+$$
 - Interpretation: confidence controlled by sketch depth
 - Engineering implication: set depth \(d = \lceil \ln(1/\delta) \rceil\)
 

@@ -148,25 +148,7 @@ C --> R : "user_id=123"
 R --> P1 : "P1 (key 123)"
 R ..> P0 : "skip"
 R ..> P2 : "skip"
-P1 --> M : "Local read"
-M --> OUT : "JSON"
-
-note bottom of R
-  **Key-based routing**
-  O(1) lookup
-  No cross-partition
-end note
-
-note bottom of P1
-  **Co-location**
-  User + Orders same node
-  No network transfer
-end note
-
-note bottom of M
-  **NoSQL pattern**
-  Single partition read
-  ~1–5 ms typical
-end note
+P1 --> M : "local read"
+M --> OUT : "single-partition response (~1–5 ms)"
 
 @enduml

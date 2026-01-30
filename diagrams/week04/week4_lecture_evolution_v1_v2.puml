@@ -135,8 +135,8 @@ skinparam component<<failure>> {
 rectangle "v1 - Full refresh (does not scale)" #FFF3E0 {
     database "**Source**" as S1
     component "**Read full**\n<size:10>No watermark</size>" as R1 <<V1>>
-    component "**INSERT**\n<size:10>No MERGE</size>" as I1 <<V1>>
-    database "**Target**" as T1
+    component "**INSERT**\n<size:10>Rerun duplicates</size>" as I1 <<V1>>
+    database "**Target**\n<size:10>Full scan each run</size>" as T1
 }
 S1 --> R1
 R1 --> I1
@@ -146,8 +146,8 @@ rectangle "v2 - Incremental + idempotent" #E8F5E9 {
     database "**Source**" as S2
     component "**Read slice**\n<size:10>Watermark</size>" as R2 <<V2>>
     database "**Staging**\n<size:10>Dedup</size>" as ST2
-    component "**MERGE**\n<size:10>Key = event_id</size>" as M2 <<V2>>
-    database "**Target**" as T2
+    component "**MERGE**\n<size:10>Idempotent</size>" as M2 <<V2>>
+    database "**Target**\n<size:10>No duplicates</size>" as T2
     database "**Control**\n<size:10>last_watermark</size>" as C2
 }
 S2 --> R2
@@ -157,14 +157,5 @@ M2 --> T2
 M2 --> C2 : "after success"
 
 R1 -[hidden]right- R2
-note bottom of R1
-  **v1:** Full scan every run.
-  Rerun ⇒ duplicates.
-end note
-
-note bottom of R2
-  **v2:** Only new data. Rerun
-  re-reads same slice; MERGE ⇒ no dupes.
-end note
 
 @enduml

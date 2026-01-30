@@ -149,8 +149,7 @@ PRUNE1 --> S1 : "Read 31"
 
 Q2 --> FULL : "No filter"
 FULL --> S2 : "Read 365"
-
-note bottom of S1 : **Cost:** ~1/12 of year
-note bottom of S2 : **Failure:** Full scan\n365× more data
+S1 --> Q1 : "fast result"
+S2 --> Q2 : "timeout risk"
 
 @enduml

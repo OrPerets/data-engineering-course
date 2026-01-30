@@ -42,15 +42,15 @@
 
 ## Formal Quality Metrics
 - Freshness lag for partition \(t\)
-\[
+$$
 L_t = \text{now} - \max(\text{event\_ts}_t)
-\]
+$$
 - Interpretation: how stale the newest data is
 - Engineering implication: alert when \(L_t\) exceeds SLA
 - Volume anomaly with expected \(\mu\) and std \(\sigma\)
-\[
+$$
 z_t = \frac{|N_t - \mu|}{\sigma}
-\]
+$$
 - Interpretation: statistical deviation in row count
 - Engineering implication: gate promotion on large \(z_t\)
 

@@ -136,7 +136,8 @@ component "**Partition by hash(key)**" as PART
 component "**R1**\n<size:10>balanced</size>" as R1 <<Tool>>
 component "**R2**\n<size:10>balanced</size>" as R2 <<Tool>>
 component "**R3 (HOT)**\n<size:10>one key, 800M values</size>" as R3 <<Tool>>
-component "**OOM / Timeout**" as FAIL
+component "**OOM / Timeout**" as FAIL <<failure>>
+component "**Mitigation**\n<size:10>salting / combiner / custom partitioner</size>" as FIX <<Agent>>
 
 database "**Done**" as D1
 database "**Done**" as D2
@@ -147,16 +148,6 @@ PART --> R3 : "hot key\nall values"
 R1 --> D1
 R2 --> D2
 R3 --> FAIL
-
-note bottom of R3
-  **Skew:** One key has
-  majority of data
-  (e.g. bot user_id).
-end note
-
-note bottom of FAIL
-  **Mitigation:** Salting,
-  combiner, custom partitioner
-end note
+FAIL --> FIX : "rebalance keys"
 
 @enduml

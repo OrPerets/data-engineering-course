@@ -140,14 +140,8 @@ component "**Reducer 2**\n<size:10>key: \"eng\"\nvalues: [1,1,...]</size>" as R2
 component "**Reducer 3**\n<size:10>key: \"fun\"\nvalues: [1]</size>" as R3 <<Tool>>
 
 MAP --> PART
-PART --> R1 : "data"
+PART --> R1 : "data (hot key risk)"
 PART --> R2 : "eng"
 PART --> R3 : "fun"
-
-note bottom of PART
-  Same key -> same reducer.
-  Skew = one key has
-  many more values.
-end note
 
 @enduml

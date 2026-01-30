@@ -155,11 +155,9 @@ rectangle "OUTPUT" #F8F9FA {
 
 DOCS --> TOK : "text"
 TOK --> NGRAM : "terms"
-NGRAM --> COOC : "ngrams"
+NGRAM --> COOC : "ngrams (vocab ~ V^n)"
 COOC --> VEC : "stats"
 NGRAM --> VEC : "counts"
 VEC --> OUT : "vectors"
-
-note bottom of NGRAM : Word n-grams: (w1..wn); char n-grams: substring. Vocab size ~ V^n.
 
 @enduml

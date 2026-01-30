@@ -46,15 +46,15 @@
 
 ## Backfill vs Incremental Cost
 - Let \(|D|\) be data per day, \(T\) days in a backfill
-\[
+$$
 \text{Work}_{\text{backfill}} = O(|D| \cdot T)
-\]
+$$
 - Interpretation: cost grows linearly with history length
 - Engineering implication: schedule backfills off-peak
 - Incremental load on new data \(|\Delta|\)
-\[
+$$
 \text{Work}_{\text{incr}} = O(|\Delta|)
-\]
+$$
 - Interpretation: steady-state cost depends on new data only
 - Engineering implication: incremental is the production default
 

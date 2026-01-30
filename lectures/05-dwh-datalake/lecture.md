@@ -40,15 +40,15 @@
 
 ## Partition Pruning Cost Model
 - Fact table size \(|F|\), partition selectivity \(s\) (fraction scanned)
-\[
+$$
 \text{ScanCost} = s \cdot |F|
-\]
+$$
 - Interpretation: pruning reduces I/O linearly with \(s\)
 - Engineering implication: choose partition keys aligned with filters
 - Star join with dimension sizes \(|D_i|\)
-\[
+$$
 \text{JoinWork} = O(|F| + \sum_i |D_i|)
-\]
+$$
 - Interpretation: fact table dominates join cost
 - Engineering implication: keep dimensions small; broadcast when possible
 

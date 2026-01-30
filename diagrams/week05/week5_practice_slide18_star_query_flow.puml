@@ -147,11 +147,8 @@ database "**Result**\n<size:10>region, total_revenue</size>" as RESULT
 BI --> PLAN : "1"
 PLAN --> FACT : "2 Partitions only"
 PLAN --> DIM : "2"
-FACT --> AGG : "3"
-DIM --> AGG : "3"
+FACT --> AGG : "fact scan (pruned)"
+DIM --> AGG : "broadcast dim"
 AGG --> RESULT : "4"
-
-note bottom of FACT : **Pruning:** WHERE date_key\nBETWEEN 20251201 AND 20251231
-note bottom of DIM : **Small dim**\nBroadcast to nodes
 
 @enduml

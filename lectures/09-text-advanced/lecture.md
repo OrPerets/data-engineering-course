@@ -32,15 +32,15 @@
 
 ## N-gram Size Model
 - Document length \(L\), n-gram length \(n\)
-\[
+$$
 \text{ngrams}(d) = L - n + 1
-\]
+$$
 - Interpretation: emissions scale linearly with document length
 - Engineering implication: map output size grows with total tokens
 - Vocabulary size upper bound for word n-grams
-\[
+$$
 |V_n| \le V^n
-\]
+$$
 - Interpretation: vocabulary grows exponentially with \(n\)
 - Engineering implication: larger \(n\) raises shuffle and storage cost
 

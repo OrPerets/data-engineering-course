@@ -42,15 +42,15 @@
 
 ## Point-in-Time Correctness
 - Feature for entity \(e\) at time \(t\) uses only historical data
-\[
+$$
 f(e,t) = g(\{x \mid x.\text{entity}=e,\ x.\text{ts} \le t\})
-\]
+$$
 - Interpretation: no future leakage into features
 - Engineering implication: joins must use as_of_ts filters
 - Training and serving should match
-\[
+$$
 f_{\text{train}}(e,t) = f_{\text{serve}}(e,t)
-\]
+$$
 - Interpretation: same definition across offline and online
 - Engineering implication: shared feature definitions prevent skew
 

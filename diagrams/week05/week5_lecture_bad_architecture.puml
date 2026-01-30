@@ -149,15 +149,7 @@ rectangle "CORRECT" #F8F9FA {
 BI_OK --> Q_OK
 Q_OK --> PRUNE
 PRUNE --> FACT_OK : "Scan 31 only"
-
-note bottom of FACT_BAD
-  **Why it fails:** Full table scan.
-  Dashboards timeout; mistrust in data.
-end note
-
-note bottom of FACT_OK
-  **Why it works:** Partition pruning.
-  Low latency; predictable cost.
-end note
+FACT_BAD --> BI_BAD : "timeout risk"
+FACT_OK --> BI_OK : "fast report"
 
 @enduml

@@ -145,9 +145,7 @@ rectangle "MITIGATION" #F8F9FA {
     component "**Skew:** filter stop-ngrams; partition by (doc_id, ngram) not ngram alone" as M2
 }
 
-REGEX --> M1
-SKEW --> M2
-
-note bottom of REGEX : Use possessive/atomic groups or avoid nested quantifiers on untrusted input.
+REGEX --> M1 : "timeout + simplify"
+SKEW --> M2 : "filter / repartition"
 
 @enduml

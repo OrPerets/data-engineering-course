@@ -163,7 +163,7 @@ LOAD --> TARGET
 TARGET --> PROC
 PROC --> CONS
 
-note bottom of LOAD : **Idempotent:** Rerun safe. Watermark + MERGE.
-note bottom of TARGET : **Partition pruning.** Avoid full scan.
+note bottom of LOAD : **Idempotent:**\nrerun safe;\nwatermark + MERGE.
+note bottom of TARGET : **Partition pruning.**\nAvoid full scan.
 
 @enduml

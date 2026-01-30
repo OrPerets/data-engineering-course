@@ -151,7 +151,7 @@ AGG --> JOIN
 JOIN --> WRITE
 WRITE --> FT
 
-note bottom of JOIN : **Point-in-time:** join only rows where ts <= as_of_ts.
-note bottom of WRITE : **Idempotent:** overwrite partition or MERGE on key.
+note bottom of JOIN : **Point-in-time:**\njoin ts ≤ as_of_ts.
+note bottom of WRITE : **Idempotent:**\noverwrite partition\nor MERGE on key.
 
 @enduml

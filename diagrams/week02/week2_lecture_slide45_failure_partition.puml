@@ -132,36 +132,33 @@ skinparam component<<failure>> {
 '=================================================
 
 ' FAILURE: NETWORK PARTITION (SPLIT-BRAIN)
-package "**Datacenter A**" #E3F2FD {
+package "**Partition A**" #E3F2FD {
+    component "**Client A**\n<size:10>Writes continue</size>" as CA
     database "**Node A**\n<size:10>Accepts writes</size>" as NA <<up>>
 }
 
-package "**Datacenter B**" #FFF3E0 {
+package "**Partition B**" #FFF3E0 {
+    component "**Client B**\n<size:10>Writes continue</size>" as CB
     database "**Node B**\n<size:10>Accepts writes</size>" as NB <<up>>
-    database "**Node C**\n<size:10>Accepts writes</size>" as NC <<up>>
+    database "**Node C**\n<size:10>Replica</size>" as NC <<up>>
+    NB -[hidden]left- NC
 }
 
-component "**Network partition**\n<size:10>A ↔ B,C split</size>" as PART <<down>>
+component "**Network partition**\n<size:10>No sync between sides</size>" as PART <<failure>>
+component "**Conflict resolution**\n<size:10>Quorum / LWW / manual</size>" as RESOLVE <<Agent>>
+database "**Merged state**\n<size:10>Reconciled data</size>" as MERGED
 
-NA <-[#C62828]-> PART
-PART <-[#C62828]-> NB
-PART <-[#C62828]-> NC
+CA --> NA : "writes"
+CB --> NB : "writes"
+NB <--> NC : "replicate"
 
-NA ..[#90A4AE].. NB : "✗ unreachable"
-NA ..[#90A4AE].. NC : "✗ unreachable"
-NB <--> NC : "✓ replicated"
+NA -[#C62828].. PART
+NB -[#C62828].. PART
+NC -[#C62828].. PART
 
-note bottom of PART
-  **Split-brain**
-  - A has divergent data
-  - B,C have same data
-  - Writes on both sides
-  - Merge conflict on heal
-end note
-
-note bottom of NA
-  **CP**: block writes on A
-  **AP**: accept writes, eventual consistency
-end note
+NA --> RESOLVE : "divergent updates"
+NB --> RESOLVE : "divergent updates"
+NC --> RESOLVE : "divergent updates"
+RESOLVE --> MERGED : "reconcile"
 
 @enduml

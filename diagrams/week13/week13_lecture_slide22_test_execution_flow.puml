@@ -154,7 +154,7 @@ PIPE --> DTEST
 DTEST --> PASS
 DTEST --> FAIL
 
-note bottom of DTEST : **Order:** Pipeline writes target;\nthen tests read target.
-note bottom of FAIL : **Idempotent rerun:** Same input -> same output; no duplicate rows.
+note bottom of DTEST : **Order:** pipeline\nwrites target;\nthen tests read.
+note bottom of FAIL : **Idempotent rerun:**\nsame input → same output;\nno dup rows.
 
 @enduml

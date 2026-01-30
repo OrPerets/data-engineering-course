@@ -156,7 +156,7 @@ LOOKUP --> CACHE
 CACHE --> LOOKUP
 LOOKUP --> OUT2
 
-note bottom of BATCH : **Cost:** full scan or partition prune by as_of_ts.
-note bottom of LOOKUP : **Latency:** ms; key must include entity_id.
+note bottom of BATCH : **Cost:** full scan\nor prune by as_of_ts.
+note bottom of LOOKUP : **Latency:** ms;\nkey = entity_id.
 
 @enduml

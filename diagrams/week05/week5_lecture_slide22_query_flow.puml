@@ -151,11 +151,8 @@ rectangle "JOIN / AGG" #F8F9FA {
 database "**Result**\n<size:10>Rows to BI</size>" as RESULT
 
 SQL --> PRUNE : "1"
-PRUNE --> SCAN1 : "2 Partitions only"
-SCAN1 --> JOIN : "3"
+PRUNE --> SCAN1 : "2 date_key filter"
+SCAN1 --> JOIN : "3 pruned scan"
 JOIN --> RESULT : "4"
-
-note bottom of PRUNE : **Filter by date_key**\nSkips other partitions
-note bottom of SCAN1 : **Reduced I/O**\nvs full table scan
 
 @enduml

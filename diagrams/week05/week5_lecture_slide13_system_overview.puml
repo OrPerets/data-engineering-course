@@ -154,10 +154,7 @@ SRC1 --> ETL
 SRC2 --> ETL
 ETL --> DWH
 ETL --> LAKE
-DWH --> BI
-LAKE --> BI
-
-note bottom of DWH : **DWH:** Curated tables, partition by date. OLAP.
-note bottom of LAKE : **Lake:** Parquet/ORC. Flexibility, ML.
+DWH --> BI : "governed BI"
+LAKE --> BI : "ad-hoc / ML"
 
 @enduml

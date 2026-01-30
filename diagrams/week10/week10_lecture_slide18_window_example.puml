@@ -152,7 +152,7 @@ e3 --> w2
 e4 --> w2
 e5 --> w3
 
-note bottom of w1 : e1,e2 in W1. e3 starts W2. No overlap.
-note bottom of w2 : Watermark ≥ window end -> emit. Late e? Drop or side output.
+note bottom of w1 : e1,e2 in W1;\ne3 starts W2;\nno overlap.
+note bottom of w2 : Watermark ≥ end → emit.\nLate? Drop or side output.
 
 @enduml

@@ -161,15 +161,10 @@ INP --> MAP3
 MAP1 --> PART
 MAP2 --> PART
 MAP3 --> PART
-PART --> SORT_XFER
+PART --> SORT_XFER : "balance keys"
 SORT_XFER --> R1
 SORT_XFER --> R2
 R1 --> OUT
 R2 --> OUT
-
-note bottom of PART
-  **Skew mitigation:** Combiner,
-  custom partitioner, salting
-end note
 
 @enduml

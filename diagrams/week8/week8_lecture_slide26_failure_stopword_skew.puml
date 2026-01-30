@@ -146,11 +146,14 @@ rectangle "REDUCERS" #F8F9FA {
     component "**Reducer 2**\n\"eng\" -> [...]" as R2
 }
 
+rectangle "MITIGATION" #F8F9FA {
+    component "**Stop-word list**\n<size:10>Filter high-df terms in Map</size>" as STOP <<Agent>>
+}
+
 J2MAP --> PART
 PART --> R0 : "(\"the\", doc_id) × N"
 PART --> R1
 PART --> R2
-
-note bottom of R0 : **Failure:** OOM or timeout when N = millions. Mitigation: stop-word list in Map.
+R0 --> STOP : "hot reducer"
 
 @enduml

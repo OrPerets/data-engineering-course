@@ -156,16 +156,6 @@ PART --> R3 : "hot key\nall values"
 R1 --> D1
 R2 --> D2
 R3 --> FAIL : "crash or stall"
-
-note bottom of R3
-  **Skew:** One key has
-  majority of data
-  (e.g. bot user_id)
-end note
-
-note bottom of FAIL
-  **Mitigation:** Salting,
-  combiner, custom partitioner
-end note
+FAIL --> PART : "rebalance keys"
 
 @enduml

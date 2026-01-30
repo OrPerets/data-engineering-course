@@ -154,9 +154,7 @@ rectangle "OUTPUT" #F8F9FA {
 
 INP --> MAP_FN : "read splits"
 MAP_FN --> SORT_XFER : "(k,v) pairs"
-SORT_XFER --> RED : "grouped by key"
+SORT_XFER --> RED : "grouped by key (network + disk)"
 RED --> OUT : "write"
-
-note bottom of SORT_XFER : **Bottleneck:** network + disk I/O. Often dominates job time.
 
 @enduml

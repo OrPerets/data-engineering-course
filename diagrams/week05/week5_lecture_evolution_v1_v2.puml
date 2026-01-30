@@ -146,15 +146,7 @@ rectangle "v2 - Star + partitioned fact" #E8F5E9 {
 BI2 --> F2 : "Pruning"
 F2 --> D2 : "Join"
 BI2 --> D2
-
-note bottom of T1
-  **v1:** Full scan every query.
-  No pruning; unpredictable cost.
-end note
-
-note bottom of F2
-  **v2:** Prune by date_key.
-  Predictable joins; governed BI.
-end note
+T1 --> BI1 : "full scan cost"
+F2 --> BI2 : "pruned scan"
 
 @enduml

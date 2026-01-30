@@ -150,7 +150,7 @@ NO --> OVER
 MERGE --> T1
 OVER --> T2
 
-note bottom of MERGE : Watermark + MERGE.\nSame key can arrive again.
-note bottom of OVER : Reload full day.\nNever mix old/new in partition.
+note bottom of MERGE : Watermark + MERGE;\nsame key can\narrive again.
+note bottom of OVER : Reload full day;\nnever mix old/new\nin partition.
 
 @enduml

@@ -152,7 +152,7 @@ rectangle "MITIGATION" #E8F5E9 {
     component "**Salting / split**\n<size:10>Hot key -> N buckets</size>" as M2 <<Agent>>
 }
 
-note bottom of DUP : **Fix:** idempotent write per partition; single owner per (entity, as_of_ts).
-note bottom of FAIL : **Fix:** salt key; or incremental per entity; limit window size.
+note bottom of DUP : **Fix:** idempotent\nper partition;\none owner per (entity,ts).
+note bottom of FAIL : **Fix:** salt key;\nor incremental\nper entity; limit window.
 
 @enduml

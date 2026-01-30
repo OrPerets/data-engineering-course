@@ -157,7 +157,7 @@ AGG --> SINK : write
 SINK --> COMMIT : ack
 COMMIT --> BROKER : commit offset
 
-note bottom of WM : **Order:** process -> watermark -> close windows -> commit
-note bottom of COMMIT : **At-least-once:** commit after write. **Exactly-once:** transactional sink.
+note bottom of WM : **Order:** process →\nwatermark → close\nwindows → commit.
+note bottom of COMMIT : **At-least-once:**\ncommit after write.\n**Exactly-once:** txn sink.
 
 @enduml

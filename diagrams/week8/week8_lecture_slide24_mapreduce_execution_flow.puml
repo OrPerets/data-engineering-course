@@ -159,13 +159,11 @@ J1R --> J1OUT
 
 J1OUT --> J2M : "(doc_id, term)"
 J2M --> J2S
-J2S --> J2R
+J2S --> J2R : "skew risk if term in most docs"
 J2R --> J2OUT
 
 J1OUT --> J3M
 J2OUT --> J3M
 J3M --> J3OUT
-
-note bottom of J2S : **Skew risk:** term in all docs -> one reducer gets N values
 
 @enduml

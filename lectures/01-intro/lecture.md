@@ -32,9 +32,9 @@
 ## Formal Volume Model
 - Let \(V_d\) = daily raw volume (GB/day)
 - Retention \(R\) days, compression factor \(c\), replication \(r\)
-\[
+$$
 S = \frac{V_d \cdot R \cdot r}{c}
-\]
+$$
 - Interpretation: total storage footprint across the cluster
 - Engineering implication: cost scales linearly in volume and replication
 

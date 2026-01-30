@@ -63,23 +63,23 @@
 
 ## Formal Pipeline Stages
 - Raw dataset \(D_{raw}\) becomes cleaned \(D_{clean}\), then modeled \(D_{modeled}\)
-\[
+$$
 D_{raw} \xrightarrow{clean} D_{clean} \xrightarrow{model} D_{modeled}
-\]
+$$
 - Interpretation: deterministic transformation chain
 - Engineering implication: version and re-run transformations reliably
 - Idempotent load function \(f\) satisfies
-\[
+$$
 f(f(D)) = f(D)
-\]
+$$
 - Interpretation: retries do not change output
 - Engineering implication: safe reruns and failure recovery
 
 ## Delivery Semantics and Duplicates
 - Let \(C(k)\) be count for key \(k\) in sink
-\[
+$$
 C_{\text{alo}}(k) = C_{\text{exact}}(k) + \Delta_k,\quad \Delta_k \ge 0
-\]
+$$
 - Interpretation: at-least-once can only over-count
 - Engineering implication: require idempotent writes or dedup keys
 - Exactly-once requires deterministic processing + transactional sink

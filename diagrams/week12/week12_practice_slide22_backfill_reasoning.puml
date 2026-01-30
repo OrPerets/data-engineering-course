@@ -154,7 +154,7 @@ BACKFILL --> WRITE
 INCR --> WRITE
 WRITE --> FT
 
-note bottom of WRITE : **Idempotent:** same partition overwritten; rerun = same result.
-note bottom of FT : **No overlap:** one job owns each partition; control updated after success.
+note bottom of WRITE : **Idempotent:**\nsame partition overwritten;\nrerun = same result.
+note bottom of FT : **No overlap:**\none job per partition;\ncontrol after success.
 
 @enduml

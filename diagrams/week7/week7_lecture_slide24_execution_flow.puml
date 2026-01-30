@@ -141,12 +141,7 @@ database "**Output**" as OUT
 
 IN --> M : "records"
 M --> S : "(k,v) stream"
-S --> R : "grouped by k"
+S --> R : "shuffle (network + disk)"
 R --> OUT : "(k,v')"
-
-note bottom of S
-  **Bottleneck:** Network + disk.
-  Cost ∝ intermediate size.
-end note
 
 @enduml

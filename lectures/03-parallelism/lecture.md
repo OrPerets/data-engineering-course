@@ -44,15 +44,15 @@
 
 ## Formal Work and Span
 - Let \(W\) = total work, \(S\) = span (critical path), \(p\) = workers
-\[
+$$
 T_p \ge \max\left(\frac{W}{p}, S\right)
-\]
+$$
 - Interpretation: parallel time bounded by work and critical path
 - Engineering implication: low \(S\) is required for near-linear scale
 - Speedup is limited by the sequential fraction
-\[
+$$
 \text{Speedup} \le \frac{W}{S}
-\]
+$$
 - Interpretation: Amdahl-style bound on parallel benefit
 - Engineering implication: remove sequential bottlenecks first
 

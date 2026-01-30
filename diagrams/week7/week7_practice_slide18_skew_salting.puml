@@ -142,14 +142,8 @@ component "**Reducer N**\n<size:10>888-N</size>" as RN <<Tool>>
 MAP_L --> R1
 MAP_L --> R2
 MAP_L --> RN
-MAP_S --> R1
+MAP_S --> R1 : "replicated user rows"
 MAP_S --> R2
 MAP_S --> RN
-
-note bottom of MAP_S
-  Salt and replicate:
-  heavy key 888 split
-  across N reducers.
-end note
 
 @enduml

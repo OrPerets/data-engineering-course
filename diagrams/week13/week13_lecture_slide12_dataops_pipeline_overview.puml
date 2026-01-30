@@ -166,7 +166,7 @@ TEST1 --> MONITOR
 TEST2 --> MONITOR
 LOAD --> MONITOR
 
-note bottom of TARGET : **Quality gate:** Tests must pass before promote / alert.
-note bottom of MONITOR : **Incident:** Fail tests or SLA -> alert; no silent regression.
+note bottom of TARGET : **Quality gate:**\ntests pass before\npromote/alert.
+note bottom of MONITOR : **Incident:** fail tests/SLA\n→ alert;\nno silent regression.
 
 @enduml

@@ -155,6 +155,6 @@ TGT --> Q1
 TGT --> Q2
 TGT --> Q3
 
-note bottom of Q3 : **Fail gate -> block promote / alert.**\nRerun same slice = idempotent; no duplicates.
+note bottom of Q3 : **Fail gate → block\npromote/alert.**\nRerun same slice = idempotent.
 
 @enduml

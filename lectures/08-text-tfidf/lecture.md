@@ -42,29 +42,29 @@
 
 ## TF and IDF Definitions
 - Term frequency for term \(t\) in document \(d\)
-\[
+$$
 TF(t,d) = \frac{\text{count}(t,d)}{|d|}
-\]
+$$
 - Interpretation: local importance within a document
 - Engineering implication: requires per-document counts
 - Inverse document frequency with \(N\) documents
-\[
+$$
 IDF(t) = \log\frac{N}{df(t)}
-\]
+$$
 - Interpretation: rarer terms get higher weight
 - Engineering implication: global aggregation over all docs
 
 ## TF-IDF Vector and Sparsity
 - TF-IDF weight combines local and global signals
-\[
+$$
 \text{TF-IDF}(t,d) = TF(t,d) \cdot IDF(t)
-\]
+$$
 - Interpretation: high for terms frequent in a doc but rare overall
 - Engineering implication: compute after both TF and DF are known
 - Let \(\text{nnz}\) = non-zeros in the doc-term matrix
-\[
+$$
 \text{Storage} = O(\text{nnz})
-\]
+$$
 - Interpretation: sparse representation dominates feasibility
 - Engineering implication: store (doc_id, term, tfidf) tuples
 

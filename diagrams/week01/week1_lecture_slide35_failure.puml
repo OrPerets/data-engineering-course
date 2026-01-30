@@ -131,50 +131,24 @@ skinparam component<<failure>> {
 
 '=================================================
 
-' FAILURE PROPAGATION — two columns: success (left) | failure (right), notes below to fit slide
-
-component "**Step 1: Ingestion**\n<size:10>10 minutes</size>" as STEP1 <<success>>
-component "**Step 2: Transform**\n<size:10>20 minutes</size>" as STEP2 <<failure>>
-
-component "**Step 3: Aggregate**\n<size:10>10 minutes</size>" as STEP3
-database "**Intermediate**\n<size:10>Partial: 2.5 GB</size>" as INTERMEDIATE
-
-component "**Step 4: Load**\n<size:10>5 minutes</size>" as STEP4
-database "**Output**\n<size:10>Not created</size>" as OUTPUT
-
+' FAILURE PROPAGATION — sequential pipeline with failure at Step 2
+database "**Input**\n<size:10>Raw events</size>" as INPUT
+component "**Step 1: Ingestion**\n<size:10>Write raw</size>" as STEP1 <<success>>
 database "**Raw Storage**\n<size:10>5 GB stored</size>" as RAW
 
-' Same rank: success and failure paths start side by side
-STEP1 -[hidden]right- STEP2
+component "**Step 2: Transform**\n<size:10>Fails at 50%</size>" as STEP2 <<failure>>
+database "**Partial Output**\n<size:10>2.5 GB written</size>" as PARTIAL <<down>>
 
-' Success path (left column, top to bottom)
-STEP1 --> STEP3
-STEP3 --> STEP4
-STEP4 --> RAW
+component "**Step 3: Aggregate**\n<size:10>Not run</size>" as STEP3 <<down>>
+component "**Step 4: Load**\n<size:10>Not run</size>" as STEP4 <<down>>
+database "**Output**\n<size:10>Not created</size>" as OUTPUT <<down>>
 
-' Failure path (right column, top to bottom)
-STEP2 --> INTERMEDIATE
-INTERMEDIATE --> OUTPUT
-
-note bottom of STEP2
-  **Failure Point**
-  - Memory exhaustion
-  - 50% data processed
-  - Pipeline stops
-end note
-
-note bottom of INTERMEDIATE
-  **Impact**
-  - Partial data written
-  - Inconsistent state
-  - Manual cleanup needed
-end note
-
-note bottom of OUTPUT
-  **Downstream Impact**
-  - Analytics unavailable
-  - Dashboard shows stale data
-  - Business decisions delayed
-end note
+INPUT --> STEP1 : "ingest"
+STEP1 --> RAW : "raw saved"
+RAW --> STEP2 : "read raw"
+STEP2 -[#C62828]-> PARTIAL : "crash / stop"
+STEP2 -[#C62828]-> STEP3 : "blocked"
+STEP3 -[#C62828]-> STEP4 : "blocked"
+STEP4 -[#C62828]-> OUTPUT : "no load"
 
 @enduml

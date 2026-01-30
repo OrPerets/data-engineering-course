@@ -139,14 +139,14 @@ package "BEFORE (Skew)" #F8F9FA {
 }
 
 package "SALTING" #F8F9FA {
-    component "**Map: append salt**\n<size:10>888->888-1..888-N</size>" as SALT
-    component "**Small table: replicate**\n<size:10>888->888-1..888-N</size>" as REPL
+    component "**Map: append salt**\n<size:10>key -> key-salt</size>" as SALT
+    component "**Small table: replicate**\n<size:10>key -> key-1..key-N</size>" as REPL
 }
 
 package "AFTER (Balanced)" #F8F9FA {
-    component "**Shuffle**\n<size:10>888-i -> reducer i</size>" as SHUFFLE2
+    component "**Shuffle**\n<size:10>key-salt -> reducer</size>" as SHUFFLE2
     component "**N Reducers**\n<size:10>each ~1B/N rows</size>" as REDUCE2
-    component "**Second MR / merge**\n<size:10>sum per original key</size>" as MERGE
+    component "**Second MR / merge**\n<size:10>merge back by key</size>" as MERGE
 }
 
 LARGE --> SHUFFLE1
@@ -157,15 +157,5 @@ SALT --> SHUFFLE2
 REPL --> SHUFFLE2
 SHUFFLE2 --> REDUCE2
 REDUCE2 --> MERGE
-
-note bottom of SALT
-  Large table: emit (key-salt, value)
-  Small table: emit (key-i, value) for i=1..N
-end note
-
-note bottom of MERGE
-  Join correct; then aggregate
-  to get final result per key
-end note
 
 @enduml

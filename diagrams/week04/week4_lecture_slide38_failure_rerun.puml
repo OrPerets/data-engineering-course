@@ -141,25 +141,15 @@ package "RUN 1" #F8F9FA {
 database "**Target**\n<size:10>P1, P2 written</size>" as TARGET
 
 package "RUN 2 (Rerun)" #F8F9FA {
-    component "**Skip P1, P2**\n<size:10>Already in target</size>" as SKIP <<Agent>>
+    component "**Skip P1, P2**\n<size:10>Already committed</size>" as SKIP <<Agent>>
     component "**Process P3 only**\n<size:10>Idempotent write</size>" as P3B <<Tool>>
 }
 
 P1 --> TARGET : "OK"
 P2 --> TARGET : "OK"
-P3 --> TARGET : "FAIL"
+P3 -[#C62828]-> TARGET : "fails before write"
 
-note bottom of P3
-  **Failure:** Job fails
-  before P3 written
-end note
-
-SKIP --> P3B : "Resume"
-P3B --> TARGET : "P3 written\n(no duplicate P1, P2)"
-
-note bottom of TARGET
-  **Idempotent:** MERGE / partition
-  Rerun does not duplicate
-end note
+SKIP --> P3B : "resume"
+P3B --> TARGET : "write P3 only"
 
 @enduml

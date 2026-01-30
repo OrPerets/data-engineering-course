@@ -156,8 +156,6 @@ TRIGGER --> READ : "1"
 READ --> TRANSFORM_STEP : "2"
 TRANSFORM_STEP --> WRITE : "3"
 WRITE --> STATE : "4 Update watermark\n(after success)"
-
-note bottom of READ : **Watermark:** Only new/changed rows. upper_bound = NOW() - buffer.
-note bottom of STATE : **Only after commit.** Failure -> no update -> rerun safe.
+STATE --> READ : "watermark + safety buffer"
 
 @enduml

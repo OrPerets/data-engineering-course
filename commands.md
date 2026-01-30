@@ -16,10 +16,10 @@ python3 create_prompt.py --week 14 --folder 14-review                   --topic 
 
 
 
-pandoc lectures/01-intro/lecture.md  -o build/01-introduction.pptx     --reference-doc=reference.pptx --resource-path=diagrams/week01 
+pandoc lectures/01-intro/lecture.md  -o build/01-introduction.pptx     --reference-doc=reference.pptx --resource-path=diagrams/week01  --pdf-engine=xelatex
 pandoc lectures/01-intro/practice.md  -o build/01-practice.pptx     --reference-doc=reference.pptx
 
-pandoc lectures/02-distributed-db/lecture.md  -o build/02-Distributed-DBs.pptx     --reference-doc=reference.pptx
+pandoc lectures/02-distributed-db/lecture.md  -o build/02-Distributed-DBs.pptx     --reference-doc=reference.pptx  --resource-path=diagrams/week02
 pandoc lectures/02-distributed-db/practice.md  -o build/02-practice.pptx     --reference-doc=reference.pptx
 
 pandoc lectures/03-parallelism/lecture.md  -o build/03-Parallelism.pptx     --reference-doc=reference.pptx
@@ -43,7 +43,7 @@ pandoc lectures/08-text-tfidf/practice.md  -o build/08-practice.pptx     --refer
 pandoc lectures/09-text-advanced/lecture.md  -o build/09-TextProcessing.pptx     --reference-doc=reference.pptx
 pandoc lectures/09-text-advanced/practice.md  -o build/09-practice.pptx     --reference-doc=reference.pptx
 
-pandoc lectures/10-streaming/lecture.md  -o build/10-Streaming.pptx     --reference-doc=reference.pptx
+pandoc lectures/10-streaming/lecture.md  -o build/10-Streaming.pptx     --reference-doc=reference.pptx --resource-path=diagrams/week10 --pdf-engine=xelatex
 pandoc lectures/10-streaming/practice.md  -o build/10-practice.pptx     --reference-doc=reference.pptx
 
 pandoc lectures/11-feaure-engineering/lecture.md  -o build/11-feaure-engineering.pptx     --reference-doc=reference.pptx

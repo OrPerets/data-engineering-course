@@ -135,7 +135,7 @@ skinparam component<<failure>> {
 rectangle "BAD (fails in production)" #FFEBEE {
     database "**Source**\n<size:10>raw_events</size>" as SRC_BAD
     component "**INSERT**\n<size:10>No staging, no MERGE</size>" as INS_BAD <<Bad>>
-    database "**Target**\n<size:10>Duplicates on rerun</size>" as TGT_BAD
+    database "**Target**\n<size:10>Duplicates on rerun</size>" as TGT_BAD <<down>>
 }
 SRC_BAD --> INS_BAD : "full or slice"
 INS_BAD --> TGT_BAD : "rerun = 2× rows"
@@ -143,8 +143,8 @@ INS_BAD --> TGT_BAD : "rerun = 2× rows"
 rectangle "CORRECT" #F8F9FA {
     database "**Source**\n<size:10>raw_events</size>" as SRC_OK
     component "**Extract**\n<size:10>Watermark</size>" as EXT <<Tool>>
-    database "**Staging**\n<size:10>Dedup, DLQ</size>" as STG
-    component "**MERGE**\n<size:10>Idempotent</size>" as MERGE <<Agent>>
+    database "**Staging**\n<size:10>Dedup + DLQ</size>" as STG
+    component "**MERGE**\n<size:10>Idempotent upsert</size>" as MERGE <<Agent>>
     database "**Target**\n<size:10>events_clean</size>" as TGT_OK
     database "**Control**\n<size:10>watermark</size>" as CTRL
 }
@@ -153,15 +153,5 @@ EXT --> STG
 STG --> MERGE
 MERGE --> TGT_OK
 MERGE --> CTRL : "update after success"
-
-note bottom of INS_BAD
-  **Why it fails:** Rerun inserts same rows again.
-  No dedup, no partition resume. Dashboards 2×.
-end note
-
-note bottom of MERGE
-  **Why it works:** Same slice re-read -> MERGE
-  changes nothing. Watermark only after commit.
-end note
 
 @enduml

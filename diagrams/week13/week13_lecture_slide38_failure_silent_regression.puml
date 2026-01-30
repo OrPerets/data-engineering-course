@@ -153,7 +153,7 @@ T --> L
 L --> TGT
 TGT --> TEST
 
-note bottom of T : **Gap:** No assertion on column X;\nbad value passes through.
-note bottom of TGT : **Result:** Dashboard shows wrong X;\nno alert; silent regression.
+note bottom of T : **Gap:** no assertion\non column X;\nbad value passes.
+note bottom of TGT : **Result:** dashboard\nwrong X; no alert;\nsilent regression.
 
 @enduml

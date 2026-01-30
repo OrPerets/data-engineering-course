@@ -134,11 +134,11 @@ skinparam component<<failure>> {
 ' MAP-SHUFFLE-REDUCE EXECUTION FLOW
 rectangle "MAP" #F8F9FA {
     database "**Records**\n<size:10>r1, r2, r3...</size>" as RECS
-    component "**Map**\n<size:10>emit (k,v)</size>" as MAP_FN <<Tool>>
+    component "**Map**\n<size:10>Pure fn; emit (k,v)</size>" as MAP_FN <<Tool>>
 }
 
 rectangle "SHUFFLE" #F8F9FA {
-    component "**Sort & Transfer**\n<size:10>Group by key</size>" as SORT_XFER <<Agent>>
+    component "**Sort & Transfer**\n<size:10>Group by key; network I/O</size>" as SORT_XFER <<Agent>>
     database "**Groups**\n<size:10>k1->[v1,v2,...]</size>" as GROUPS
 }
 
@@ -152,8 +152,5 @@ MAP_FN --> SORT_XFER : "(k,v) pairs"
 SORT_XFER --> GROUPS : "same key -> same node"
 GROUPS --> RED : "iterator"
 RED --> OUT : "write"
-
-note bottom of MAP_FN : Pure function per record. No cross-record state.
-note bottom of SHUFFLE : **Bottleneck:** network I/O. Most expensive phase.
 
 @enduml

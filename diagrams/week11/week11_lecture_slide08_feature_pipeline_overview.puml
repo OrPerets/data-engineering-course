@@ -158,7 +158,7 @@ PIT --> FT
 FT --> TRAIN
 FT --> SERVE
 
-note bottom of PIT : **No leakage:** features only use data available at as_of_ts.
-note bottom of FT : **Idempotent:** rerun same (entity, as_of_ts) overwrites; no duplicates.
+note bottom of PIT : **No leakage:**\nonly data at as_of_ts.
+note bottom of FT : **Idempotent:**\nrerun overwrites;\nno dupes.
 
 @enduml

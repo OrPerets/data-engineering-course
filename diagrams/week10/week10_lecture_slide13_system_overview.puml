@@ -160,7 +160,7 @@ STATE --> WINDOW
 WINDOW --> SINK
 SINK --> TARGET
 
-note bottom of WINDOW : **Windows:** tumbling / sliding / session. Watermark for late data.
-note bottom of SINK : **Delivery:** at-least-once / exactly-once. Idempotent writes.
+note bottom of WINDOW : **Windows:** tumbling/\nsliding/session;\nwatermark for late.
+note bottom of SINK : **Delivery:** at-least/\nexactly-once;\nidempotent writes.
 
 @enduml

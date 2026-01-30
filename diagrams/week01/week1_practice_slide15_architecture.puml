@@ -1,8 +1,4 @@
 @startuml
-'=================================================
-' CANONICAL DIAGRAM TEMPLATE - DATA ENGINEERING
-'=================================================
-
 top to bottom direction
 skinparam linetype ortho
 skinparam shadowing false
@@ -132,46 +128,56 @@ skinparam component<<failure>> {
 '=================================================
 
 ' NEWS PLATFORM ARCHITECTURE
-package "DATA SOURCES" #F8F9FA {
+package "DATA SOURCES"  as A #F8F9FA {
     database "**News Sources**\n<size:10>1,000 sources</size>" as SOURCES
     database "**User Clicks**\n<size:10>500K/day</size>" as CLICKS
+    SOURCES -[hidden]- CLICKS
+
 }
 
-package "INGESTION LAYER" #F8F9FA {
+package "INGESTION LAYER" as B  #F8F9FA{
     component "**Article Ingestion**\n<size:10>10K articles/day</size>" as INGEST_ART
     component "**Click Ingestion**\n<size:10>Streaming</size>" as INGEST_CLICK
+INGEST_ART -[hidden]- INGEST_CLICK
 }
 
 package "STORAGE LAYER" #F8F9FA {
     database "**Raw Articles**\n<size:10>50M articles, 515 GB</size>" as RAW_ART
     database "**Raw Clicks**\n<size:10>200M clicks, 8.8 GB</size>" as RAW_CLICK
+RAW_ART -[hidden]- RAW_CLICK
 }
 
 package "PROCESSING LAYER" #F8F9FA {
     component "**Batch Pipeline**\n<size:10>Daily aggregation</size>" as BATCH
     component "**Streaming Pipeline**\n<size:10>5-min trending</size>" as STREAM
+BATCH -[hidden]- STREAM
 }
 
 package "ANALYTICS LAYER" #F8F9FA {
     database "**Data Warehouse**\n<size:10>Aggregated tables</size>" as WAREHOUSE
     component "**Trending Service**\n<size:10>Real-time API</size>" as TRENDING
+WAREHOUSE -[hidden]- TRENDING
 }
 
 package "CONSUMPTION" #F8F9FA {
     component "**Analytics Dashboard**\n<size:10>Daily reports</size>" as DASHBOARD
     component "**News App**\n<size:10>Trending feed</size>" as APP
+DASHBOARD -[hidden]- APP
 }
 
-note right of BATCH
-  **Cost**: $0.10/run
-  **Latency**: 2 hours
-  **Frequency**: Daily
-end note
+SOURCES --> INGEST_ART : "batch pulls"
+CLICKS --> INGEST_CLICK : "event stream"
 
-note right of STREAM
-  **Cost**: $2.00/hour
-  **Latency**: < 1 second
-  **Frequency**: Continuous
-end note
+INGEST_ART --> RAW_ART
+INGEST_CLICK --> RAW_CLICK
+
+RAW_ART --> BATCH : "daily ETL"
+RAW_CLICK --> STREAM : "near real-time"
+
+BATCH --> WAREHOUSE : "aggregates"
+STREAM --> TRENDING : "top-N"
+
+WAREHOUSE --> DASHBOARD : "BI queries"
+TRENDING --> APP : "serve trends"
 
 @enduml

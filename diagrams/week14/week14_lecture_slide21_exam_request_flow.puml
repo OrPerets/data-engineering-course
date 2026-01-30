@@ -155,8 +155,8 @@ TOPIC_ID --> CONCEPTS_LIST : "2"
 CONCEPTS_LIST --> PLAN : "3"
 PLAN --> ANSWER : "4"
 
-note bottom of TOPIC_ID : **SQL/ETL:** MERGE, dedup, watermark
-note bottom of CONCEPTS_LIST : **MapReduce:** (k,v), shuffle, skew
-note bottom of PLAN : **DWH:** star, pruning, join size
+note bottom of TOPIC_ID : **SQL/ETL:**\nMERGE, dedup,\nwatermark.
+note bottom of CONCEPTS_LIST : **MapReduce:**\n(k,v), shuffle,\nskew.
+note bottom of PLAN : **DWH:** star,\npruning, join size.
 
 @enduml

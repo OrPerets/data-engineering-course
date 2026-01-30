@@ -155,7 +155,7 @@ rectangle "ORCHESTRATION" #F8F9FA {
 TRIG --> CTRL
 CTRL --> TRIG
 
-note bottom of COMP : **Cost:** O(events in window) × 1 day; bounded.
-note bottom of BACKFILL : **Cost:** O(events) × (d2 − d1); overlap = duplicate keys if not overwrite.
+note bottom of COMP : **Cost:** O(events)\n× 1 day; bounded.
+note bottom of BACKFILL : **Cost:** O(events)×(d2−d1);\noverlap = dup keys\nif not overwrite.
 
 @enduml

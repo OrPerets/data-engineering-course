@@ -16,15 +16,15 @@
 
 ## Review: Pipeline Cost Model
 - Batch pipeline stages on the critical path
-\[
+$$
 T_{\text{total}} = T_{\text{extract}} + T_{\text{transform}} + T_{\text{load}}
-\]
+$$
 - Interpretation: end-to-end latency is the sum of stage runtimes
 - Engineering implication: optimize the slowest stage first
 - MapReduce communication cost
-\[
+$$
 \text{Comm} = O(|\text{shuffle output}|)
-\]
+$$
 - Interpretation: network dominates when shuffle is large
 - Engineering implication: use combiners and balanced keys
 
