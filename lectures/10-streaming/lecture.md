@@ -1,453 +1,621 @@
-# Week 10: Streaming Data and Real-Time Processing
+# Week 10: Streaming Data and Approximation Algorithms
 
 ## Purpose
-- Streaming is unbounded data: events arrive continuously
-- Real-time pipelines power alerts, dashboards, and low-latency analytics
-- Trade-offs: latency vs throughput; event-time vs processing-time
+- Streaming: unbounded data processed in one pass with bounded memory
+- Exact computation is often impossible; approximation is necessary
+- Core algorithms: Morris Counter, Flajolet-Martin, HyperLogLog, Count-Min Sketch
 
-## Learning Objectives (1/2)
-- Define streaming data and contrast with batch
-- Distinguish event-time from processing-time
-- Define watermark and late data
-- Classify windows: tumbling, sliding, session
+## Learning Objectives
+- Define the streaming model and its constraints
+- State why exact solutions fail for streaming problems
+- Derive Morris Counter with expectation, variance, and error bounds
+- Derive Flajolet-Martin for cardinality estimation
+- Apply (ε, δ)-approximation framework
+- Design streaming pipelines with windowing and watermarks
 
-## Learning Objectives (2/2)
-- State delivery guarantees: at-most-once, at-least-once, exactly-once
-- Design a streaming pipeline: source → window → sink
-- Estimate cost: throughput, state size, latency
-- Identify failure modes: late data, duplicate delivery
+---
 
-## The Real Problem This Lecture Solves
+# Part I: The Streaming Model
 
-## Production Failure
-- Team built dashboards on processing-time windows
-- Same event stream replayed gave different numbers each run
-- Alerts fired on "spikes" that were just replay order
+## Formal Stream Definition
+- **Stream:** Sequence $S = \langle a_1, a_2, \ldots, a_m \rangle$ of $m$ elements
+- **Domain:** Each $a_i \in [n] = \{1, 2, \ldots, n\}$
+- **Frequency:** $f_j = |\{i : a_i = j\}|$ for each $j \in [n]$
+- **Constraint:** $\sum_j f_j = m$ (stream length)
 
-## Root Cause
-- Event-time was ignored; no watermark
-- ⇒ non-deterministic windows
-- At-least-once without idempotent sink ⇒ double-count on replay
+## Streaming Constraints
+1. **One pass:** Elements seen sequentially; no rewinding
+2. **Bounded memory:** Space $s \ll m$ (typically $s = O(\log m)$ or $O(\text{poly}(\log m))$)
+3. **Fast update:** $O(1)$ or $O(\log m)$ time per element
+4. **Query at end:** Return estimate after stream completes
 
-## Takeaway
-- Streaming without event-time and idempotency doesn't scale
-- This lecture is about correct, deterministic streaming
+## Why Exact Solutions Fail
 
-## The System We Are Building
+### Exact Counting
+- **Problem:** Count elements in stream (compute $m$)
+- **Exact:** Maintain counter; increment per element
+- **Space:** $O(\log m)$ bits to store counter value $m$
+- **For $m = 2^{64}$:** Need 64 bits = 8 bytes (seems fine)
+- **But:** What if we need to count with $O(\log \log m)$ space?
 
-## Domain Overview
-- **Domain:** event analytics by user (clicks, spend) in tumbling windows
-- Same lineage as Week 4 ingestion and Week 6 batch
-- **Source:** event stream (user_id, event_time, amount)
-- E.g. Kafka topic partitioned by user_id; ~1M events/day
+### Exact Distinct Count
+- **Problem:** Count distinct elements (compute $F_0 = |\{j : f_j > 0\}|$)
+- **Exact:** Store all seen elements in set
+- **Space:** $\Omega(n)$ bits in worst case
+- **For $n = 10^9$:** Need ~1 GB minimum
+- **Streaming constraint:** Space must be $o(n)$
 
-## Pipeline Design
-- **Compute:** tumbling 5-min windows by event_time
-- Watermark to close windows; sum(amount) per user per window
-- **Sink:** table or API keyed by (window_start, user_id)
-- Idempotent upsert so replay does not duplicate
-- **Consumers:** dashboards, alerts; expect same numbers on reprocess
+### Exact Frequency Tracking
+- **Problem:** Track $f_j$ for all $j$
+- **Exact:** Array of $n$ counters
+- **Space:** $\Omega(n \log m)$ bits
+- **Infeasible** when $n$ is large
 
-## Diagram Manifest
-- Slide 13 → week10_lecture_slide13_system_overview.puml
-- Slide 18 → week10_lecture_slide18_window_example.puml
-- Slide 22 → week10_lecture_slide22_execution_flow.puml
-- Slide 38 → week10_lecture_slide38_failure_late_data.puml
-
-## Core Concepts (1/2)
-- **Streaming:** unbounded sequence of events; processed as they arrive
-- **Event:** (key, value, event_time)
-- event_time = when it happened; processing_time = when system saw it
-- **Window:** group events by time for aggregation
-- Close when watermark passes window end
-
-## Core Concepts (2/2)
-- **Watermark:** progress of event-time
-- "No event with event_time < T will arrive"
-- **At-most-once:** emit once, may lose on failure
-- **At-least-once:** retry on failure; duplicates possible
-- **Exactly-once:** no loss, no duplicate; transactional sink
-
-## Streaming Model: Constraints
-- **One pass:** events cannot be rewound
-- **Bounded memory:** state << stream size
-- **Per-event update:** \(O(1)\) or \(O(\log n)\)
-- **Approximation:** trade exactness for feasibility
-- **Guarantee:** error bounds or confidence stated
-
-## Morris Counter (Approximate Counting)
-- Counter state \(X\) increments with probability \(2^{-X}\)
+## The Approximation Paradigm
+- **Accept:** Approximate answers within controlled error
+- **(ε, δ)-approximation:**
+  - Error at most $\epsilon$ with probability at least $1 - \delta$
 $$
-P(\text{inc}) = 2^{-X}
+P(|\hat{X} - X| \leq \epsilon \cdot X) \geq 1 - \delta
 $$
-- Interpretation: large counts advance slowly
-- Engineering implication: \(O(1)\) space, one pass
-- Estimator uses the counter value
-$$
-\hat{n} = 2^{X} - 1
-$$
-- Interpretation: unbiased estimate, \(E[\hat{n}] = n\)
-- Error intuition: variance is high for one counter
-- Engineering implication: average \(k\) counters ⇒ error \(\propto 1/\sqrt{k}\)
+- **Trade-off:** Smaller $\epsilon, \delta$ require more space
 
-## Flajolet–Martin Cardinality
-- Hash each item, track max trailing-zero count \(\rho(h(x))\)
-$$
-R = \max_x \rho(h(x))
-$$
-- Interpretation: more distinct items ⇒ larger \(R\)
-- Engineering implication: constant memory, one pass
-- Cardinality estimate
-$$
-\hat{N} = 2^{R}
-$$
-- Interpretation: accurate up to a constant factor
-- Error intuition: variance high for one register
-- Engineering implication: \(m\) registers ⇒ error \(\propto 1/\sqrt{m}\)
+---
 
-## HyperLogLog (Intuition)
-- FM with many small registers and harmonic mean aggregation
-- Reduces variance while keeping sublinear memory
-- Engineering implication: standard for distinct counts in data systems
+# Part II: Probability Tools — Tail Inequalities
 
-## Count-Min Sketch (Frequency Estimation)
-- Let \(N\) be total updates, estimate \(\hat{f}(x)\)
+## Random Variable Basics
+- $X$: Random variable
+- $E[X] = \mu$: Expectation
+- $Var(X) = \sigma^2 = E[(X - \mu)^2]$
+
+## Markov's Inequality
+- **Condition:** $X \geq 0$
+- **Statement:** For any $t > 0$:
 $$
-\hat{f}(x) \le f(x) + \epsilon N
+P(X \geq t) \leq \frac{E[X]}{t}
 $$
-- Interpretation: overestimation bounded by \(\epsilon N\)
-- Engineering implication: choose width by \(\epsilon\) tolerance
-- Probability of meeting the error bound
+- **Rewritten:** For $\epsilon > 0$:
 $$
-P(\hat{f}(x) \le f(x) + \epsilon N) \ge 1-\delta
+P(X \geq (1 + \epsilon)\mu) \leq \frac{1}{1 + \epsilon}
 $$
-- Interpretation: confidence controlled by sketch depth
-- Engineering implication: set depth \(d = \lceil \ln(1/\delta) \rceil\)
 
-## Data Context: Sample Stream
-- e1(A,10:00,5), e2(B,10:02,3), e3(A,10:04,2)
-- e4(B,10:06,1), e5(A,10:08,4), e6(B,10:10,2)
-- e7 late: A at 10:01 arrives after e6
+## Chebyshev's Inequality
+- **Statement:** For any $t > 0$:
+$$
+P(|X - \mu| \geq t) \leq \frac{\sigma^2}{t^2}
+$$
+- **Rewritten:** For $\epsilon > 0$:
+$$
+P(|X - \mu| \geq \epsilon \mu) \leq \frac{\sigma^2}{\epsilon^2 \mu^2}
+$$
 
-## In-Lecture Exercise 1: Event-Time vs Processing-Time
-- Define event-time and processing-time
-- Why do windows use event-time?
+## Using Chebyshev for (ε, δ)-Bounds
+- Want: $P(|X - \mu| \geq \epsilon \mu) \leq \delta$
+- Chebyshev gives: $\frac{\sigma^2}{\epsilon^2 \mu^2} \leq \delta$
+- **Solve for variance requirement:**
+$$
+\sigma^2 \leq \delta \epsilon^2 \mu^2
+$$
 
-## In-Lecture Exercise 1: Solution (1/2)
-- Event-time: when the event occurred in the real world
-- Processing-time: when the system processes it
+---
 
-## In-Lecture Exercise 1: Solution (2/2)
-- Event-time makes window aggregates deterministic on replay
-- Processing-time depends on arrival order and backpressure
+# Part III: Morris Counter — Approximate Counting
 
-## In-Lecture Exercise 1: Takeaway
-- Event-time plus watermarks ensure reproducible aggregates
+## The Problem
+- **Goal:** Count stream length $n$ (number of elements)
+- **Exact:** Store $n$ in $O(\log n)$ bits
+- **Challenge:** Can we do better? $O(\log \log n)$ bits?
+
+## Morris's Algorithm
+
+### Algorithm
+```
+Initialize: X = 0
+On each element arrival:
+    Increment X with probability 2^(-X)
+At query time:
+    Return estimate n̂ = 2^X - 1
+```
+
+### Intuition
+- Instead of counting $n$, count $\log n$ (approximately)
+- $X$ tracks roughly $\log_2 n$
+- Space: $O(\log X) = O(\log \log n)$ bits
+
+## Morris Counter: Expectation
+
+### Claim
+$$
+E[2^X] = n + 1
+$$
+
+### Proof Sketch (by induction)
+- Base: $n = 0 \Rightarrow X = 0 \Rightarrow 2^0 = 1 = 0 + 1$ ✓
+- Inductive step: After $n$ elements, $E[2^X] = n + 1$
+- New element: $X$ increments with prob $2^{-X}$
+$$
+E[2^{X'}] = E[2^X \cdot 2^{\mathbf{1}[\text{inc}]}]
+$$
+$$
+= E[2^X \cdot (1 + \mathbf{1}[\text{inc}])]
+$$
+$$
+= E[2^X] + E[2^X \cdot 2^{-X}] = (n+1) + 1 = n + 2
+$$
+
+### Estimator
+$$
+\hat{n} = 2^X - 1
+$$
+$$
+E[\hat{n}] = E[2^X] - 1 = n
+$$
+- **Unbiased estimator**
+
+## Morris Counter: Variance
+
+### Claim
+$$
+Var(2^X) = \frac{n(n-1)}{2}
+$$
+
+### Implication
+$$
+Var(\hat{n}) = Var(2^X - 1) = Var(2^X) = \frac{n(n-1)}{2} \approx \frac{n^2}{2}
+$$
+
+### Standard Deviation
+$$
+\sigma = \sqrt{Var(\hat{n})} \approx \frac{n}{\sqrt{2}}
+$$
+- **Problem:** Standard deviation is $O(n)$ — same order as the mean!
+
+## Morris Counter: Error Analysis
+
+### Applying Chebyshev
+$$
+P(|\hat{n} - n| \geq \epsilon n) \leq \frac{Var(\hat{n})}{\epsilon^2 n^2} = \frac{n^2/2}{\epsilon^2 n^2} = \frac{1}{2\epsilon^2}
+$$
+
+### For $\epsilon = 0.1$:
+$$
+P(|\hat{n} - n| \geq 0.1n) \leq \frac{1}{2 \times 0.01} = 50
+$$
+- **Bound is useless!** (probability > 1)
+
+### The Problem
+- Single Morris counter has too high variance
+- Need variance reduction
+
+## Morris Counter: Averaging (Morris+)
+
+### Algorithm
+- Run $k$ independent Morris counters: $X_1, \ldots, X_k$
+- Return average estimate:
+$$
+\hat{n} = \frac{1}{k} \sum_{i=1}^{k} (2^{X_i} - 1)
+$$
+
+### Variance of Average
+$$
+Var(\hat{n}) = \frac{1}{k^2} \cdot k \cdot Var(2^X - 1) = \frac{Var(2^X)}{k} = \frac{n^2}{2k}
+$$
+
+### Applying Chebyshev
+$$
+P(|\hat{n} - n| \geq \epsilon n) \leq \frac{n^2/(2k)}{\epsilon^2 n^2} = \frac{1}{2k\epsilon^2}
+$$
+
+### Achieving (ε, δ)-approximation
+- Want: $\frac{1}{2k\epsilon^2} \leq \delta$
+- Solve: $k \geq \frac{1}{2\delta\epsilon^2}$
+
+### Example
+- $\epsilon = 0.05$ (5% error), $\delta = 0.01$ (99% confidence)
+- $k \geq \frac{1}{2 \times 0.01 \times 0.0025} = 20{,}000$ counters
+- Space: $20{,}000 \times O(\log \log n)$ bits
+
+## Morris Counter: Summary
+
+| Property | Value |
+|----------|-------|
+| Space (single) | $O(\log \log n)$ bits |
+| Update time | $O(1)$ |
+| Estimator | $\hat{n} = 2^X - 1$ |
+| Expectation | $E[\hat{n}] = n$ (unbiased) |
+| Variance | $Var(\hat{n}) \approx n^2/2$ |
+| For (ε,δ) | Need $k = O(1/(\delta\epsilon^2))$ counters |
+
+---
+
+# Part IV: Flajolet-Martin — Distinct Element Counting
+
+## The Problem
+- **Stream:** $S = \langle a_1, \ldots, a_m \rangle$ with elements from $[n]$
+- **Goal:** Estimate $F_0 = |\{j : f_j > 0\}|$ (number of distinct elements)
+- **Exact:** $\Omega(n)$ space (must remember all seen elements)
+
+## The Intuition
+- Hash each element to a random binary string
+- Track the maximum number of trailing zeros seen
+- More distinct elements → higher chance of seeing rare patterns
+
+## Flajolet-Martin Algorithm
+
+### Setup
+- Hash function $h: [n] \rightarrow [0, 2^L - 1]$ (uniform, random)
+- Define $\rho(y)$ = number of trailing zeros in binary representation of $y$
+  - $\rho(12) = \rho(1100_2) = 2$
+  - $\rho(8) = \rho(1000_2) = 3$
+
+### Algorithm
+```
+Initialize: R = 0
+For each element a:
+    R = max(R, ρ(h(a)))
+At query time:
+    Return estimate F̂₀ = 2^R
+```
+
+### Space
+- Store only $R \in [0, L]$: $O(\log \log n)$ bits
+
+## Flajolet-Martin: Analysis
+
+### Key Observation
+- $P(\rho(h(a)) \geq r) = 2^{-r}$ for uniform random $h$
+- Binary string ends in $r$ zeros with probability $2^{-r}$
+
+### Expectation of Maximum
+- Let $Z_r$ = indicator that some element has $\rho \geq r$
+- $P(Z_r = 1) = 1 - (1 - 2^{-r})^{F_0}$
+
+### For $r = \log_2 F_0$:
+- $P(Z_r = 1) \approx 1 - e^{-1} \approx 0.63$
+- Expected $R \approx \log_2 F_0$
+
+### Estimator Properties
+$$
+E[2^R] \approx \frac{F_0}{\phi} \quad \text{where } \phi \approx 0.77351
+$$
+- Need bias correction: $\hat{F}_0 = \phi \cdot 2^R$
+
+## Flajolet-Martin: Variance
+
+### Problem
+- Single estimator has high variance
+- $Var(2^R) \approx F_0^2$
+
+### Solution: Multiple Hash Functions
+- Use $k$ independent hash functions $h_1, \ldots, h_k$
+- Compute $R_i = \max_a \rho(h_i(a))$ for each
+- **Averaging:** $\hat{F}_0 = \frac{1}{k} \sum_i 2^{R_i}$ (reduces variance)
+- **Median:** More robust to outliers
+
+## Flajolet-Martin: (ε, δ)-Bounds
+
+### With $k$ Independent Estimators
+- $Var(\bar{X}) = \frac{Var(X)}{k}$
+- Chebyshev:
+$$
+P(|\hat{F}_0 - F_0| \geq \epsilon F_0) \leq \frac{1}{k\epsilon^2}
+$$
+
+### Achieving Bound
+- For $\frac{1}{k\epsilon^2} \leq \delta$: need $k \geq \frac{1}{\delta\epsilon^2}$
+
+### Example
+- $\epsilon = 0.1$, $\delta = 0.01$
+- $k \geq \frac{1}{0.01 \times 0.01} = 10{,}000$ hash functions
+- Space: $10{,}000 \times O(\log \log n)$ bits
+
+## Flajolet-Martin: Worked Example
+
+### Input
+- Stream: $S = \langle 1, 3, 5, 7, 5, 2, 7 \rangle$
+- Hash: $h(x) = (3x + 1) \mod 32$
+
+### Computation
+
+| Element | h(x) | Binary | ρ(h(x)) |
+|---------|------|--------|---------|
+| 1 | 4 | 00100 | 2 |
+| 3 | 10 | 01010 | 1 |
+| 5 | 16 | 10000 | 4 |
+| 7 | 22 | 10110 | 1 |
+| 2 | 7 | 00111 | 0 |
+
+### Result
+- $R = \max(2, 1, 4, 1, 0) = 4$
+- Estimate: $\hat{F}_0 = 2^4 = 16$
+- Actual: $F_0 = 5$ (distinct: 1, 2, 3, 5, 7)
+- **Note:** Single estimator is noisy; need averaging
+
+---
+
+# Part V: HyperLogLog — Practical Cardinality Estimation
+
+## Improvement over Flajolet-Martin
+- FM: Average multiple independent estimates
+- HLL: Partition elements into buckets; combine estimates
+
+## HyperLogLog Algorithm
+
+### Setup
+- $m = 2^b$ buckets (typically $b = 10$ to $16$)
+- Hash function $h: [n] \rightarrow [0, 2^L - 1]$
+- Use first $b$ bits to select bucket
+- Use remaining bits for trailing zero count
+
+### Algorithm
+```
+Initialize: M[0..m-1] = 0  (m registers)
+For each element a:
+    x = h(a)
+    bucket = first b bits of x
+    w = remaining L-b bits of x
+    M[bucket] = max(M[bucket], ρ(w) + 1)
+At query time:
+    Return HLL estimate (harmonic mean based)
+```
+
+### Estimator
+$$
+\hat{F}_0 = \alpha_m \cdot m^2 \cdot \left( \sum_{j=0}^{m-1} 2^{-M[j]} \right)^{-1}
+$$
+- $\alpha_m$: Bias correction constant (~0.7213 for large $m$)
+
+## HyperLogLog: Guarantees
+- **Space:** $m \cdot \log \log n$ bits (each register stores $O(\log \log n)$)
+- **Error:** Standard error $\approx \frac{1.04}{\sqrt{m}}$
+
+### For $m = 2^{10} = 1024$:
+- Space: ~1.5 KB
+- Error: $\frac{1.04}{\sqrt{1024}} \approx 3.25\%$
+
+### For $m = 2^{16} = 65536$:
+- Space: ~96 KB
+- Error: $\frac{1.04}{\sqrt{65536}} \approx 0.4\%$
+
+## HyperLogLog: Why It Works
+- **Harmonic mean:** Less sensitive to outliers than arithmetic mean
+- **Bucketing:** Implicitly averages over $m$ independent "experiments"
+- **Bias correction:** Accounts for systematic estimation bias
+
+## HyperLogLog: Summary
+
+| Property | Value |
+|----------|-------|
+| Space | $O(m \log \log n)$ bits |
+| Standard error | $\approx 1.04/\sqrt{m}$ |
+| Update time | $O(1)$ |
+| Merge | Yes (take max per register) |
+| Practical use | Redis, BigQuery, Spark |
+
+---
+
+# Part VI: Count-Min Sketch — Frequency Estimation
+
+## The Problem
+- **Stream:** $S = \langle a_1, \ldots, a_m \rangle$
+- **Query:** Estimate $f_j$ (frequency of element $j$)
+- **Exact:** Store $n$ counters — $\Omega(n)$ space
+
+## Count-Min Sketch Structure
+- **Parameters:** Width $w$, depth $d$
+- **Table:** $d \times w$ array of counters $C[i][j]$
+- **Hash functions:** $h_1, \ldots, h_d: [n] \rightarrow [w]$ (pairwise independent)
+
+## Count-Min Sketch Algorithm
+
+### Update (element $a$)
+```
+For i = 1 to d:
+    C[i][h_i(a)] += 1
+```
+
+### Query (element $j$)
+```
+Return min_{i=1..d} C[i][h_i(j)]
+```
+
+### Space
+- $d \times w$ counters, each $O(\log m)$ bits
+- Total: $O(dw \log m)$ bits
+
+## Count-Min Sketch: Analysis
+
+### Overestimation Property
+- Counters only increase → estimate $\hat{f}_j \geq f_j$
+- Collisions add extra counts → overestimate
+
+### Error Bound
+$$
+\hat{f}_j \leq f_j + \epsilon \cdot \|f\|_1
+$$
+- Where $\|f\|_1 = \sum_k f_k = m$ (stream length)
+
+### Probability Bound
+$$
+P(\hat{f}_j > f_j + \epsilon m) \leq \delta
+$$
+
+### Parameter Selection
+- Width: $w = \lceil e/\epsilon \rceil$ (where $e \approx 2.718$)
+- Depth: $d = \lceil \ln(1/\delta) \rceil$
+
+## Count-Min Sketch: Derivation
+
+### Single Row Analysis
+- $C[i][h_i(j)]$ = $f_j$ + (collisions from other elements)
+- Expected collision: $\frac{m - f_j}{w} \leq \frac{m}{w}$
+
+### Using Markov
+- For $w = e/\epsilon$:
+$$
+P(C[i][h_i(j)] > f_j + \epsilon m) \leq \frac{m/w}{\epsilon m} = \frac{1}{w\epsilon} = \frac{1}{e} \approx 0.37
+$$
+
+### Minimum over $d$ Rows
+- Each row independently exceeds bound with prob $\leq 1/e$
+- All $d$ rows exceed: $(1/e)^d$
+- For $d = \ln(1/\delta)$: $(1/e)^{\ln(1/\delta)} = \delta$
+
+## Count-Min Sketch: Summary
+
+| Property | Value |
+|----------|-------|
+| Space | $O(\frac{1}{\epsilon} \cdot \log(1/\delta) \cdot \log m)$ bits |
+| Update time | $O(d) = O(\log(1/\delta))$ |
+| Query time | $O(d)$ |
+| Guarantee | $\hat{f}_j \leq f_j + \epsilon m$ with prob $\geq 1-\delta$ |
+| Merge | Yes (add corresponding counters) |
+
+### Example Parameters
+- $\epsilon = 0.01$ (1% of stream length error)
+- $\delta = 0.01$ (99% confidence)
+- $w = \lceil e/0.01 \rceil = 272$
+- $d = \lceil \ln(100) \rceil = 5$
+- Space: $272 \times 5 = 1360$ counters
+
+---
+
+# Part VII: Streaming Windowing
+
+## Window Types
+
+### Tumbling Windows
+- Fixed, non-overlapping intervals
+- Example: [10:00, 10:05), [10:05, 10:10), ...
+- **State:** $O(\text{keys})$ — one aggregate per key per window
+
+### Sliding Windows
+- Fixed size, overlapping by slide amount
+- Example: Size 5 min, slide 1 min
+- **State:** $O(\text{keys} \times \frac{\text{size}}{\text{slide}})$
+
+### Session Windows
+- Variable size; close after gap threshold
+- **State:** $O(\text{keys} \times \text{active sessions})$
 
 ## Event-Time vs Processing-Time
-- **Event-time:** timestamp from data (e.g. click at 10:00)
-- Correct for analytics and windows
-- **Processing-time:** time when pipeline processes event
-- Non-deterministic under backpressure
-- **Why event-time:** out-of-order arrival; reprocessing; same input ⇒ same result
+- **Event-time:** When event occurred (in data)
+- **Processing-time:** When system processes it
+- **Rule:** Use event-time for deterministic results
 
-## Watermark
-- Function of processing-time or event-time
-- "Event-time progress"
-- Late events beyond watermark dropped or side-output
+## Watermarks
+- **Definition:** "No event with event_time < W will arrive"
+- **Purpose:** Decide when to close windows
+- **Trade-off:**
+  - Aggressive (small delay): Fast but drops late data
+  - Conservative (large delay): Complete but slow
 
-## Window Types (1/2)
-- **Tumbling:** fixed, non-overlapping intervals
-- E.g. [10:00, 10:05), [10:05, 10:10)
-- **Sliding:** fixed size, fixed slide; overlapping
-- E.g. size 5 min, slide 1 min
-- **Session:** gap-based; close after idle threshold
+---
 
-## Window Types (2/2)
-- **Engineering:** tumbling = low state; sliding = more state
-- Session = state per key until gap
-- **Assignment:** event belongs to window(s) by event_time
-- Window closes when watermark ≥ end
-- **State:** per (key, window); bounded for tumbling
+# Part VIII: Streaming System Design
 
-## In-Lecture Exercise 2: Tumbling Window Aggregate
-- Use e1–e6 only; 5-minute tumbling windows
-- Compute sum(amount) per user for [10:00, 10:05)
-- Compute sum(amount) per user for [10:05, 10:10)
+## Pipeline Components
+1. **Source:** Kafka, Kinesis, Pub/Sub
+2. **Transform:** Filter, map, window, aggregate
+3. **State:** Per-key, per-window aggregates
+4. **Sink:** Database, API, downstream topic
 
-## In-Lecture Exercise 2: Solution (1/2)
-- [10:00,10:05): A = 5+2 = 7; B = 3
-- Output: (10:00,A,7), (10:00,B,3)
+## Delivery Guarantees
+- **At-most-once:** May lose; no duplicates
+- **At-least-once:** No loss; may duplicate
+- **Exactly-once:** No loss; no duplicates (requires transactions)
 
-## In-Lecture Exercise 2: Solution (2/2)
-- [10:05,10:10): A = 4; B = 1+2 = 3
-- Output: (10:05,A,4), (10:05,B,3)
+## Idempotent Sink Pattern
+- **Key:** $(window\_start, key)$
+- **Write:** Upsert (insert or update)
+- **Effect:** Replay produces same final state
+- **Enables:** At-least-once with exactly-once semantics
 
-## In-Lecture Exercise 2: Takeaway
-- Window boundaries are defined by event-time
-- Aggregates are per (window_start, user_id)
+## State Size Formula
+$$
+\text{State} = O(\text{keys} \times \text{active windows} \times \text{aggregate size})
+$$
+- **Tumbling:** active windows = 1
+- **Sliding:** active windows = $\lceil \text{size}/\text{slide} \rceil$
 
-## Guarantees and What Breaks at Scale
-- **Throughput:** events/sec limited by slowest operator
-- Backpressure propagates upstream
-- **Latency:** time from event_time to result
-- Watermark delay + processing delay
-- **State:** grows with distinct keys and allowed lateness
-- **Late data:** watermark too aggressive ⇒ drop late events
+---
 
-## Cost of Naïve Design (Streaming)
+# Part IX: Algorithm Comparison
 
-## Processing-Time Windows
-- Same input, different output on replay or out-of-order
-- ⇒ non-deterministic dashboards; broken backtests
+## Streaming Algorithms Summary
 
-## No Watermark
-- Windows never close ⇒ unbounded state
-- Long-running job → OOM; no way to emit "final" result
+| Algorithm | Problem | Space | Error Type | Guarantee |
+|-----------|---------|-------|------------|-----------|
+| Morris | Count | $O(\log \log n)$ | Relative | $E[\hat{n}] = n$ |
+| FM | Distinct | $O(\log \log n)$ | Relative | $(1 \pm \epsilon)F_0$ |
+| HLL | Distinct | $O(m \log \log n)$ | Relative | $\pm 1.04/\sqrt{m}$ |
+| CM Sketch | Frequency | $O(\frac{1}{\epsilon}\log\frac{1}{\delta})$ | Additive | $f_j \leq \hat{f}_j \leq f_j + \epsilon m$ |
 
-## In-Lecture Exercise 3: Late Event Correction
-- Window [10:00,10:05) already emitted: (A,7), (B,3)
-- Late event e7 arrives: (A,10:01,1)
-- What is the correct sum for A in that window?
-- What single sink write fixes it with upsert?
+## When to Use What
+- **Counting elements:** Morris (if space critical); else exact counter
+- **Distinct count:** HyperLogLog (practical); FM (theoretical baseline)
+- **Heavy hitters:** Count-Min Sketch + heap
+- **Frequency query:** Count-Min Sketch
 
-## In-Lecture Exercise 3: Solution (1/2)
-- Correct sum for A: 7 + 1 = 8
-- Late event belongs to [10:00,10:05)
+---
 
-## In-Lecture Exercise 3: Solution (2/2)
-- Upsert row (10:00, A, 8) by primary key
-- Idempotent sink overwrites previous value
+# Part X: Production Best Practices
 
-## In-Lecture Exercise 3: Takeaway
-- Late data requires correction or explicit dropping
-- Idempotent sinks make corrections safe
+## Streaming Checklist
+1. **Event-time windowing:** Deterministic results on replay
+2. **Watermark tuning:** Balance latency vs completeness
+3. **Idempotent sink:** Enable exactly-once via upsert
+4. **State management:** Bound by watermark; checkpoint regularly
+5. **Late data handling:** Side-output or allowed lateness
 
-## At-Least-Once Without Idempotent Sink
-- Consumer crash ⇒ replay ⇒ same (window, user) written twice
-- ⇒ double-count in revenue
-- **Engineering rule:** event-time + watermark + idempotent sink
+## Sketch Algorithm Checklist
+1. **Choose parameters:** Based on $(\epsilon, \delta)$ requirements
+2. **Verify space:** Fits in available memory
+3. **Mergeability:** Sketches from different partitions can combine
+4. **Monitor accuracy:** Sample and compare to exact counts
 
-## Delivery Semantics (Detail)
-- **At-most-once:** emit and forget; no retry; may lose
-- **At-least-once:** retry on failure; duplicates possible
-- Idempotent sink required
-- **Exactly-once:** transactional sink + checkpoint; or dedup by key
-- **Engineering:** at-least-once + upsert ⇒ effectively once per key
+## Monitoring
 
-## Streaming System Overview
-- **Sources:** event logs, IoT, message queue (e.g. Kafka)
-- Partitioned by key
-- **Ingest:** subscribe/poll; assign event_time
-- **Stream engine:** window by event_time; watermark; per-key state
-- **Sink:** DB, API, or topic; idempotent write by (key, window)
-![](../../diagrams/week10/week10_lecture_slide13_system_overview.png)
+| Metric | Healthy | Investigate |
+|--------|---------|-------------|
+| Consumer lag | < 1 min | > 5 min |
+| Late event rate | < 1% | > 5% |
+| State size | Stable | Growing unbounded |
+| Checkpoint duration | < 10s | > 60s |
 
-## Running Example — Data & Goal
-- **Schema:** (user_id, event_time, amount)
-- event_time in minutes (e.g. 10:00, 10:02)
-- **Sample:** (A, 10:00, 5), (B, 10:02, 3), (A, 10:04, 2), (B, 10:06, 1)
-- **Goal:** sum(amount) per user in tumbling 5-minute windows
+---
 
-## Running Example — Schema and Sample Rows
-- **Events:** (user_id, event_time, amount)
-- **Sample:** (A, 10:00, 5), (B, 10:02, 3), (A, 10:04, 2), (B, 10:06, 1)
-- **Keys:** user_id for grouping; window for sink idempotency
-- **Scale:** 1M events/day; 10K users; 288 windows/day per user
-
-## Running Example — Step-by-Step (1/4)
-- **Step 1:** Ingest events; assign event_time from payload
-- **Watermark:** e.g. current_max_event_time - 1 min
-- **Window assignment:** [10:00,10:05) gets (A,5), (B,3), (A,2)
-- [10:05,10:10) gets (B,1)
-
-## Running Example — Step-by-Step (2/4)
-- **Step 2:** For window [10:00, 10:05): group by user_id
-- Sum(amount): A = 5 + 2 = 7; B = 3
-- **Emit when:** watermark ≥ 10:05 ⇒ close window
-- **Output:** (10:00, A, 7), (10:00, B, 3)
-
-## Running Example — Window Example (Diagram)
-- Tumbling 5 min: [10:00,10:05) gets e1,e2,e3
-- [10:05,10:10) gets e4,e5
-- Watermark ≥ window end ⇒ close; emit aggregate
-- Late event ⇒ drop or allow lateness (retract + update)
-![](../../diagrams/week10/week10_lecture_slide18_window_example.png)
-
-## Running Example — Step-by-Step (3/4)
-- **Step 3:** Sink writes with upsert by (window_start, user_id)
-- **Idempotency:** same key overwrites same row; at-least-once safe
-- **State:** after emit, window state can be discarded (tumbling)
-- **Late event:** e.g. (A, 10:01, 1) arrives after watermark passed 10:05
-
-## Running Example — Step-by-Step (4/4)
-- **Output:** (10:00, A, 7), (10:00, B, 3), (10:05, B, 1)
-- **Engineering:** event-time windows give consistent results
-- Watermark trades latency for completeness
-- Idempotent sink enables at-least-once without double-counting
-
-## Cost & Scaling Analysis (1/3)
-- **Time model:** latency = max(ingest, window buffer, aggregate, sink)
-- Dominated by watermark delay + sink write
-- **Throughput:** events/sec = min(partition throughput)
-- Scale by adding partitions and parallel consumers
-
-## Cost — Latency Breakdown
-- **Ingest:** poll interval + deserialize; typically ms
-- **Window buffer:** wait for watermark; delay = watermark_lag
-- **Aggregate:** per-key state update; O(1) per event
-- **Sink:** write latency; batch size vs latency trade-off
-
-## Cost & Scaling Analysis (2/3)
-- **Memory / state:** per (key, active window)
-- Tumbling: O(keys × 1); sliding: O(keys × size/slide)
-- **Storage:** checkpoint = state + offset; size ∝ state
-- **Bounded state:** watermark ensures old windows close
-
-## Cost — State Size (Formula)
-- **Tumbling:** active windows per key ≈ 1
-- State = O(keys × size_per_window)
-- **Sliding:** active windows ≈ window_size / slide
-- **Session:** state ∝ keys × open_sessions
-- **Example:** 10K keys, 5-min tumbling ⇒ ~10K window buffers
-
-## Cost & Scaling Analysis (3/3)
-- **Network:** producer → broker → consumer
-- Throughput ∝ partitions; shuffle if key-based aggregation
-- **Latency vs throughput:** low watermark delay ⇒ low latency but more late data
-- **Backpressure:** slow sink ⇒ consumer lags; monitor lag
-
-## Execution Flow
-- **Producer:** emit (key, value, event_time); partition by key
-- **Broker:** persist by partition; offset per partition
-- **Consumer:** poll batch; assign watermark; run window/aggregate
-- Write sink; commit offset after ack
-![](../../diagrams/week10/week10_lecture_slide22_execution_flow.png)
-
-## Pitfalls & Failure Modes (1/3)
-- **Ignoring event-time:** processing-time windows ⇒ non-deterministic
-- Breaks reprocessing and out-of-order
-- **No watermark:** windows never close ⇒ unbounded state; OOM
-- **Watermark too tight:** many events classified "late"
-- **Watermark too loose:** long delay before window closes
-
-## Pitfalls — Duplicate Delivery and Hot Keys
-- **At-least-once:** consumer crash ⇒ replay ⇒ same events again
-- **Idempotent sink:** upsert by (window_start, user_id)
-- **Hot key:** one key gets most events ⇒ one partition overloaded
-- **Mitigation:** partition by key; salting for skew
-
-## Watermark Tuning
-- **Delay:** watermark = max_event_time - delay
-- Delay = expected max lateness (e.g. 1–5 min)
-- **Too small:** many late events; undercount
-- **Too large:** windows close late; high state
-- **Monitor:** late events count; adjust delay from P99 lateness
-
-## State and Checkpointing
-- **State:** per (key, window); persisted for recovery
-- **Checkpoint:** state + consumer offset; periodic (e.g. every 1 min)
-- **Recovery:** restore state; reset offset; reprocess from checkpoint
-- **Exactly-once:** checkpoint before sink ack; sink in transaction
-
-## Sink Idempotency Design
-- **Key:** (window_start, user_id) or event_id for dedup
-- **Write:** upsert (INSERT ON CONFLICT UPDATE or MERGE)
-- **Rerun:** same key ⇒ overwrite same row; no duplicate rows
-- **Constraint:** sink must support upsert; or append + dedup at read
-
-## Consumer Lag and Backpressure
-- **Lag:** offset difference between producer and consumer
-- High lag ⇒ delay
-- **Backpressure:** slow consumer ⇒ broker buffer grows
-- May hit retention limit
-- **Mitigation:** scale consumers; increase partitions; optimize sink
-
-## Reprocessing and Replay
-- **Replay:** reset offset to earlier time; reprocess all events
-- **Event-time windows:** same events ⇒ same results (deterministic)
-- **Idempotent sink:** reprocessed writes overwrite; no duplicate
-- **Use case:** fix bug in aggregation; backfill new field
-
-## Late Data — Side Output and Allowed Lateness
-
-## Side Output
-- Route late events to separate stream/topic
-- Human or batch correction
-
-## Allowed Lateness
-- Keep window state for watermark + L
-- Late event within L triggers retract + update
-- **Trade-off:** L large ⇒ correct but more state
-
-## Monitoring and Alerts
-- **Metrics:** events/sec; consumer lag; watermark lag; late events
-- **Alerts:** lag > threshold; late spike; sink errors; checkpoint failure
-- **Dashboard:** throughput by partition; latency p50/p99; state size
-- **Action:** scale; tune watermark; fix sink
-
-## Failure — Partial Write and Recovery
-- **Scenario:** consumer writes to sink then crashes before commit
-- Sink has partial data
-- **Recovery:** restore from checkpoint; replay from last committed offset
-- **Idempotent sink:** replay writes same keys; overwrite; no duplicates
-
-## Failure — Watermark Stuck or Too Fast
-
-## Stuck Watermark
-- No new events ⇒ watermark does not advance
-- Windows never close
-- **Mitigation:** periodic watermark when idle
-
-## Too Fast Watermark
-- Watermark advances ahead of real event-time
-- Many events "late"
-- **Mitigation:** bounded watermark delay; monitor late count
-
-## Pitfalls — Late Data Scenario
-- **Scenario:** window [10:00,10:05) closed at watermark 10:05
-- Emitted (A, 7), (B, 3)
-- **Late event:** (A, 10:01, 1) arrives at processing_time 10:06
-- **Correctness:** true sum for A = 7 + 1 = 8; already emitted 7
-- **Options:** drop (undercount); allow lateness (retract + update)
-![](../../diagrams/week10/week10_lecture_slide38_failure_late_data.png)
-
-## Pitfalls & Failure Modes (3/3)
-- **Detection:** late events count; consumer lag; sink errors
-- **Mitigation:** watermark with bounded delay; allow lateness
-- Idempotent sink by (key, window); exactly-once with transactional sink
-- **Trade-off:** bounded delay + drop late ⇒ predictable latency
-
-## Best Practices (1/2)
-- Use event-time and watermarks for windowing
-- Avoid processing-time for analytics
-- Set watermark delay from domain (max network delay)
-- Monitor late events
-- Design idempotent sink: upsert by (key, window)
-- Bound state: close windows via watermark
-
-## Best Practices (2/2)
-- Scale by partitions and parallel consumers
-- Monitor consumer lag and sink latency
-- Checkpoint state and offsets for recovery; test failover
-- Prefer exactly-once sinks when supported
-- Otherwise at-least-once + idempotent write
-- Document watermark policy and late-data handling
+# Summary
 
 ## Recap — Engineering Judgment
-- **Event-time is non-negotiable:** processing-time windows are non-deterministic
-- Always window by event_time and use watermarks
-- **Watermark trade-off:** delay too small ⇒ drop late (undercount)
-- Too large ⇒ big state and slow results
-- **Idempotent sink by (key, window):** at-least-once without upsert ⇒ double-count
-- **Cost levers:** throughput = min(partition rate); state ∝ keys × windows
+- **Streaming constraint:** One pass, bounded memory
+- **Exact is impossible:** Distinct count needs $\Omega(n)$ space exactly
+- **Morris Counter:** $O(\log \log n)$ space; $k$ counters for $(\epsilon, \delta)$
+- **Flajolet-Martin:** Track max trailing zeros; average for accuracy
+- **HyperLogLog:** Practical distinct counting; $1.04/\sqrt{m}$ error
+- **Count-Min Sketch:** Frequency estimation; additive $\epsilon m$ error
+- **Event-time + watermarks:** Essential for deterministic streaming
+
+## The (ε, δ) Framework
+- All streaming algorithms provide probabilistic guarantees
+- Space/accuracy trade-off: More space → better bounds
+- **Engineering decision:** Choose $\epsilon, \delta$ based on requirements
 
 ## Pointers to Practice
-- Compute window aggregates from concrete event streams
-- Reason about event-time vs processing-time and watermark placement
-- Design idempotent sink and handle late data
-- Draw window boundaries and execution flow
+- Trace Morris Counter on small stream (8–10 elements)
+- Compute FM estimate with hash function
+- Size CM Sketch for given $(\epsilon, \delta)$
+- Design windowed aggregate with watermark
 
 ## Additional Diagrams
+### System Overview
+![](../../diagrams/week10/week10_lecture_slide13_system_overview.png)
+### Window Example
+![](../../diagrams/week10/week10_lecture_slide18_window_example.png)
+### Execution Flow
+![](../../diagrams/week10/week10_lecture_slide22_execution_flow.png)
+### Failure: Late Data
+![](../../diagrams/week10/week10_lecture_slide38_failure_late_data.png)
 ### Practice: Window Late Reasoning
 ![](../../diagrams/week10/week10_practice_slide18_window_late_reasoning.png)
