@@ -14,6 +14,7 @@
 - Reason about trade-offs: batch vs streaming, SQL vs NoSQL
 
 ## What is Data Engineering?
+![](../../diagrams/week01/week1_what_is_de.png)
 
 ## Constraints, Not Definitions
 - **Constraint:** data lives in many systems; consumers need one place
@@ -39,6 +40,7 @@ $$
 - Engineering implication: cost scales linearly in volume and replication
 
 ## Business Intelligence Context
+![](../../diagrams/week01/week1_bi_context.png)
 
 ## What is Business Intelligence? (1/2)
 - **Definition:** methodologies and technologies transforming raw data
@@ -53,6 +55,7 @@ $$
 - Enable data-driven decision making
 
 ## Data to Wisdom Pyramid (1/2)
+![](../../diagrams/week01/week1_data_to_wisdom.png)
 - **Data:** raw facts describing event characteristics
 - Example: 51, 77, 58, 82, 64, 70
 - **Information:** data converted into meaningful insights
@@ -89,6 +92,7 @@ $$
 - **DWH role:** integrated data; OLAP enables KDD at scale
 
 ## Data Engineering vs Data Science
+![](../../diagrams/week01/week1_de_vs_ds.png)
 
 ## Data Science Focus
 - Build predictive models
@@ -109,6 +113,7 @@ $$
 - Science informs engineering requirements
 
 ## Data Engineering vs Analytics
+![](../../diagrams/week01/week1_de_vs_analytics.png)
 
 ## Analytics Focus
 - Answer business questions
@@ -129,6 +134,7 @@ $$
 - Clear separation of concerns
 
 ## Why Data Engineering Exists
+![](../../diagrams/week01/week1_why_de_exists.png)
 
 ## The Scale Problem
 - 2010: 1 TB/day typical company
@@ -157,6 +163,7 @@ $$
 - **Design for failure from day one**
 
 ## Data Engineering Lifecycle
+![](../../diagrams/week01/week1_lifecycle_phases.png)
 
 ## Ingestion
 - Extract data from sources
@@ -218,6 +225,7 @@ $$
 
 
 ## Core Concepts (1/3)
+![](../../diagrams/week01/week1_data_pipeline.png)
 
 ## Data Pipeline
 - Sequence of processing steps: Input → Transform → Output
@@ -239,6 +247,7 @@ $$
 - **Opinion:** keep raw immutable; prefer ELT-style raw layer
 
 ## Core Concepts (2/3)
+![](../../diagrams/week01/week1_core_concepts_2.png)
 
 ## Batch vs Streaming
 - **Batch:** chunks; hourly/daily; latency minutes–hours
@@ -282,9 +291,7 @@ $$
 - Mixing without boundaries leads to cost overruns
 - Results in unmaintainable pipelines
 
-## Cost of Naïve Design
-
-## What Goes Wrong Without Discipline (1/2)
+## Cost of Naïve Design — What Goes Wrong Without Discipline (1/2)
 - **Naïve:** "one script, one DB, run nightly"
 - Works until volume doubles; then 20-hour runs
 - Timeouts, no observability
@@ -295,9 +302,7 @@ $$
 - **Naïve:** no idempotency — rerun doubles counts
 - **Takeaway:** constraints force pipeline design
 
-## Running Example — Data & Goal
-
-## Scenario: E-commerce Clickstream
+## Running Example — Data & Goal: Scenario (E-commerce Clickstream)
 - Source: web server logs
 - Volume: 10M events/day
 - Format: JSON, 500 bytes/event
@@ -315,9 +320,7 @@ $$
 - Cost: minimize compute hours
 - Quality: handle missing user_ids
 
-## Running Example — Step-by-Step (1/4)
-
-## Step 1: Ingestion
+## Running Example — Step-by-Step (1/4): Ingestion
 - Read log files from S3
 - Parse JSON events
 - Validate: timestamp, page present
@@ -327,9 +330,7 @@ $$
 ## Ingestion Diagram
 ![](../../diagrams/week01/week1_lecture_slide20_ingestion.png)
 
-## Running Example — Step-by-Step (2/4)
-
-## Step 2: Transformation
+## Running Example — Step-by-Step (2/4): Transformation
 - Filter: only "page_view" events
 - Extract: product_id from page URL
 - Clean: remove invalid product_ids
@@ -345,9 +346,7 @@ Group: (date(timestamp), product_id)
 Output: (date, product_id, view_count)
 ```
 
-## Running Example — Step-by-Step (3/4)
-
-## Step 3: Aggregation
+## Running Example — Step-by-Step (3/4): Aggregation
 - Input: filtered events (8M after filter)
 - Group by: (date, product_id)
 - Aggregate: count(*) as views
@@ -361,9 +360,7 @@ Result: 1,250 views for product_123
 Output row: (2024-01-15, product_123, 1250)
 ```
 
-## Running Example — Step-by-Step (4/4)
-
-## Step 4: Load to Analytics
+## Running Example — Step-by-Step (4/4): Load to Analytics
 - Write aggregated results
 - Format: Parquet, partitioned by date
 - Destination: data warehouse
@@ -376,9 +373,7 @@ Output row: (2024-01-15, product_123, 1250)
 - Reliability: 99.95% success rate
 - Trade-off: 1-hour delay acceptable
 
-## Cost & Scaling Analysis (1/3)
-
-## Time Model
+## Cost & Scaling Analysis (1/3): Time Model
 - Ingestion: 10 minutes (I/O bound)
 - Transformation: 20 minutes (CPU bound)
 - Aggregation: 10 minutes (CPU bound)
@@ -398,9 +393,7 @@ T_parallel = T_sequential / N_workers
 Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 ```
 
-## Cost & Scaling Analysis (2/3)
-
-## Memory Model
+## Cost & Scaling Analysis (2/3): Memory Model
 - Raw data: 5 GB (compressed)
 - Intermediate: 2 GB (after filter)
 - Final output: 5 MB (aggregated)
@@ -418,9 +411,7 @@ Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 - Compression: 5× reduction possible
 - Compressed: $6.90/month
 
-## Cost & Scaling Analysis (3/3)
-
-## Network Model
+## Cost & Scaling Analysis (3/3): Network Model
 - Ingestion: 5 GB from source
 - Processing: 0 GB (local)
 - Output: 5 MB to warehouse
@@ -438,9 +429,7 @@ Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 - Bottleneck: network if > 1 Gbps needed
 - Solution: parallel transfers
 
-## Pitfalls & Failure Modes (1/3)
-
-## Missing Data
+## Pitfalls & Failure Modes (1/3): Missing Data
 - Problem: user_id null in 5% of events
 - Impact: undercounted page views
 - Detection: count nulls, alert if > 1%
@@ -458,9 +447,7 @@ Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 - Detection: schema validation errors
 - Mitigation: schema evolution, versioning
 
-## Pitfalls & Failure Modes (2/3)
-
-## Pipeline Failure Scenario
+## Pitfalls & Failure Modes (2/3): Pipeline Failure Scenario
 - Step 1 (ingestion): succeeds
 - Step 2 (transform): fails at 50%
 - Step 3 (aggregate): never runs
@@ -497,9 +484,7 @@ Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 - Rollback: delete partial outputs
 - Manual: investigate, fix, rerun
 
-## Pitfalls & Failure Modes (3/3)
-
-## Late Data
+## Pitfalls & Failure Modes (3/3): Late Data
 - Problem: events arrive 2 hours late
 - Impact: yesterday's report incomplete
 - Detection: watermark, late event metrics
@@ -517,9 +502,7 @@ Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 - Detection: cost alerts, daily reports
 - Mitigation: optimize queries, compress data
 
-## Best Practices (1/2)
-
-## Start with Business Questions
+## Best Practices (1/2): Start with Business Questions
 - What decisions need data? Who consumes it?
 - What latency is acceptable?
 - **Don't build pipelines without purpose**
@@ -535,9 +518,7 @@ Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 - **You can't fix what you don't measure**
 - **Version:** code (Git), schema (versioned), data (timestamped)
 
-## Best Practices (2/2)
-
-## CRISP-DM Methodology (1/2)
+## Best Practices (2/2): CRISP-DM Methodology (1/2)
 - **Cross-Industry Standard Process for Data Mining**
 - Most widely-used analytics model
 - **Six phases:** Business → Data Understanding → Preparation
@@ -574,9 +555,7 @@ Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 - **Optimize last:** first make it work, then reliable, then fast
 - **Premature optimization wastes time and hides bugs**
 
-## Recap
-
-## Data Engineering: Constraints, Not Definitions
+## Recap: Data Engineering — Constraints, Not Definitions
 - **Constraints:** scale, reliability, cost
 - **Output:** clean, accessible data at the right latency
 - **Judgment:** ETL vs ELT, batch vs stream

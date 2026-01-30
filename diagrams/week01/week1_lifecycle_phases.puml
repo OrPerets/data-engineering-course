@@ -1,0 +1,44 @@
+@startuml
+' Data Engineering Lifecycle — four phases
+left to right direction
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam roundcorner 15
+skinparam shadowing true
+skinparam linetype ortho
+skinparam nodesep 35
+skinparam ranksep 60
+
+skinparam arrow {
+    Thickness 3
+    FontSize 13
+    FontStyle italic
+}
+
+title <size:22><b>Data Engineering Lifecycle</b></size>\n<size:14>From Raw Data to Business Value</size>
+
+component "📥 **INGESTION**\n\n<size:14>• Extract from sources\n• Validate schema\n• Handle errors</size>" as I #E3F2FD {
+}
+
+database "💾 **STORAGE**\n\n<size:14>• Raw data lake\n• Partitioned by date\n• Versioned</size>" as S #ECEFF1 {
+}
+
+component "⚙️ **PROCESSING**\n\n<size:14>• Transform data\n• Aggregate metrics\n• Join datasets</size>" as P #C8E6C9 {
+}
+
+cloud "📊 **CONSUMPTION**\n\n<size:14>• BI Dashboards\n• APIs & Services\n• ML Features</size>" as C #FFF9C4 {
+}
+
+I -[#1976D2,thickness=4]-> S : <size:13><color:#0D47A1>**Raw**</color></size>
+S -[#388E3C,thickness=4]-> P : <size:13><color:#1B5E20>**Read**</color></size>
+P -[#F57C00,thickness=4]-> C : <size:13><color:#E65100>**Serve**</color></size>
+
+note bottom of I
+  <size:12>Multiple sources:\nAPIs, DBs, streams</size>
+end note
+
+note bottom of C
+  <size:12>End users & systems\nconsume clean data</size>
+end note
+
+@enduml

@@ -5,11 +5,11 @@
 
 left to right direction
 skinparam linetype ortho
-skinparam shadowing false
-skinparam roundcorner 8
+skinparam shadowing true
+skinparam roundcorner 12
 skinparam handwritten false
-skinparam nodesep 30
-skinparam ranksep 40
+skinparam nodesep 40
+skinparam ranksep 60
 
 '-------------------------
 ' FONT & GLOBAL STYLE
@@ -49,9 +49,10 @@ skinparam database {
 
 skinparam arrow {
     Color #607D8B
-    Thickness 1.5
-    FontSize 11
+    Thickness 2.5
+    FontSize 12
     FontColor #546E7A
+    FontStyle italic
 }
 
 '-------------------------
@@ -131,22 +132,24 @@ skinparam component<<failure>> {
 
 '=================================================
 
-database "**S3 Log Files**\n<size:10>JSON, 5 GB</size>" as S3
+title <size:22><b>Ingestion Pipeline</b></size>\n<size:14>From S3 Logs to Parquet Storage</size>
 
-component "**1. Read Files**\n<size:10>List & download</size>" as READ
+storage "☁️ **S3 Log Files**\n<size:12>JSON format\n5 GB raw data</size>" as S3
 
-component "**2. Parse JSON**\n<size:10>Extract events</size>" as PARSE
+component "📥 **1. Read Files**\n<size:11>List & download\nfrom S3</size>" as READ <<Agent>>
 
-component "**3. Validate**\n<size:10>Check schema</size>" as VALIDATE
+component "🔍 **2. Parse JSON**\n<size:11>Extract events\nfrom logs</size>" as PARSE <<Tool>>
 
-component "**4. Write Parquet**\n<size:10>Compress & store</size>" as WRITE
+component "✓ **3. Validate**\n<size:11>Check schema\nrules</size>" as VALIDATE <<Tool>>
 
-database "**Raw Storage**\n<size:10>10M events, 5 GB</size>" as RAW
+component "💾 **4. Write Parquet**\n<size:11>Compress &\nstore efficiently</size>" as WRITE <<Tool>>
 
-S3 --> READ : "5 GB; ~5 min"
-READ --> PARSE : "parsed JSON"
-PARSE --> VALIDATE : "events"
-VALIDATE --> WRITE : "schema OK"
-WRITE --> RAW : "Parquet; 5x smaller"
+database "🗄️ **Raw Storage**\n<size:12>10M events\n5 GB Parquet</size>" as RAW
+
+S3 -[#1976D2,thickness=3]-> READ : <color:#0D47A1><b>5 GB</b>\n~5 min</color>
+READ -[#1976D2,thickness=3]-> PARSE : <color:#1565C0>parsed\nJSON</color>
+PARSE -[#388E3C,thickness=3]-> VALIDATE : <color:#2E7D32>events</color>
+VALIDATE -[#388E3C,thickness=3]-> WRITE : <color:#1B5E20>schema\nOK</color>
+WRITE -[#7B1FA2,thickness=3]-> RAW : <color:#4A148C><b>Parquet</b>\n5x smaller</color>
 
 @enduml

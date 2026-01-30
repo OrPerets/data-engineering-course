@@ -1,11 +1,11 @@
 @startuml
 top to bottom direction
 skinparam linetype ortho
-skinparam shadowing false
-skinparam roundcorner 8
+skinparam shadowing true
+skinparam roundcorner 12
 skinparam handwritten false
-skinparam nodesep 30
-skinparam ranksep 40
+skinparam nodesep 35
+skinparam ranksep 50
 
 '-------------------------
 ' FONT & GLOBAL STYLE
@@ -45,9 +45,16 @@ skinparam database {
 
 skinparam arrow {
     Color #607D8B
-    Thickness 1.5
-    FontSize 11
+    Thickness 2.5
+    FontSize 12
     FontColor #546E7A
+    FontStyle italic
+}
+
+skinparam package {
+    BorderThickness 2.5
+    FontSize 15
+    FontStyle bold
 }
 
 '-------------------------
@@ -127,57 +134,59 @@ skinparam component<<failure>> {
 
 '=================================================
 
+title <size:24><b>📰 News Platform Architecture</b></size>\n<size:15>End-to-End Data Engineering Solution</size>
+
 ' NEWS PLATFORM ARCHITECTURE
-package "DATA SOURCES"  as A #F8F9FA {
-    database "**News Sources**\n<size:10>1,000 sources</size>" as SOURCES
-    database "**User Clicks**\n<size:10>500K/day</size>" as CLICKS
+package "📥 DATA SOURCES"  as A #E3F2FD/B3E5FC {
+    database "📰 **News Sources**\n<size:12>1,000 news sites\nRSS & APIs</size>" as SOURCES
+    storage "👆 **User Clicks**\n<size:12>500K events/day\nClick stream</size>" as CLICKS
     SOURCES -[hidden]- CLICKS
-
 }
 
-package "INGESTION LAYER" as B  #F8F9FA{
-    component "**Article Ingestion**\n<size:10>10K articles/day</size>" as INGEST_ART
-    component "**Click Ingestion**\n<size:10>Streaming</size>" as INGEST_CLICK
-INGEST_ART -[hidden]- INGEST_CLICK
+package "⚡ INGESTION LAYER" as B  #FFF9C4/FFF59D {
+    component "📄 **Article Ingestion**\n<size:11>10K articles/day\nPull-based</size>" as INGEST_ART <<Agent>>
+    component "📊 **Click Ingestion**\n<size:11>Real-time streaming\nEvent-driven</size>" as INGEST_CLICK <<Agent>>
+    INGEST_ART -[hidden]- INGEST_CLICK
 }
 
-package "STORAGE LAYER" #F8F9FA {
-    database "**Raw Articles**\n<size:10>50M articles, 515 GB</size>" as RAW_ART
-    database "**Raw Clicks**\n<size:10>200M clicks, 8.8 GB</size>" as RAW_CLICK
-RAW_ART -[hidden]- RAW_CLICK
+package "💾 STORAGE LAYER" as C #ECEFF1/CFD8DC {
+    database "📚 **Raw Articles**\n<size:12>50M articles\n515 GB total</size>" as RAW_ART
+    database "🖱️ **Raw Clicks**\n<size:12>200M clicks\n8.8 GB total</size>" as RAW_CLICK
+    RAW_ART -[hidden]- RAW_CLICK
 }
 
-package "PROCESSING LAYER" #F8F9FA {
-    component "**Batch Pipeline**\n<size:10>Daily aggregation</size>" as BATCH
-    component "**Streaming Pipeline**\n<size:10>5-min trending</size>" as STREAM
-BATCH -[hidden]- STREAM
+package "⚙️ PROCESSING LAYER" as D #E1F5FE/B3E5FC {
+    component "📦 **Batch Pipeline**\n<size:11>Daily aggregation\nSpark jobs</size>" as BATCH <<Tool>>
+    component "⚡ **Streaming Pipeline**\n<size:11>5-min windows\nKafka Streams</size>" as STREAM <<Tool>>
+    BATCH -[hidden]- STREAM
 }
 
-package "ANALYTICS LAYER" #F8F9FA {
-    database "**Data Warehouse**\n<size:10>Aggregated tables</size>" as WAREHOUSE
-    component "**Trending Service**\n<size:10>Real-time API</size>" as TRENDING
-WAREHOUSE -[hidden]- TRENDING
+package "📊 ANALYTICS LAYER" as E #F3E5F5/E1BEE7 {
+    database "🏢 **Data Warehouse**\n<size:12>Star schema\nAggregated tables</size>" as WAREHOUSE
+    cloud "🔥 **Trending Service**\n<size:12>Real-time API\nTop-N articles</size>" as TRENDING
+    WAREHOUSE -[hidden]- TRENDING
 }
 
-package "CONSUMPTION" #F8F9FA {
-    component "**Analytics Dashboard**\n<size:10>Daily reports</size>" as DASHBOARD
-    component "**News App**\n<size:10>Trending feed</size>" as APP
-DASHBOARD -[hidden]- APP
+package "🎯 CONSUMPTION" as F #C8E6C9/A5D6A7 {
+    component "📈 **Analytics Dashboard**\n<size:11>Daily reports\nBI tools</size>" as DASHBOARD <<UI>>
+    component "📱 **News App**\n<size:11>Trending feed\nMobile & Web</size>" as APP <<UI>>
+    DASHBOARD -[hidden]- APP
 }
 
-SOURCES --> INGEST_ART : "batch pulls"
-CLICKS --> INGEST_CLICK : "event stream"
+SOURCES -[#1976D2,thickness=3]-> INGEST_ART : <color:#0D47A1><b>batch pulls</b>\nHTTP/RSS</color>
+CLICKS -[#F57C00,thickness=3]-> INGEST_CLICK : <color:#E65100><b>event stream</b>\nKafka</color>
 
-INGEST_ART --> RAW_ART
-INGEST_CLICK --> RAW_CLICK
+INGEST_ART -[#1976D2,thickness=3]-> RAW_ART : <color:#1565C0>write\nParquet</color>
+INGEST_CLICK -[#F57C00,thickness=3]-> RAW_CLICK : <color:#EF6C00>write\nAvro</color>
 
-RAW_ART --> BATCH : "daily ETL"
-RAW_CLICK --> STREAM : "near real-time"
+RAW_ART -[#7B1FA2,thickness=3]-> BATCH : <color:#4A148C><b>daily ETL</b>\n1x/day</color>
+RAW_CLICK -[#388E3C,thickness=3]-> STREAM : <color:#1B5E20><b>near real-time</b>\ncontinuous</color>
 
-BATCH --> WAREHOUSE : "aggregates"
-STREAM --> TRENDING : "top-N"
+BATCH -[#7B1FA2,thickness=3]-> WAREHOUSE : <color:#6A1B9A>aggregates\nSQL</color>
+STREAM -[#388E3C,thickness=3]-> TRENDING : <color:#2E7D32>top-N\nwindows</color>
 
-WAREHOUSE --> DASHBOARD : "BI queries"
-TRENDING --> APP : "serve trends"
+WAREHOUSE -[#1976D2,thickness=3]-> DASHBOARD : <color:#0D47A1><b>BI queries</b>\nSQL</color>
+TRENDING -[#388E3C,thickness=3]-> APP : <color:#1B5E20><b>serve trends</b>\nREST API</color>
+
 
 @enduml

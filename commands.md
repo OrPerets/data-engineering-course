@@ -34,10 +34,10 @@ pandoc lectures/05-dwh-datalake/practice.md  -o build/05-practice.pptx     --ref
 pandoc lectures/06-mapreduce/lecture.md  -o build/06-MapReduce.pptx     --reference-doc=reference.pptx
 pandoc lectures/06-mapreduce/practice.md  -o build/06-practice.pptx     --reference-doc=reference.pptx
 
-pandoc lectures/07-mapreduce-advanced/lecture.md  -o build/07-MapReduce.pptx     --reference-doc=reference.pptx
+pandoc lectures/07-mapreduce-advanced/lecture.md  -o build/07-MapReduce.pptx     --reference-doc=reference.pptx  --resource-path=diagrams/week7  --pdf-engine=xelatex
 pandoc lectures/07-mapreduce-advanced/practice.md  -o build/07-practice.pptx     --reference-doc=reference.pptx
 
-pandoc lectures/08-text-tfidf/lecture.md  -o build/08-TF-IDF.pptx     --reference-doc=reference.pptx
+pandoc lectures/08-text-tfidf/lecture.md  -o build/08-TF-IDF.pptx     --reference-doc=reference.pptx --resource-path=diagrams/week8  --pdf-engine=xelatex
 pandoc lectures/08-text-tfidf/practice.md  -o build/08-practice.pptx     --reference-doc=reference.pptx
 
 pandoc lectures/09-text-advanced/lecture.md  -o build/09-TextProcessing.pptx     --reference-doc=reference.pptx
@@ -46,5 +46,5 @@ pandoc lectures/09-text-advanced/practice.md  -o build/09-practice.pptx     --re
 pandoc lectures/10-streaming/lecture.md  -o build/10-Streaming.pptx     --reference-doc=reference.pptx --resource-path=diagrams/week10 --pdf-engine=xelatex
 pandoc lectures/10-streaming/practice.md  -o build/10-practice.pptx     --reference-doc=reference.pptx
 
-pandoc lectures/11-feaure-engineering/lecture.md  -o build/11-feaure-engineering.pptx     --reference-doc=reference.pptx
+pandoc lectures/11-feature-engineering/lecture.md  -o build/11-feature-engineering.pptx     --reference-doc=reference.pptx
 pandoc lectures/11-feature-engineering/practice.md  -o build/11-practice.pptx     --reference-doc=reference.pptx

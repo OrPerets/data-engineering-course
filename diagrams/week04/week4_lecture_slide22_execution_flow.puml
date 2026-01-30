@@ -133,11 +133,11 @@ skinparam component<<failure>> {
 
 ' EXECUTION FLOW: TRIGGER TO COMMIT
 rectangle "TRIGGER" #F8F9FA {
-    component "**Schedule / Event**\n<size:10>Run job</size>" as TRIGGER <<Agent>>
+    component "**Schedule / Event**\n<size:10>Run job</size>" as TRIGGER1 <<Agent>>
 }
 
 rectangle "READ" #F8F9FA {
-    component "**Read source**\n<size:10>WHERE modified_at > watermark</size>" as READ <<Tool>>
+    component "**Read source**\n<size:10>WHERE modified_at > watermark</size>" as READ1 <<Tool>>
 }
 
 rectangle "TRANSFORM" #F8F9FA {
@@ -145,11 +145,11 @@ rectangle "TRANSFORM" #F8F9FA {
 }
 
 rectangle "WRITE" #F8F9FA {
-    component "**Write target**\n<size:10>MERGE / partition</size>" as WRITE <<Tool>>
+    component "**Write target**\n<size:10>MERGE / partition</size>" as WRITE1 <<Tool>>
 }
 
 rectangle "STATE" #F8F9FA {
-    database "**Control table**\n<size:10>last_watermark</size>" as STATE
+    database "**Control table**\n<size:10>last_watermark</size>" as STATE1
 }
 
 TRIGGER --> READ : "1"

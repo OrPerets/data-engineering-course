@@ -5,11 +5,11 @@
 
 top to bottom direction
 skinparam linetype ortho
-skinparam shadowing false
-skinparam roundcorner 8
+skinparam shadowing true
+skinparam roundcorner 12
 skinparam handwritten false
-skinparam nodesep 24
-skinparam ranksep 28
+skinparam nodesep 35
+skinparam ranksep 45
 
 '-------------------------
 ' FONT & GLOBAL STYLE
@@ -49,9 +49,16 @@ skinparam database {
 
 skinparam arrow {
     Color #607D8B
-    Thickness 1.5
-    FontSize 11
+    Thickness 2.5
+    FontSize 12
     FontColor #546E7A
+    FontStyle italic
+}
+
+skinparam package {
+    BorderThickness 2.5
+    FontSize 15
+    FontStyle bold
 }
 
 '-------------------------
@@ -131,50 +138,63 @@ skinparam component<<failure>> {
 
 '=================================================
 
+title <size:24><b>🔄 Data Engineering Lifecycle</b></size>\n<size:15>Complete Pipeline from Sources to Consumption</size>
+
 ' DATA ENGINEERING LIFECYCLE
-package "DATA SOURCES" #F8F9FA {
-    database "**Web Server Logs**\n<size:10>10M events/day</size>" as SOURCE1
-    database "**User Database**\n<size:10>100M users</size>" as SOURCE2
-    database "**Product Catalog**\n<size:10>1M products</size>" as SOURCE3
+package "📥 DATA SOURCES" #E3F2FD/B3E5FC {
+    storage "🌐 **Web Server Logs**\n<size:12>10M events/day\nJSON format</size>" as SOURCE1
+    database "👥 **User Database**\n<size:12>100M users\nPostgreSQL</size>" as SOURCE2
+    database "📦 **Product Catalog**\n<size:12>1M products\nMongoDB</size>" as SOURCE3
 }
 
-package "INGESTION" #F8F9FA {
-    component "**Extract**\n<size:10>Read from sources</size>" as INGEST
+package "⚡ INGESTION" #FFF9C4/FFF59D {
+    component "📥 **Extract**\n<size:11>Read from sources\nValidate schema</size>" as INGEST <<Agent>>
 }
 
-package "STORAGE" #F8F9FA {
-    database "**Raw Storage**\n<size:10>Parquet, 5 GB/day</size>" as RAW
+package "💾 STORAGE" #ECEFF1/CFD8DC {
+    database "🗄️ **Raw Storage**\n<size:12>Data Lake\nParquet, 5 GB/day</size>" as RAW
 }
 
-package "PROCESSING" #F8F9FA {
+package "⚙️ PROCESSING" #E1F5FE/B3E5FC {
     together {
-        component "**Transform**\n<size:10>Clean, filter, enrich</size>" as TRANSFORM
-        component "**Aggregate**\n<size:10>Group, count, sum</size>" as AGGREGATE
+        component "🔄 **Transform**\n<size:11>Clean, filter, enrich\nNormalize formats</size>" as TRANSFORM <<Tool>>
+        component "📊 **Aggregate**\n<size:11>Group, count, sum\nRollup metrics</size>" as AGGREGATE <<Tool>>
     }
 }
 
-package "CONSUMPTION" #F8F9FA {
-    database "**Data Warehouse**\n<size:10>Analytics tables</size>" as WAREHOUSE
+package "🎯 CONSUMPTION" #C8E6C9/A5D6A7 {
+    database "🏢 **Data Warehouse**\n<size:12>Star schema\nAnalytics tables</size>" as WAREHOUSE
     together {
-        component "**Analytics Dashboard**\n<size:10>BI tools</size>" as DASHBOARD
-        component "**ML Models**\n<size:10>Feature store</size>" as ML
+        component "📈 **Analytics Dashboard**\n<size:11>BI tools\nTableau/Looker</size>" as DASHBOARD <<UI>>
+        component "🤖 **ML Models**\n<size:11>Feature store\nSageMaker</size>" as ML <<Tool>>
     }
 }
 
 '========================
 ' Balanced flow: sources → ingest → storage → (transform | aggregate) → warehouse → (dashboard | ML)
 
-SOURCE1 --> INGEST
-SOURCE2 --> INGEST
-SOURCE3 --> INGEST
+SOURCE1 -[#1976D2,thickness=3]-> INGEST
+SOURCE2 -[#1976D2,thickness=3]-> INGEST
+SOURCE3 -[#1976D2,thickness=3]-> INGEST
 
-INGEST --> RAW : "5 GB/day"
+INGEST -[#F57C00,thickness=3]-> RAW : <color:#E65100><b>5 GB/day</b>\nraw data</color>
 
-RAW --> TRANSFORM : "Read raw data"
-TRANSFORM --> AGGREGATE : "Filtered events"
-AGGREGATE --> WAREHOUSE : "5 MB aggregated"
+RAW -[#7B1FA2,thickness=3]-> TRANSFORM : <color:#4A148C>Read raw\ndata</color>
+TRANSFORM -[#7B1FA2,thickness=3]-> AGGREGATE : <color:#6A1B9A>Filtered\nevents</color>
+AGGREGATE -[#388E3C,thickness=3]-> WAREHOUSE : <color:#1B5E20><b>5 MB</b>\naggregated</color>
 
-WAREHOUSE --> DASHBOARD : "Query results"
-WAREHOUSE --> ML : "Features"
+WAREHOUSE -[#1976D2,thickness=3]-> DASHBOARD : <color:#0D47A1>Query\nresults</color>
+WAREHOUSE -[#388E3C,thickness=3]-> ML : <color:#2E7D32>Features</color>
+
+note right of RAW
+  <size:13><b>💡 Compression:</b>
+  1000x reduction
+  from source to warehouse</size>
+end note
+
+note bottom of WAREHOUSE
+  <size:14><b>🎯 Two Consumption Paths:</b></size>
+  <size:13>• <b>Analytics:</b> Business insights & KPIs\n• <b>ML:</b> Predictive models & automation</size>
+end note
 
 @enduml

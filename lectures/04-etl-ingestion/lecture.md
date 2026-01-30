@@ -13,9 +13,7 @@
 - Handle failure: partition-based resume, DLQ, no duplicates
 - Reason about cost: I/O, network, latency vs consistency
 
-## The Real Problem This Lecture Solves
-
-## Revenue Duplication Incident
+## The Real Problem This Lecture Solves: Revenue Duplication Incident
 - **Failure:** company ran nightly revenue loads with plain INSERT
 - No watermark; job failed mid-run
 - Operator re-ran the full job
@@ -27,9 +25,7 @@
 - **Root cause:** non-idempotent load; no staging or dedup
 - **Takeaway:** bad ingestion breaks trust, not just pipelines
 
-## The System We Are Building
-
-## Domain Overview
+## The System We Are Building: Domain Overview
 - **Domain:** event analytics (clicks, views, purchases)
 - Feeds BI and product dashboards
 - **Data source:** raw_events (DB or log export)
@@ -75,6 +71,13 @@ $$
 - Interpretation: retries do not change output
 - Engineering implication: safe reruns and failure recovery
 
+## Correctness Conditions and Recovery
+- **Correctness condition:** each key written at most once per run
+- **Recovery condition:** rerun produces identical target state
+- If watermark not advanced, rerun replays same slice
+- If write is idempotent, replay does not duplicate
+- Engineering implication: rerun is safe by construction
+
 ## Delivery Semantics and Duplicates
 - Let \(C(k)\) be count for key \(k\) in sink
 $$
@@ -84,6 +87,14 @@ $$
 - Engineering implication: require idempotent writes or dedup keys
 - Exactly-once requires deterministic processing + transactional sink
 - Engineering implication: higher coordination cost, lower ambiguity
+
+## Monitoring Signals for Correctness Drift
+- **Row counts:** read vs written per partition
+- **Duplicate keys:** violations per run
+- **Watermark lag:** now − last_watermark
+- **DLQ rate:** invalid rows per batch
+- **Partition completeness:** expected vs completed
+- **Rerun rate:** repeated runs per partition
 
 ## In-Lecture Exercise 1: Idempotency Check
 - Define idempotency for a load job
@@ -101,9 +112,7 @@ $$
 - Reruns are normal in production pipelines
 - Idempotency is a core safety property
 
-## Source to Target Mapping (STTM)
-
-## What is STTM?
+## Source to Target Mapping (STTM): What is STTM?
 - **Definition:** instructions for source-to-target data transfer
 - Guidelines for ETL process
 - Handles data types, unknown members, default values
@@ -125,9 +134,7 @@ $$
 - Deploy mapping: schedule on live data
 - Maintain mapping: update for new sources
 
-## STTM Techniques
-
-## Manual Mapping
+## STTM Techniques: Manual Mapping
 - Manually code connection between source and destination
 - Use when mapping few sources with limited data
 - **Advantages:** flexible, completely customizable
@@ -138,9 +145,7 @@ $$
 - **Advantages:** fast, easy to scale, eliminates human error
 - **Disadvantages:** training required; in-house solutions expensive
 
-## Architectural Fork: ETL vs ELT
-
-## Option A — ETL
+## Architectural Fork: ETL vs ELT — Option A (ETL)
 - Transform in pipeline (Spark, Python); then load cleaned data
 - **Pros:** target sees only clean data; smaller load volume
 - **Cons:** transform logic outside DWH; more moving parts
@@ -169,9 +174,7 @@ $$
 - When loading, already extracted data can transform
 - **Benefit:** overlapping phases reduce total time
 
-## Building Batch ETL Pipeline
-
-## Step 1: Reference Data
+## Building Batch ETL Pipeline: Step 1 — Reference Data
 - Create set of data defining permissible values
 - Example: allowed country codes
 - Acts as validation and standardization reference
@@ -204,9 +207,7 @@ $$
 - Some DWH overwrites; others append
 - ETL loads new batch based on schedule
 
-## Architectural Fork: MERGE vs Overwrite
-
-## Option A — MERGE (Upsert)
+## Architectural Fork: MERGE vs Overwrite — Option A (MERGE/Upsert)
 - ON key match update/insert; rerun safe
 - **Pros:** idempotent; handles duplicates and late updates
 - **Cons:** cost = join source vs target; needs index
@@ -239,9 +240,7 @@ $$
 - Dedup in staging before touching the target
 - MERGE provides idempotent upserts for batch loads
 
-## Architectural Fork: Schema-on-Read vs Write
-
-## Option A — Schema-on-Write
+## Architectural Fork: Schema-on-Read vs Write — Option A (Schema-on-Write)
 - Validate and type on load; bad row fails load
 - **Pros:** target is always typed; simpler queries
 - **Cons:** one bad row fails whole batch
@@ -322,9 +321,7 @@ $$
 - Staging allows schema-on-read and validation
 ![](../../diagrams/week04/week4_lecture_slide13_pipeline_overview.png)
 
-## Bad Architecture: Why This Fails
-
-## Anti-Pattern
+## Bad Architecture: Why This Fails — Anti-Pattern
 - Source → direct INSERT into target
 - No staging; no watermark; no MERGE
 - Rerun inserts same rows again ⇒ 2× counts
@@ -336,9 +333,7 @@ $$
 - **No dedup:** upstream retry sends same batch twice
 ![](../../diagrams/week04/week4_lecture_bad_architecture.png)
 
-## Cost of Naïve Design (Ingestion)
-
-## Naïve Choices and Costs
+## Cost of Naïve Design (Ingestion): Naïve Choices and Costs
 - **Naïve:** plain INSERT; no staging; no watermark
 - **Cost:** rerun duplicates rows
 - Finance sees 2× revenue; trust collapses
@@ -349,9 +344,7 @@ $$
 - Design for rerun from day one
 - Wrong data drives wrong decisions
 
-## Evolution: v1 to v2
-
-## v1: Full Refresh
+## Evolution: v1 to v2 — v1 Full Refresh
 - Full table read every run; INSERT into target
 - No watermark; fails at scale
 - Full scan each run; rerun duplicates everything
@@ -417,9 +410,7 @@ $$
 - On failure: do not update; next run re-reads (idempotent)
 ![](../../diagrams/week04/week4_lecture_slide22_execution_flow.png)
 
-## Failure Story 1: Rerun Duplicates Revenue
-
-## Incident
+## Failure Story 1: Rerun Duplicates Revenue — Incident
 - Nightly job failed after loading 2 of 3 partitions
 - Operator re-ran full job
 - Revenue showed ~2× for two partitions
@@ -430,9 +421,7 @@ $$
 - On rerun skip completed; process only remaining
 - Update watermark only after successful commit
 
-## Failure Story 2: One Bad Row Kills Batch
-
-## Incident
+## Failure Story 2: One Bad Row Kills Batch — Incident
 - Source sent integer instead of string for one partner
 - One row failed cast; whole nightly load failed
 - Next morning: dashboards had no new data

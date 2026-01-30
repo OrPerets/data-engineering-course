@@ -138,7 +138,7 @@ rectangle "SOURCES" #F8F9FA {
 }
 
 rectangle "INGEST" #F8F9FA {
-    component "**Ingest**\n<size:10>Subscribe / poll</size>" as INGEST <<Tool>>
+    component "**Ingest**\n<size:10>Subscribe / poll</size>" as INGEST1 <<Tool>>
 }
 
 rectangle "STREAM ENGINE" #F8F9FA {
@@ -147,7 +147,7 @@ rectangle "STREAM ENGINE" #F8F9FA {
 }
 
 rectangle "SINK" #F8F9FA {
-    component "**Sink**\n<size:10>DB / API / topic</size>" as SINK <<Tool>>
+    component "**Sink**\n<size:10>DB / API / topic</size>" as SINK1 <<Tool>>
 }
 
 database "**Downstream**\n<size:10>DWH / dashboard</size>" as TARGET

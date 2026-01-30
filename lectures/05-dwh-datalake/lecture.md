@@ -402,7 +402,10 @@ GROUP BY c.region ORDER BY total_revenue DESC;
 ## Cost & Scaling Analysis (1/3)
 - **Time model:** query time ≈ scan + join + aggregate
 - Scan time ∝ rows read; partition pruning reduces rows
-- Formula: \( T \propto R_{\text{scan}} / \text{throughput} \)
+- Formula:
+$$
+T \propto R_{\text{scan}} / \text{throughput}
+$$
 
 ## Cost & Scaling Analysis (2/3)
 - **Memory / storage:** fact table dominates; dimensions small

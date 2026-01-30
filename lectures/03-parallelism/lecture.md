@@ -19,9 +19,7 @@
 - Slide 22 → week3_lecture_slide22_execution_flow.puml
 - Slide 38 → week3_lecture_slide38_failure_skew.puml
 
-## Core Concepts (1/2) — Constraints
-
-## Divide-and-Conquer
+## Core Concepts (1/2) — Constraints: Divide-and-Conquer
 - Split problem into subproblems, solve independently, combine
 - **Constraint:** no shared state across chunks
 - **Divide:** partition input
@@ -34,9 +32,7 @@
 - **Map:** one output per input; no cross-record state
 - **Pure functions** enable safe distribution
 
-## Core Concepts (2/2) — Why Systems Break
-
-## Determinism and Scalability
+## Core Concepts (2/2) — Why Systems Break: Determinism and Scalability
 - **Determinism:** same input ⇒ same output
 - **Violation** (shared state, time-dependent logic) ⇒ wrong results
 - **Scalability:** more workers ⇒ more throughput
@@ -62,9 +58,7 @@ $$
 - **Coordination:** fault tolerance, stragglers, partial failures
 - **Design for them**
 
-## Cost of Naïve Design (Parallelism)
-
-## What Goes Wrong (1/2)
+## Cost of Naïve Design (Parallelism): What Goes Wrong (1/2)
 - **Naïve:** "just add more workers"
 - **Shuffle** and **skew** often dominate
 - More workers ⇒ more shuffle traffic
@@ -146,26 +140,24 @@ $$
 - Combine: shuffle groups by key; reducers aggregate
 ![](../../diagrams/week03/week3_lecture_slide13_system_overview.png)
 
-## Cost & Scaling Analysis (1/3)
-
-## Time Model
+## Cost & Scaling Analysis (1/3): Time Model
 - **Work \(W\):** total operations over all workers
 - **Span \(S\):** critical path; longest dependency chain
-- **Speedup:** \(W/S\) with enough workers
+- **Speedup:**
+$$
+W/S
+$$
+with enough workers
 - Upper bound = number of workers
 
-## Cost & Scaling Analysis (2/3)
-
-## Memory and Storage
+## Cost & Scaling Analysis (2/3): Memory and Storage
 - **Map:** each task holds one record + emitted (k,v)
 - Bounded per task
 - **Shuffle:** all (k,v) written to disk/network
 - Peak ≈ size of map output
 - **Reduce:** one key's values in memory; skew ⇒ OOM
 
-## Cost & Scaling Analysis (3/3)
-
-## Network and Throughput
+## Cost & Scaling Analysis (3/3): Network and Throughput
 - **Shuffle traffic:** ≈ size of map output
 - **Bottleneck:** link bandwidth and disk I/O
 - Often limits scale more than CPU
@@ -225,9 +217,7 @@ $$
 - Reduce aggregates per key
 ![](../../diagrams/week03/week3_lecture_slide22_execution_flow.png)
 
-## Pitfalls & Failure Modes (1/3)
-
-## Shared State and Stragglers
+## Pitfalls & Failure Modes (1/3): Shared State and Stragglers
 - Map or reduce with global state is not deterministic
 - One slow worker (straggler) delays the whole job
 - Causes: skew, GC, network, disk
@@ -336,9 +326,7 @@ $$
 - Other reducers finish quickly; job waits or fails
 ![](../../diagrams/week03/week3_lecture_slide38_failure_skew.png)
 
-## Pitfalls & Failure Modes (3/3)
-
-## Detection and Mitigation
+## Pitfalls & Failure Modes (3/3): Detection and Mitigation
 - **Detection:** per-partition sizes and reducer runtimes
 - **Combiner:** local pre-aggregation before shuffle
 - **Custom partitioner / salting:** spread hot key across reducers

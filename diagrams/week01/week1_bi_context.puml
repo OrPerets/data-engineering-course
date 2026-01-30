@@ -1,0 +1,44 @@
+@startuml
+' BI Context - From Raw Data to Business Decisions
+left to right direction
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam roundcorner 15
+skinparam shadowing true
+skinparam linetype ortho
+skinparam nodesep 40
+skinparam ranksep 65
+
+skinparam arrow {
+    Thickness 3
+    FontSize 13
+    FontStyle italic
+}
+
+title <size:22><b>Business Intelligence Pipeline</b></size>\n<size:14>From Raw Data to Actionable Insights</size>
+
+storage "📄 **Raw Data**\n\n<size:14>Unstructured sources:\n• Log files\n• Transaction DBs\n• Customer events</size>" as R #ECEFF1 {
+}
+
+component "⚙️ **ETL Pipeline**\n\n<size:14>Extract, Transform, Load:\n• Data integration\n• Quality checks\n• Schema mapping</size>" as E #E3F2FD {
+}
+
+database "🏢 **DWH / Lake**\n\n<size:14>Centralized storage:\n• Star schema\n• Historical data\n• Optimized queries</size>" as D #B39DDB {
+}
+
+component "📊 **BI & Reports**\n\n<size:14>Analytics layer:\n• Dashboards\n• KPIs & Metrics\n• Visualizations</size>" as B #FFF9C4 {
+}
+
+cloud "🎯 **Decisions**\n\n<size:14>Business outcomes:\n• Strategy\n• Operations\n• Optimization</size>" as X #C8E6C9 {
+}
+
+R -[#1976D2,thickness=3.5]-> E : <size:13><color:#0D47A1>**Extract**</color></size>
+E -[#7B1FA2,thickness=3.5]-> D : <size:13><color:#4A148C>**Load**</color></size>
+D -[#F57C00,thickness=3.5]-> B : <size:13><color:#E65100>**Query**</color></size>
+B -[#388E3C,thickness=3.5]-> X : <size:13><color:#1B5E20>**Inform**</color></size>
+
+note bottom
+  <size:13><i>Each stage adds value: from raw bits to strategic actions</i></size>
+end note
+
+@enduml

@@ -85,14 +85,20 @@ $$
 ## Exact vs Approximate Statistics
 - **Exact:** full scan for df and N each batch
 - **Approximate:** sample documents for df estimate
-- Estimator: \(\widehat{df}(t) = \frac{df_{\text{sample}}(t)}{p}\)
+- Estimator:
+$$
+\widehat{df}(t) = \frac{df_{\text{sample}}(t)}{p}
+$$
 - **Guarantee:** unbiased estimate for sampled corpus
 - **Limit:** sampling error for rare terms
 
 ## Hashing and Collision Limits
 - Hash terms into \(B\) buckets to bound memory
 - Collision merges counts from different terms
-- **Upper bound:** \(\widehat{df}(t) \le df(t) + \epsilon N\)
+- **Upper bound:**
+$$
+\widehat{df}(t) \le df(t) + \epsilon N
+$$
 - **Guarantee:** bounded over-count with fixed \(B\)
 - **Limit:** frequent terms can mask rare ones
 
@@ -136,18 +142,28 @@ $$
 
 ## No Smoothing
 - df=0 or df=N ⇒ log(0) or division edge cases
-- Use \(\log\frac{N+1}{df+1}\) and handle empty docs
+- Use
+$$
+\log\frac{N+1}{df+1}
+$$
+and handle empty docs
 - Numerical robustness is production requirement
 
 ## Core Concepts (1/2)
 - **Term Frequency (TF):** how often term appears in document
 - Raw count or normalized
 - **Document Frequency (df):** number of docs containing term
-- **Inverse Document Frequency (IDF):** \(\log\frac{N}{df}\)
+- **Inverse Document Frequency (IDF):**
+$$
+\log\frac{N}{df}
+$$
 - N = total documents
 
 ## Core Concepts (2/2)
-- **TF-IDF:** \(\text{tfidf}(t,d) = \text{TF}(t,d) \times \text{IDF}(t)\)
+- **TF-IDF:**
+$$
+\text{tfidf}(t,d) = \text{TF}(t,d) \times \text{IDF}(t)
+$$
 - Balances local relevance and global rarity
 - **Guarantees:** deterministic given same tokenization
 - **What breaks:** vocabulary size and df aggregation; skew
@@ -172,10 +188,19 @@ $$
 - TF captures local importance; IDF down-weights common terms
 
 ## Formal TF Definitions
-- **Raw count:** \(\text{tf}_{\text{raw}}(t,d) = \text{count of } t \text{ in } d\)
-- **Normalized:** \(\text{tf}_{\text{norm}}(t,d) = \frac{\text{tf}_{\text{raw}}}{|d|}\)
+- **Raw count:**
+$$
+\text{tf}_{\text{raw}}(t,d) = \text{count of } t \text{ in } d
+$$
+- **Normalized:**
+$$
+\text{tf}_{\text{norm}}(t,d) = \frac{\text{tf}_{\text{raw}}}{|d|}
+$$
 - |d| = total terms in d
-- **Log-scaled:** \(\text{tf}_{\text{log}}(t,d) = 1 + \log(\text{tf}_{\text{raw}})\)
+- **Log-scaled:**
+$$
+\text{tf}_{\text{log}}(t,d) = 1 + \log(\text{tf}_{\text{raw}})
+$$
 - **Use:** normalized or log-scaled avoids long-doc dominance
 
 ## Intuition: Why IDF Down-weights Common Terms
@@ -187,9 +212,15 @@ $$
 - **Engineering:** stop words also cause skew
 
 ## Formal IDF Definition
-- **IDF:** \(\text{idf}(t) = \log\frac{N}{df(t)}\)
+- **IDF:**
+$$
+\text{idf}(t) = \log\frac{N}{df(t)}
+$$
 - N = total documents, df(t) = docs containing t
-- **Smoothing:** \(\text{idf}(t) = \log\frac{N+1}{df(t)+1}\)
+- **Smoothing:**
+$$
+\text{idf}(t) = \log\frac{N+1}{df(t)+1}
+$$
 - Avoids log(0) when df = N
 - **At scale:** N and df must be computed once and broadcast
 
@@ -228,7 +259,10 @@ $$
 - **Reproducibility:** version tokenization (stemmer, stop list)
 
 ## TF-IDF Formula and Vector
-- **Score:** \(\text{tfidf}(t,d) = \text{TF}(t,d) \times \text{IDF}(t)\)
+- **Score:**
+$$
+\text{tfidf}(t,d) = \text{TF}(t,d) \times \text{IDF}(t)
+$$
 - **Document vector:** one dimension per term in vocabulary
 - Value = TF-IDF for that term in d
 - **Query:** same weighting; similarity = dot product or cosine
@@ -393,7 +427,10 @@ $$
 - Use stop-word list or df threshold to drop terms
 - Reduces skew and noise
 - Normalize TF by doc length or use log(1+tf)
-- Smooth IDF: \(\log\frac{N+1}{df+1}\)
+- Smooth IDF:
+$$
+\log\frac{N+1}{df+1}
+$$
 - Store vocabulary and N, df for reproducibility
 
 ## Best Practices (2/2)

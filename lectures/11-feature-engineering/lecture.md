@@ -54,6 +54,22 @@ $$
 - Interpretation: same definition across offline and online
 - Engineering implication: shared feature definitions prevent skew
 
+## Formal Aggregation at Scale
+- Windowed count feature for entity \(e\) at time \(t\)
+$$
+\text{count}_{w}(e,t) = \sum_{x \in D} \mathbf{1}[x.e=e,\ t-w < x.\text{ts} \le t]
+$$
+- Interpretation: aggregation over a bounded time window
+- Engineering implication: window size controls cost and freshness
+
+## Approximate Aggregation and Error Trade-offs
+- For large \(D\), sample with rate \(p\) to estimate counts
+$$
+\widehat{\text{count}}_{w}(e,t) = \frac{1}{p} \sum_{x \in S} \mathbf{1}[x.e=e,\ t-w < x.\text{ts} \le t]
+$$
+- Interpretation: unbiased estimate; variance grows as \(1/p\)
+- Engineering implication: lower cost, higher noise; pick \(p\) by SLA
+
 ## Diagram Manifest
 - Slide 15 → week11_lecture_slide08_feature_pipeline_overview.puml
 - Slide 21 → week11_lecture_slide12_execution_flow.puml
@@ -147,6 +163,12 @@ $$
 - **No leakage:** f must not use any event with timestamp > t
 - **Idempotent write:** writing twice yields one row
 - Key = (entity_id, as_of_ts)
+
+## Leakage as Assumption Violation
+- Assumption: all feature inputs satisfy ts ≤ as_of_ts
+- Leakage occurs if any input violates this constraint
+- Interpretation: model sees future evidence during training
+- Engineering implication: treat leakage as a correctness bug
 
 ## Architectural Fork: Offline vs Online
 
@@ -259,6 +281,13 @@ $$
 - Or partition overwrite per as_of_ts
 - **Schema drift:** new feature column; old jobs still write old schema
 - Detection: schema checks and lineage; version feature definitions
+
+## Monitoring Signals for Leakage and Drift
+- **Train/serve parity:** compare feature distributions by time
+- **Future leakage test:** shift as_of_ts forward and re-run
+- **Freshness lag:** now − latest as_of_ts in table
+- **Duplicate key rate:** violations per (entity_id, as_of_ts)
+- **Null spike:** sudden rise in missing feature values
 
 ## Best Practices (1/2)
 - Always key feature table by (entity_id, as_of_ts)

@@ -96,7 +96,11 @@ $$
 - Same k ⇒ same reducer
 - **Shuffle size:** sum over all map output (k,v) pairs
 - Combiner reduces before shuffle
-- **IDF:** \(\log\frac{N}{df}\); TF-IDF = TF × IDF
+- **IDF:**
+$$
+\log\frac{N}{df}
+$$
+TF-IDF = TF × IDF
 - **Join size:** |A ⋈ B| ≤ |A| × |B|; with FK often ≈ fact rows
 
 ## In-Lecture Exercise 2: MapReduce Trace

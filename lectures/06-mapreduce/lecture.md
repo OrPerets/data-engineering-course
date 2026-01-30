@@ -247,7 +247,10 @@ $$
 ![](../../diagrams/week06/week6_lecture_slide20_execution_flow.png)
 
 ## Cost & Scaling Analysis (1/3)
-- **Time model:** \(T_{\text{job}} \approx T_{\text{map}} + T_{\text{shuffle}} + T_{\text{reduce}}\)
+- **Time model:**
+$$
+T_{\text{job}} \approx T_{\text{map}} + T_{\text{shuffle}} + T_{\text{reduce}}
+$$
 - Interpretation: shuffle adds directly to total runtime
 - Engineering implication: shrink shuffle before adding workers
 - **Work W:** total CPU over all tasks
@@ -263,7 +266,10 @@ $$
 
 ## Cost & Scaling Analysis (3/3)
 - **Network / shuffle:** bytes shuffled ≈ map output
-- **Formula:** \(B_{\text{shuffle}} \approx N_{\text{emits}} \times \text{avg\_size}\)
+- **Formula:**
+$$
+B_{\text{shuffle}} \approx N_{\text{emits}} \times \text{avg\_size}
+$$
 - Interpretation: bytes scale linearly with emits
 - Engineering implication: filter early, compress, combine
 - **Latency:** shuffle often bottleneck

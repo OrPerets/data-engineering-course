@@ -1,7 +1,23 @@
 #!/bin/bash
 
 # PlantUML Diagram Renderer
-# This script renders all PlantUML diagrams from the diagrams folder
+# This script renders PlantUML diagrams from the diagrams folder.
+# Usage:
+#   ./render_diagrams.sh           # render all diagrams
+#   ./render_diagrams.sh week01    # render only diagrams/week01/
+
+# Optional: limit to one subfolder (e.g. week01, week02)
+SUBFOLDER="$1"
+if [ -n "$SUBFOLDER" ]; then
+    SEARCH_DIR="diagrams/$SUBFOLDER"
+    if [ ! -d "$SEARCH_DIR" ]; then
+        echo "❌ Folder not found: $SEARCH_DIR"
+        exit 1
+    fi
+    echo "📂 Rendering only: $SEARCH_DIR"
+else
+    SEARCH_DIR="diagrams"
+fi
 
 echo "🎨 PlantUML Diagram Renderer"
 echo "=============================="
@@ -43,8 +59,8 @@ if [ ! -f "$PLANTUML_JAR" ]; then
 fi
 
 
-echo "📁 Found PlantUML files (diagrams/ and subfolders):"
-find diagrams -name "*.puml" -type f 2>/dev/null | while read -r f; do echo "   $f"; done
+echo "📁 Found PlantUML files in $SEARCH_DIR:"
+find "$SEARCH_DIR" -name "*.puml" -type f 2>/dev/null | while read -r f; do echo "   $f"; done
 
 echo ""
 echo "🖼️  Rendering diagrams to PNG..."
@@ -65,7 +81,7 @@ while IFS= read -r -d '' file; do
         echo "❌ Failed: $file"
         ((failed_count++))
     fi
-done < <(find diagrams -name "*.puml" -type f -print0 2>/dev/null)
+done < <(find "$SEARCH_DIR" -name "*.puml" -type f -print0 2>/dev/null)
 
 echo ""
 echo "🎉 Rendering complete!"
@@ -73,10 +89,10 @@ echo "📊 Summary:"
 echo "   ✅ Successfully rendered: $rendered_count diagrams"
 echo "   ❌ Failed: $failed_count diagrams"
 echo ""
-echo "📁 Check 'diagrams/' and subfolders for .png files"
+echo "📁 Check '$SEARCH_DIR' for .png files"
 echo ""
 echo "📋 Generated files:"
-find diagrams -name "*.png" -type f 2>/dev/null | while read -r f; do echo "   $f ($(wc -c < "$f" 2>/dev/null) bytes)"; done
+find "$SEARCH_DIR" -name "*.png" -type f 2>/dev/null | while read -r f; do echo "   $f ($(wc -c < "$f" 2>/dev/null) bytes)"; done
 
 # Create a summary file
 echo "📝 Creating summary file..."
@@ -91,10 +107,10 @@ Generated on: $(date)
 - Failed: $failed_count
 
 ## Generated Files
-$(find diagrams -name "*.png" -type f 2>/dev/null | while read -r f; do echo "- $f"; done)
+$(find "$SEARCH_DIR" -name "*.png" -type f 2>/dev/null | while read -r f; do echo "- $f"; done)
 
 ## Source Files
-$(find diagrams -name "*.puml" -type f 2>/dev/null | while read -r f; do echo "- $f"; done)
+$(find "$SEARCH_DIR" -name "*.puml" -type f 2>/dev/null | while read -r f; do echo "- $f"; done)
 EOF
 
 echo "✅ Summary saved to: diagrams/RENDER_SUMMARY.md"

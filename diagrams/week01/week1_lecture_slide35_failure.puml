@@ -5,11 +5,11 @@
 
 top to bottom direction
 skinparam linetype ortho
-skinparam shadowing false
-skinparam roundcorner 8
+skinparam shadowing true
+skinparam roundcorner 12
 skinparam handwritten false
-skinparam nodesep 24
-skinparam ranksep 28
+skinparam nodesep 35
+skinparam ranksep 45
 
 '-------------------------
 ' FONT & GLOBAL STYLE
@@ -49,9 +49,10 @@ skinparam database {
 
 skinparam arrow {
     Color #607D8B
-    Thickness 1.5
-    FontSize 11
+    Thickness 2.5
+    FontSize 12
     FontColor #546E7A
+    FontStyle italic
 }
 
 '-------------------------
@@ -131,24 +132,32 @@ skinparam component<<failure>> {
 
 '=================================================
 
+title <size:22><b>⚠️ Failure Propagation in Pipeline</b></size>\n<size:14>Sequential Dependencies Amplify Impact</size>
+
 ' FAILURE PROPAGATION — sequential pipeline with failure at Step 2
-database "**Input**\n<size:10>Raw events</size>" as INPUT
-component "**Step 1: Ingestion**\n<size:10>Write raw</size>" as STEP1 <<success>>
-database "**Raw Storage**\n<size:10>5 GB stored</size>" as RAW
+storage "📥 **Input**\n<size:12>Raw events\nfrom sources</size>" as INPUT
 
-component "**Step 2: Transform**\n<size:10>Fails at 50%</size>" as STEP2 <<failure>>
-database "**Partial Output**\n<size:10>2.5 GB written</size>" as PARTIAL <<down>>
+component "✅ **Step 1: Ingestion**\n<size:11>Write raw data\nto storage</size>" as STEP1 <<success>>
 
-component "**Step 3: Aggregate**\n<size:10>Not run</size>" as STEP3 <<down>>
-component "**Step 4: Load**\n<size:10>Not run</size>" as STEP4 <<down>>
-database "**Output**\n<size:10>Not created</size>" as OUTPUT <<down>>
+database "💚 **Raw Storage**\n<size:12>5 GB stored\nsuccessfully</size>" as RAW <<up>>
 
-INPUT --> STEP1 : "ingest"
-STEP1 --> RAW : "raw saved"
-RAW --> STEP2 : "read raw"
-STEP2 -[#C62828]-> PARTIAL : "crash / stop"
-STEP2 -[#C62828]-> STEP3 : "blocked"
-STEP3 -[#C62828]-> STEP4 : "blocked"
-STEP4 -[#C62828]-> OUTPUT : "no load"
+component "❌ **Step 2: Transform**\n<size:11><b>Fails at 50%</b>\nOOM error</size>" as STEP2 <<failure>>
+
+database "⚠️ **Partial Output**\n<size:12>2.5 GB written\nincomplete</size>" as PARTIAL <<down>>
+
+component "⏸️ **Step 3: Aggregate**\n<size:11>Not executed\nwaiting...</size>" as STEP3 <<down>>
+
+component "⏸️ **Step 4: Load**\n<size:11>Not executed\nwaiting...</size>" as STEP4 <<down>>
+
+database "❌ **Output**\n<size:12>Not created\ndownstream blocked</size>" as OUTPUT <<down>>
+
+INPUT -[#388E3C,thickness=3]-> STEP1 : <color:#1B5E20><b>ingest</b></color>
+STEP1 -[#388E3C,thickness=3]-> RAW : <color:#2E7D32><b>raw saved</b></color>
+RAW -[#1976D2,thickness=3]-> STEP2 : <color:#0D47A1>read raw</color>
+STEP2 -[#C62828,thickness=4]-> PARTIAL : <color:#B71C1C><b>💥 crash</b></color>
+STEP2 -[#C62828,thickness=3,dashed]-> STEP3 : <color:#C62828>blocked</color>
+STEP3 -[#C62828,thickness=3,dashed]-> STEP4 : <color:#C62828>blocked</color>
+STEP4 -[#C62828,thickness=3,dashed]-> OUTPUT : <color:#C62828>no load</color>
+
 
 @enduml

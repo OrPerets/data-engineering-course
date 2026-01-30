@@ -1,0 +1,42 @@
+@startuml
+' Data Engineering vs Data Science
+left to right direction
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam roundcorner 15
+skinparam shadowing true
+skinparam linetype ortho
+skinparam nodesep 50
+skinparam ranksep 70
+
+skinparam card {
+    FontStyle bold
+    Padding 35
+    BorderThickness 2.5
+}
+
+skinparam arrow {
+    Thickness 2.5
+    FontSize 13
+}
+
+title <size:22><b>Data Engineering vs Data Science</b></size>\n<size:14>Complementary Disciplines with Shared Goals</size>
+
+card "⚙️ **DATA ENGINEERING**\n\n<size:15><b>Focus:</b></size>\n<size:14>Building data infrastructure\nand pipelines</size>\n\n<size:15><b>Activities:</b></size>\n<size:14>• ETL/ELT pipelines\n• Data architecture\n• Scalability & reliability\n• Data integration</size>\n\n<size:15><b>Output:</b></size>\n<size:14>Clean datasets, APIs,\ndata platforms</size>" as DE #E3F2FD {
+}
+
+card "🔬 **DATA SCIENCE**\n\n<size:15><b>Focus:</b></size>\n<size:14>Extracting insights from\ndata using models</size>\n\n<size:15><b>Activities:</b></size>\n<size:14>• Statistical analysis\n• Machine learning\n• Feature engineering\n• Model evaluation</size>\n\n<size:15><b>Output:</b></size>\n<size:14>Insights, predictions,\nML models</size>" as DS #F3E5F5 {
+}
+
+card "🤝 **SHARED AREA**\n\n<size:15><b>Collaboration Zone:</b></size>\n\n<size:14>• Clean, quality data\n• Large-scale datasets\n• Feature stores\n• Data exploration\n• Performance optimization\n• Reproducibility</size>\n\n<size:13><i>Success requires both disciplines</i></size>" as O #FFF9C4 {
+}
+
+DE -[#1976D2,thickness=3]-> O : <size:13><color:#0D47A1>Provides\ninfrastructure</color></size>
+O -[#7B1FA2,thickness=3]-> DS : <size:13><color:#4A148C>Enables\nanalysis</color></size>
+DS -[#7B1FA2,thickness=2,dashed]-> DE : <size:12><color:#6A1B9A>Requirements\nfeedback</color></size>
+
+note bottom of O
+  <size:13>⚡ Modern trend: <b>MLOps</b> bridges both worlds</size>
+end note
+
+@enduml
