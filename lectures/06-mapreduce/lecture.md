@@ -31,6 +31,15 @@
 - MapReduce scales only if key distribution designed for it
 - Skew and shuffle cost are main failure modes at scale
 
+## Problem Framing: Global Aggregation Cost
+- Global aggregation forces like keys to meet
+- Let \(E\) = map emits, \(s\) = bytes per pair
+$$
+B_{\text{shuffle}} = E \cdot s
+$$
+- Interpretation: communication grows with emits, not reducers
+- Engineering implication: reduce emits via combiner or smaller keys
+
 ## The System We Are Building
 
 ## Domain Overview
@@ -238,8 +247,9 @@ $$
 ![](../../diagrams/week06/week6_lecture_slide20_execution_flow.png)
 
 ## Cost & Scaling Analysis (1/3)
-- **Time model:** T_job ≈ T_map + T_shuffle + T_reduce
-- T_shuffle often dominates
+- **Time model:** \(T_{\text{job}} \approx T_{\text{map}} + T_{\text{shuffle}} + T_{\text{reduce}}\)
+- Interpretation: shuffle adds directly to total runtime
+- Engineering implication: shrink shuffle before adding workers
 - **Work W:** total CPU over all tasks
 - **Span S:** critical path
 - **Speedup:** upper bound min(workers, map_tasks)
@@ -253,9 +263,9 @@ $$
 
 ## Cost & Scaling Analysis (3/3)
 - **Network / shuffle:** bytes shuffled ≈ map output
-- Every (k,v) sent once
-- **Formula:** shuffle_bytes ≈ N_emits × avg_size_per_pair
-- Throughput limited by network
+- **Formula:** \(B_{\text{shuffle}} \approx N_{\text{emits}} \times \text{avg\_size}\)
+- Interpretation: bytes scale linearly with emits
+- Engineering implication: filter early, compress, combine
 - **Latency:** shuffle often bottleneck
 
 ## Shuffle Size Calculation
@@ -288,6 +298,7 @@ $$
 ## Reducer Memory and Skew
 - Each reducer holds one key's value list in memory
 - **Skew:** one key has 10^9 values ⇒ list size huge ⇒ OOM
+- Key frequency is random; heavy-tail makes hot keys likely
 - **Mitigation:** spread hot key (salting); increase memory
 
 ## Pitfalls & Failure Modes (1/3)
@@ -337,8 +348,8 @@ $$
 - **When:** reduce function is associative and commutative
 - E.g. sum, count, max
 - **Effect:** combine (k,v1),(k,v2) on map side → (k, v1+v2)
-- Fewer pairs sent in shuffle
 - **Correctness:** same as running reduce on full value list
+- Trade-off: extra map CPU, less network traffic
 - **Trade-off:** not all reducers support (e.g. median)
 
 ## In-Lecture Exercise 3: Combiner Impact

@@ -140,13 +140,13 @@
 **Goal:** Enforce formal framing and guarantees for distributed computation topics.
 
 **Todo**
-- [ ] Add **Problem Framing** for global aggregation costs.
-- [ ] Formalize Map/Shuffle/Reduce model with notation.
-- [ ] State associativity/commutativity conditions explicitly.
-- [ ] Explain communication vs local computation trade-offs.
-- [ ] Treat data skew as probabilistic imbalance; add mitigation.
-- [ ] Ensure equations have interpretation + engineering implication.
-- [ ] Keep ≤6 bullets per slide, ≤12 words per bullet.
+- [x] Add **Problem Framing** for global aggregation costs.
+- [x] Formalize Map/Shuffle/Reduce model with notation.
+- [x] State associativity/commutativity conditions explicitly.
+- [x] Explain communication vs local computation trade-offs.
+- [x] Treat data skew as probabilistic imbalance; add mitigation.
+- [x] Ensure equations have interpretation + engineering implication.
+- [x] Keep ≤6 bullets per slide, ≤12 words per bullet.
 
 ---
 
