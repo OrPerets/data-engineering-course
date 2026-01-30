@@ -131,37 +131,29 @@ skinparam component<<failure>> {
 
 '=================================================
 
-' ETL PIPELINE OVERVIEW
+' ETL PIPELINE OVERVIEW - Mixed layout for PPTX
+
 rectangle "SOURCES" #F8F9FA {
-    database "**DB / API**\n<size:10>Source systems</size>" as SRC1
-    database "**Files**\n<size:10>CSV / Parquet</size>" as SRC2
+    database "**DB / API**\n<size:10>Source</size>" as SRC1
+    database "**Files**\n<size:10>CSV/Parquet</size>" as SRC2
+    SRC1 -[hidden]down- SRC2
 }
 
-rectangle "EXTRACT" #F8F9FA {
-    component "**Extract**\n<size:10>Read + filter</size>" as EXTRACT_STEP <<Tool>>
-}
+component "**Extract**\n<size:10>Read + filter</size>" as EXTRACT_STEP <<Tool>>
 
-rectangle "STAGING" #F8F9FA {
-    database "**Staging**\n<size:10>Raw, validate, DLQ</size>" as STG
-}
+database "**Staging**\n<size:10>Raw, DLQ</size>" as STG
 
-rectangle "TRANSFORM" #F8F9FA {
-    component "**Transform**\n<size:10>Dedup / cast / validate</size>" as TRANSFORM_STEP <<Tool>>
-}
+component "**Transform**\n<size:10>Dedup/cast</size>" as TRANSFORM_STEP <<Tool>>
 
-rectangle "LOAD" #F8F9FA {
-    component "**Load**\n<size:10>MERGE / upsert (idempotent)</size>" as LOAD_STEP <<Agent>>
-}
+component "**Load**\n<size:10>MERGE</size>" as LOAD_STEP <<Agent>>
 
-rectangle "TARGET" #F8F9FA {
-    database "**Target**\n<size:10>DWH / lake</size>" as TGT
-}
+database "**Target**\n<size:10>DWH/Lake</size>" as TGT
 
-SRC1 --> EXTRACT_STEP
-SRC2 --> EXTRACT_STEP
-EXTRACT_STEP --> STG
-STG --> TRANSFORM_STEP
-TRANSFORM_STEP --> LOAD_STEP
-LOAD_STEP --> TGT
+SRC1 -right-> EXTRACT_STEP
+SRC2 -right-> EXTRACT_STEP
+EXTRACT_STEP -right-> STG
+STG -right-> TRANSFORM_STEP
+TRANSFORM_STEP -right-> LOAD_STEP
+LOAD_STEP -right-> TGT
 
 @enduml

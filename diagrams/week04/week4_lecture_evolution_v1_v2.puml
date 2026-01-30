@@ -131,31 +131,30 @@ skinparam component<<failure>> {
 
 '=================================================
 
-' EVOLUTION: v1 FULL REFRESH -> v2 INCREMENTAL + IDEMPOTENT
+' EVOLUTION: v1 FULL REFRESH -> v2 INCREMENTAL + IDEMPOTENT - Mixed layout for PPTX
+
 rectangle "v1 - Full refresh (does not scale)" #FFF3E0 {
     database "**Source**" as S1
     component "**Read full**\n<size:10>No watermark</size>" as R1 <<V1>>
     component "**INSERT**\n<size:10>Rerun duplicates</size>" as I1 <<V1>>
-    database "**Target**\n<size:10>Full scan each run</size>" as T1
+    database "**Target**\n<size:10>Full scan</size>" as T1
+    S1 -right-> R1
+    R1 -right-> I1
+    I1 -right-> T1
 }
-S1 --> R1
-R1 --> I1
-I1 --> T1
 
 rectangle "v2 - Incremental + idempotent" #E8F5E9 {
     database "**Source**" as S2
     component "**Read slice**\n<size:10>Watermark</size>" as R2 <<V2>>
     database "**Staging**\n<size:10>Dedup</size>" as ST2
     component "**MERGE**\n<size:10>Idempotent</size>" as M2 <<V2>>
-    database "**Target**\n<size:10>No duplicates</size>" as T2
-    database "**Control**\n<size:10>last_watermark</size>" as C2
+    database "**Target**\n<size:10>No dups</size>" as T2
+    database "**Control**\n<size:10>watermark</size>" as C2
+    S2 -right-> R2
+    R2 -right-> ST2
+    ST2 -right-> M2
+    M2 -right-> T2
+    M2 -down-> C2 : "update"
 }
-S2 --> R2
-R2 --> ST2
-ST2 --> M2
-M2 --> T2
-M2 --> C2 : "after success"
-
-R1 -[hidden]right- R2
 
 @enduml

@@ -131,31 +131,22 @@ skinparam component<<failure>> {
 
 '=================================================
 
-' EXECUTION FLOW: TRIGGER TO COMMIT
-rectangle "TRIGGER" #F8F9FA {
-    component "**Schedule / Event**\n<size:10>Run job</size>" as TRIGGER1 <<Agent>>
-}
+' EXECUTION FLOW: TRIGGER TO COMMIT - Mixed layout for PPTX
 
-rectangle "READ" #F8F9FA {
-    component "**Read source**\n<size:10>WHERE modified_at > watermark</size>" as READ1 <<Tool>>
-}
+component "**Schedule**\n<size:10>Trigger job</size>" as TRIGGER1 <<Agent>>
 
-rectangle "TRANSFORM" #F8F9FA {
-    component "**Transform**\n<size:10>Dedup / cast</size>" as TRANSFORM_STEP <<Tool>>
-}
+component "**Read source**\n<size:10>WHERE ts > watermark</size>" as READ1 <<Tool>>
 
-rectangle "WRITE" #F8F9FA {
-    component "**Write target**\n<size:10>MERGE / partition</size>" as WRITE1 <<Tool>>
-}
+component "**Transform**\n<size:10>Dedup / cast</size>" as TRANSFORM_STEP <<Tool>>
 
-rectangle "STATE" #F8F9FA {
-    database "**Control table**\n<size:10>last_watermark</size>" as STATE1
-}
+component "**Write target**\n<size:10>MERGE</size>" as WRITE1 <<Tool>>
 
-TRIGGER --> READ : "1"
-READ --> TRANSFORM_STEP : "2"
-TRANSFORM_STEP --> WRITE : "3"
-WRITE --> STATE : "4 Update watermark\n(after success)"
-STATE --> READ : "watermark + safety buffer"
+database "**Control**\n<size:10>watermark</size>" as STATE1 <<Config>>
+
+TRIGGER1 -right-> READ1 : "1"
+READ1 -right-> TRANSFORM_STEP : "2"
+TRANSFORM_STEP -right-> WRITE1 : "3"
+WRITE1 -down-> STATE1 : "4 update"
+STATE1 -up-> READ1 : "get watermark"
 
 @enduml

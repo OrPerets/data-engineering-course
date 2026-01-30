@@ -131,39 +131,46 @@ skinparam component<<failure>> {
 
 '=================================================
 
-' PRACTICE: SOCIAL MEDIA ARCHITECTURE OPTIONS
-package "ACCESS PATTERNS" #F8F9FA {
+' PRACTICE: SOCIAL MEDIA ARCHITECTURE OPTIONS - Mixed layout for PPTX
+
+rectangle "ACCESS PATTERNS" #F8F9FA {
     component "**User profile**\n<size:10>user_id -> KV</size>" as AP1
     component "**Posts by user**\n<size:10>user_id -> list</size>" as AP2
     component "**Likes by post**\n<size:10>post_id -> list</size>" as AP3
     component "**Trending**\n<size:10>aggregation</size>" as AP4
+    AP1 -[hidden]right- AP2
+    AP2 -[hidden]right- AP3
+    AP3 -[hidden]right- AP4
 }
 
-package "SQL OPTION" #FFEBEE {
-    database "**Users**\n<size:10>Partition by user_id</size>" as USQL
-    database "**Posts**\n<size:10>Partition by user_id</size>" as PSQL
-    database "**Likes**\n<size:10>Partition by post_id</size>" as LSQL
-    component "**Join-heavy**\n<size:10>Cross-partition risk</size>" as SQLJOIN <<Bad>>
+rectangle "SQL OPTION" #FFEBEE {
+    database "**Users**\n<size:10>user_id</size>" as USQL
+    database "**Posts**\n<size:10>user_id</size>" as PSQL
+    database "**Likes**\n<size:10>post_id</size>" as LSQL
+    component "**Join-heavy**\n<size:10>Cross-partition</size>" as SQLJOIN <<Bad>>
+    USQL -[hidden]right- PSQL
+    PSQL -[hidden]right- LSQL
 }
 
-package "NoSQL OPTION" #E8F5E9 {
-    database "**Users+Posts**\n<size:10>Co-locate by user_id</size>" as UNOSQL
-    database "**Likes**\n<size:10>Partition by post_id</size>" as LNOSQL
-    component "**Single-partition**\n<size:10>Low-latency reads</size>" as NOSQLFAST <<success>>
+rectangle "NoSQL OPTION" #E8F5E9 {
+    database "**Users+Posts**\n<size:10>Co-locate</size>" as UNOSQL
+    database "**Likes**\n<size:10>post_id</size>" as LNOSQL
+    component "**Single-partition**\n<size:10>Low-latency</size>" as NOSQLFAST <<success>>
+    UNOSQL -[hidden]right- LNOSQL
 }
 
-package "ANALYTICS" #F8F9FA {
-    database "**Aggregate Store**\n<size:10>Trending / batch</size>" as AGG
-}
+database "**Aggregate**\n<size:10>Trending</size>" as AGG
 
-AP1 --> USQL
-AP1 --> UNOSQL
-AP2 --> PSQL
-AP2 --> UNOSQL
-AP3 --> LSQL
-AP3 --> LNOSQL
-AP4 --> AGG : "batch / SQL"
-USQL --> SQLJOIN
-UNOSQL --> NOSQLFAST
+AP1 -down-> USQL
+AP1 -down-> UNOSQL
+AP2 -down-> PSQL
+AP2 -down-> UNOSQL
+AP3 -down-> LSQL
+AP3 -down-> LNOSQL
+AP4 -down-> AGG
+USQL -down-> SQLJOIN
+PSQL -down-> SQLJOIN
+UNOSQL -down-> NOSQLFAST
+LNOSQL -down-> NOSQLFAST
 
 @enduml

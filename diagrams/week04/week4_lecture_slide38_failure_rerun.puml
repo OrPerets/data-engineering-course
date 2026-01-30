@@ -131,25 +131,28 @@ skinparam component<<failure>> {
 
 '=================================================
 
-' FAILURE: PARTIAL RUN AND IDEMPOTENT RERUN
-package "RUN 1" #F8F9FA {
-    component "**Process P1**\n<size:10>2025-12-01</size>" as P1 <<Tool>>
-    component "**Process P2**\n<size:10>2025-12-02</size>" as P2 <<Tool>>
-    component "**Process P3**\n<size:10>2025-12-03</size>" as P3 <<Tool>>
+' FAILURE: PARTIAL RUN AND IDEMPOTENT RERUN - Mixed layout for PPTX
+
+rectangle "RUN 1" #F8F9FA {
+    component "**P1**\n<size:10>2025-12-01</size>" as P1 <<Tool>>
+    component "**P2**\n<size:10>2025-12-02</size>" as P2 <<Tool>>
+    component "**P3**\n<size:10>2025-12-03</size>" as P3 <<Bad>>
+    P1 -[hidden]right- P2
+    P2 -[hidden]right- P3
 }
 
 database "**Target**\n<size:10>P1, P2 written</size>" as TARGET
 
-package "RUN 2 (Rerun)" #F8F9FA {
-    component "**Skip P1, P2**\n<size:10>Already committed</size>" as SKIP <<Agent>>
-    component "**Process P3 only**\n<size:10>Idempotent write</size>" as P3B <<Tool>>
+rectangle "RUN 2 (Rerun)" #E8F5E9 {
+    component "**Skip P1, P2**\n<size:10>Committed</size>" as SKIP <<Agent>>
+    component "**Process P3**\n<size:10>Idempotent</size>" as P3B <<Tool>>
+    SKIP -right-> P3B : "resume"
 }
 
-P1 --> TARGET : "OK"
-P2 --> TARGET : "OK"
-P3 -[#C62828]-> TARGET : "fails before write"
+P1 -down-> TARGET : "OK"
+P2 -down-> TARGET : "OK"
+P3 -[#C62828]down-> TARGET : "fails"
 
-SKIP --> P3B : "resume"
-P3B --> TARGET : "write P3 only"
+P3B -down-> TARGET : "write P3"
 
 @enduml

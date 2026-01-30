@@ -131,44 +131,40 @@ skinparam component<<failure>> {
 
 '=================================================
 
-' PARALLEL PIPELINE OVERVIEW (MAPREDUCE)
-rectangle "INPUT" #F8F9FA {
-    database "**Input Data**\n<size:10>Split into chunks</size>" as INP
+' PARALLEL PIPELINE OVERVIEW (MAPREDUCE) - Mixed layout for PPTX
+
+database "**Input**\n<size:10>Chunks</size>" as INP
+
+component "**Split**\n<size:10>Partition</size>" as SPLIT
+
+rectangle "MAP PHASE" #E8F5E9 {
+    component "**W1**\n<size:10>Map</size>" as W1 <<Tool>>
+    component "**W2**\n<size:10>Map</size>" as W2 <<Tool>>
+    component "**W3**\n<size:10>Map</size>" as W3 <<Tool>>
+    W1 -[hidden]down- W2
+    W2 -[hidden]down- W3
 }
 
-rectangle "DIVIDE" #F8F9FA {
-    component "**Split / Partition**\n<size:10>Independent chunks</size>" as SPLIT
+component "**Shuffle**\n<size:10>Group by key</size>" as SORT_XFER <<Agent>>
+
+rectangle "REDUCE PHASE" #E1F5FE {
+    component "**R1**\n<size:10>Aggregate</size>" as R1 <<Tool>>
+    component "**R2**\n<size:10>Aggregate</size>" as R2 <<Tool>>
+    R1 -[hidden]down- R2
 }
 
-rectangle "PARALLEL WORKERS" #F8F9FA {
-    component "**Worker 1**\n<size:10>Map</size>" as W1 <<Tool>>
-    component "**Worker 2**\n<size:10>Map</size>" as W2 <<Tool>>
-    component "**Worker 3**\n<size:10>Map</size>" as W3 <<Tool>>
-}
+database "**Result**\n<size:10>Output</size>" as OUT
 
-rectangle "COMBINE" #F8F9FA {
-    component "**Shuffle / Group**\n<size:10>Network by key</size>" as SORT_XFER <<Agent>>
-}
-
-rectangle "REDUCE" #F8F9FA {
-    component "**Reducer 1**\n<size:10>Aggregate</size>" as R1 <<Tool>>
-    component "**Reducer 2**\n<size:10>Aggregate</size>" as R2 <<Tool>>
-}
-
-rectangle "OUTPUT" #F8F9FA {
-    database "**Result**\n<size:10>Aggregated output</size>" as OUT
-}
-
-INP --> SPLIT
-SPLIT --> W1 : "chunk 1"
-SPLIT --> W2 : "chunk 2"
-SPLIT --> W3 : "chunk 3"
-W1 --> SORT_XFER
-W2 --> SORT_XFER
-W3 --> SORT_XFER
-SORT_XFER --> R1 : "key group A"
-SORT_XFER --> R2 : "key group B"
-R1 --> OUT
-R2 --> OUT
+INP -right-> SPLIT
+SPLIT -right-> W1 : "c1"
+SPLIT -right-> W2 : "c2"
+SPLIT -right-> W3 : "c3"
+W1 -right-> SORT_XFER
+W2 -right-> SORT_XFER
+W3 -right-> SORT_XFER
+SORT_XFER -right-> R1 : "keys A"
+SORT_XFER -right-> R2 : "keys B"
+R1 -right-> OUT
+R2 -right-> OUT
 
 @enduml
