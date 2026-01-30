@@ -1,353 +1,419 @@
-# Week 7: Advanced MapReduce and Data Skew
+# Week 7: Advanced MapReduce — Skew, Joins, and Cost Optimization
 
 ## Purpose
-- Real-world MapReduce jobs fail due to skew and shuffle cost
-- Engineers must reason about partition balance, combiners, salting
-- Bridges theory (Week 6) and production debugging/tuning
+- Production MapReduce fails due to skew and shuffle cost
+- Formal analysis of partitioning, combiners, and salting
+- Engineers must reason about load balance and communication
 
-## Learning Objectives (1/2)
-- Define data skew and why it causes OOM and stragglers
-- Describe the shuffle: partition, sort, transfer
-- Explain when and how a combiner reduces I/O
-- State the contract of a custom partitioner
-
-## Learning Objectives (2/2)
-- Design a salted-key scheme to mitigate hot key in joins
+## Learning Objectives
+- Formalize data skew and its impact on job latency
+- Analyze combiner correctness and communication reduction
+- Design salted-key schemes for hot key mitigation
 - Estimate intermediate data size and shuffle cost
-- Recognize skew from job metrics (reducer variance, duration)
-- List failure modes: OOM, timeout, straggler
+- Implement join algorithms in MapReduce
 
-## Diagram Manifest
-- Slide 12 → week7_lecture_slide12_system_overview.puml
-- Slide 19 → week7_lecture_slide19_example_shuffle.puml
-- Slide 24 → week7_lecture_slide24_execution_flow.puml
-- Slide 28 → week7_lecture_slide28_failure_skew.puml
+---
 
-## The Real Problem This Lecture Solves
+# Part I: The Skew Problem — Formal Treatment
 
-## Production Failure
-- MapReduce jobs fail or stall not because logic is wrong
-- One reducer gets most data (skew)
-- Or shuffle dominates runtime (data movement)
+## Skew: Mathematical Definition
+- $R$ reducers, $N$ total values to process
+- $n_i$ = values received by reducer $i$
+- **Perfectly balanced:** $n_i = \frac{N}{R}$ for all $i$
 
-## Hot Key Problem
-- One key with huge value set → one reducer OOM
-- Job latency = that reducer's time
-
-## Shuffle Cost
-- Intermediate (k,v) size can match input
-- No combiner ⇒ network and disk I/O dominate
-
-## The System We Are Building
-- **Context:** Week 6 gave MapReduce model
-- Here we make it production-ready for skewed data
-- **Same pipeline:** event analytics by user_id or session_id
-- Word count; join Users (small) with Clicks (large)
-- **Engineering goal:** balance keys; cut shuffle; detect skew
-
-## Cost of Naïve Design (Advanced MapReduce)
-
-## No Combiner
-- Emit (word, 1) for every occurrence
-- Shuffle size ≈ map output
-- For 1 TB text, intermediate data is similar scale
-- Combiner cuts bytes sent and spilled
-
-## Default Partitioner on Skewed Key
-- Join on user_id; one bot has 1B clicks
-- All 1B (user_id, click) go to one reducer ⇒ OOM
-
-## No Salting on Hot Key
-- Same join; without splitting hot key
-- Job cannot scale; salting trades replication for balance
-
-## Production Cost
-- Job retries, SLA misses, on-call
-- Fixing skew post-incident is expensive
-
-## Core Concepts (1/2)
-- **Shuffle:** framework groups all (k,v) by k
-- Same key → same reducer
-- **Partition function:** `partition_id = hash(k) mod R`
-- R = number of reducers
-- **Sort:** within each partition, keys sorted before reduce
-
-## Core Concepts (2/2)
-- **Guarantees:** all pairs with same key reach one reducer
-- Order of values undefined unless secondary sort
-- **What breaks at scale:** one key with huge value set
-- **Cost:** shuffle dominates when intermediate data is large
-
-## Combiner Cost Impact
-- Let \(E\) = total map emits, \(s\) = bytes per pair
+## Skew Ratio
 $$
-B_{\text{shuffle}}^{\text{no comb}} = E \cdot s
+\sigma = \frac{\max_i n_i}{N/R} = \frac{R \cdot \max_i n_i}{N}
 $$
-- Interpretation: shuffle cost scales with total emits
-- Engineering implication: heavy hitters inflate network and disk
-- With combiner, \(U_m\) = unique keys per mapper \(m\)
+- **Interpretation:** Factor by which hottest reducer exceeds average
+- $\sigma = 1$: Perfect balance
+- $\sigma = 100$: Hottest reducer has 100× average load
+
+## Impact on Job Completion Time
+- Reducer $i$ runtime: $T_i = \alpha \cdot n_i$ for constant $\alpha$
+- Job completion: $T_{\text{job}} = \max_i T_i = \alpha \cdot \max_i n_i$
+- With skew $\sigma$:
 $$
-B_{\text{shuffle}}^{\text{comb}} = \left(\sum_m U_m\right) s
+T_{\text{job}} = \sigma \cdot T_{\text{balanced}}
 $$
-- Interpretation: local aggregation reduces bytes if repeats are common
-- Engineering implication: safe only for associative + commutative ops
+- **Insight:** Skew directly multiplies job latency
 
-## Salting Hot Keys
-- Hot key with \(n\) values, salt into \(S\) subkeys
+## Skew and Memory Failure
+- Reducer memory limit: $M$ bytes
+- Value size: $s$ bytes
+- **Constraint:** $n_i \cdot s \leq M$
+- **Failure condition:** $\max_i n_i > \frac{M}{s}$
+- Hot key with $n^* = 10^9$ values, $s = 100$ B → needs 100 GB
+
+---
+
+# Part II: Why Skew Emerges — Zipf's Law
+
+## Zipf Distribution
+- Frequency of $r$-th most common key:
 $$
-\text{Load}_{\text{per reducer}} \approx \frac{n}{S}
+f(r) = \frac{C}{r^\alpha}
 $$
-- Interpretation: salting splits a hot key across reducers
-- Engineering implication: reduces skew at cost of extra combine step
+- $\alpha \approx 1$ for natural language, web traffic, user behavior
+- **Implication:** Top 1% of keys → 50%+ of values
 
-## Shuffle Anatomy
-- **Partition:** each map output (k,v) sent to reducer `hash(k) mod R`
-- **Sort:** reducer receives key and sorted iterator of values
-- **Transfer:** map-side spill to disk; fetch by reducers; merge-sort
+## Example: User Click Distribution
+- 10M users, 1B clicks total
+- Zipf with $\alpha = 1$:
+- Top user: $\frac{1B}{\ln(10M)} \approx 62M$ clicks
+- Top 100 users: ~40% of all clicks
+- **Consequence:** Hash partitioning concentrates hot users
 
-## In-Lecture Exercise 2: Shuffle Size Estimate
-- Assume 1B lines, ~10 words/line ⇒ 10B emits
-- Each (word,1) is ~20 bytes
-- Estimate shuffle bytes and average per reducer (R = 100)
+## The Long Tail Problem
+- Most keys have few values (easy to process)
+- Few keys have many values (cause OOM/stragglers)
+- **Cannot assume uniform distribution**
 
-## In-Lecture Exercise 2: Solution (1/2)
-- Total emits ≈ 10B pairs
-- Shuffle size ≈ 10B × 20 B = 200 GB
+---
 
-## In-Lecture Exercise 2: Solution (2/2)
-- Average per reducer: 200 GB / 100 ≈ 2 GB
-- Hot keys make per-reducer load uneven
+# Part III: Combiner — Formal Analysis
 
-## In-Lecture Exercise 2: Takeaway
-- Shuffle bytes scale with map output volume
-- Average load hides hot-key skew risk
+## Combiner Contract
+- **Input:** Stream of $(k, v)$ pairs from map
+- **Output:** $(k, v')$ where $v' = v_1 \oplus v_2 \oplus \cdots$
+- **Requirement:** $\oplus$ is associative and commutative
+$$
+(a \oplus b) \oplus c = a \oplus (b \oplus c)
+$$
+$$
+a \oplus b = b \oplus a
+$$
 
-## Combiner
-- **Role:** optional local reduce on map output before shuffle
-- Must be associative and commutative where used
-- **Effect:** reduces bytes sent over network and disk
-- **Example:** word count: combiner sums per map task
+## Communication Reduction Analysis
+- Without combiner: $E$ total map emissions
+- With combiner on mapper $m$: $U_m$ unique keys
+- **Shuffle without combiner:** $C_0 = E \cdot s$
+- **Shuffle with combiner:** $C_1 = \left(\sum_m U_m\right) \cdot s$
 
-## Data Context: Word Count + Clicks
-- Word count: keys = {data, eng, fun}
-- Clicks–Users join on user_id
-- Hot key example: one user has far more clicks
+## Reduction Factor
+$$
+\rho = \frac{C_0}{C_1} = \frac{E}{\sum_m U_m}
+$$
+- **High $\rho$:** Many duplicates per mapper (word count)
+- **Low $\rho$:** Few duplicates (distinct keys per mapper)
 
-## In-Lecture Exercise 1: Combiner Check
-- Define a combiner in one sentence
-- Why is combiner safe for word count but risky for count distinct?
+## Example: Word Count on 1B Lines
+- 1B lines, 10 words/line → $E = 10B$ emissions
+- 100K unique words, 10K mappers
+- Without combiner: shuffle 10B pairs
+- With combiner: ~1B unique (key, count) pairs
+- **Reduction:** $\rho \approx 10\times$
 
-## In-Lecture Exercise 1: Solution (1/2)
-- Combiner = local reduce on map output before shuffle
-- It reduces bytes sent over network and disk
+## Combiner Validity Examples
 
-## In-Lecture Exercise 1: Solution (2/2)
-- Word count sum is associative and commutative
-- Count distinct needs set logic; naïve sum overcounts
+| Operation | Formula | Associative | Commutative | Valid? |
+|-----------|---------|-------------|-------------|--------|
+| Sum | $a + b$ | ✓ | ✓ | ✓ |
+| Product | $a \times b$ | ✓ | ✓ | ✓ |
+| Max | $\max(a, b)$ | ✓ | ✓ | ✓ |
+| Mean | $\frac{a+b}{2}$ | ✗ | ✓ | ✗ |
+| Variance | — | ✗ | ✗ | ✗ |
+| Distinct | $|A \cup B|$ | ✗ | — | ✗ |
 
-## In-Lecture Exercise 1: Takeaway
-- Only use combiners when reduce is associative/commutative
-- Wrong combiner logic corrupts results
+## Computing Mean with Combiner
+- **Trick:** Emit $(k, (sum, count))$ instead of $(k, value)$
+- Combiner: $(sum_1, count_1) \oplus (sum_2, count_2) = (sum_1 + sum_2, count_1 + count_2)$
+- Reduce: $mean = \frac{sum}{count}$
+- **Now associative and commutative**
 
-## Partitioner
-- **Default:** `hash(key) mod numReducers`
-- Uniform hash spreads keys
-- **Custom:** override to control which reducer gets which keys
-- E.g. range partition, avoid known hot keys
-- **Contract:** deterministic; same key always same partition
+---
 
-## Data Skew Definition
-- **Skew:** unequal distribution of data per key
-- Some keys have far more values than others
-- **Zipfian:** many real distributions are heavy-tail
-- Few keys dominate
-- Key counts are random; heavy-tail implies imbalance
-- **Metric:** max reducer size / mean → high implies skew
+# Part IV: Salting — Hot Key Distribution
 
-## In-Lecture Exercise 3: Skew Case — Clicks Join
-- Clicks–Users join on user_id; R = 3 reducers
-- user_id 101 has 5 clicks; 102 has 2; 103 has 1
-- Which reducer gets key 101? How many clicks land there?
-- At scale, 101 has 1B clicks: what failure occurs?
-- One sentence: what does salting do to the key?
+## Salting Algorithm
+- **Problem:** Key $k^*$ has $n^*$ values; all go to one reducer
+- **Solution:** Append random salt $s \in [0, S-1]$
+- **Emit:** $(k^* || s, v)$ instead of $(k^*, v)$
+- **Effect:** Values distributed across $S$ reducers
 
-## In-Lecture Exercise 3: Solution (1/2)
-- Reducer for key 101 gets 5 click records in sample
-- With 1B clicks, one reducer receives 1B values
-- That reducer becomes the straggler or OOMs
+## Salted Key Distribution
+- Original: reducer $\pi(k^*)$ gets all $n^*$ values
+- Salted: each reducer $\pi(k^* || s)$ gets $\approx \frac{n^*}{S}$ values
+$$
+\text{Load per salted reducer} = \frac{n^*}{S}
+$$
 
-## In-Lecture Exercise 3: Solution (2/2)
-- Salting appends a random suffix to hot keys
-- Hot key values spread across N reducers
+## Two-Phase Aggregation
+- **Phase 1:** Aggregate by salted key
+  - Emit $(k || s, \oplus_s v)$ for each salt $s$
+- **Phase 2:** Aggregate by original key
+  - Emit $(k, \oplus_s (\oplus_s v))$
+- **Correctness:** Requires $\oplus$ associative
 
-## In-Lecture Exercise 3: Takeaway
-- Skew turns parallel jobs into single-reducer bottlenecks
-- Salting trades small replication for balance
+## Salting Cost Trade-off
+- **Benefit:** Load balance; no OOM
+- **Cost:** Two MapReduce jobs instead of one
+- **Break-even:** When hot key would cause failure
 
-## System / Pipeline Overview
-- Input splits → Map (emit (k,v)) → Partition → Shuffle → Reduce
-- Skew mitigation: at partition, map (combiner), or key design (salting)
-![](../../diagrams/week7/week7_lecture_slide12_system_overview.png)
+## Salting for Joins
+- **Problem:** Join $R \bowtie S$ on key $k$; key $k^*$ has 1B rows in $S$
+- **Solution:**
+  1. Salt $S$: emit $(k || s, v_S)$ for $s \in [0, S-1]$
+  2. Replicate $R$: emit $(k || s, v_R)$ for all $s \in [0, S-1]$
+- **Reducer:** Each gets $\frac{1}{S}$ of hot key from $S$, all of $R$ for that key
 
-## Guarantees and What Breaks
-- **Guarantee:** same key → same reducer; complete grouping
-- **No guarantee:** order of values per key; load balance
-- **Break:** skew causes one reducer to get most data
+## Salting Join Cost
+- Without salting: $C = |R| + |S|$; one reducer gets $|S_{k^*}|$
+- With salting ($S$ buckets for hot key):
+$$
+C = |R_{hot}| \cdot S + |R_{cold}| + |S|
+$$
+- **Trade-off:** Replicate small table rows for hot keys
 
-## Running Example — Data & Goal
-- **Input:** short lines of text ("data eng", "data fun", "eng data")
-- Block-sized splits
-- **Goal:** word count: (word, total_count)
-- **Schema:** input (line_offset, line_text); map emit (word, 1)
+---
 
-## Running Example — Step-by-Step (1/4)
-- **Map:** read split; tokenize each line
-- For each word emit (word, 1)
-- Example: ("data eng", "data fun") → ("data",1), ("eng",1), ("data",1), ("fun",1)
+# Part V: Join Algorithms in MapReduce
 
-## Running Example — Step-by-Step (2/4)
-- **Shuffle:** partition by hash(word)
-- E.g. "data"→P0, "eng"→P1, "fun"→P2
-- All ("data", 1) go to same reducer
-- Reducers receive (key, iterator of values)
+## Reduce-Side Join (Repartition Join)
 
-## Running Example — Step-by-Step (3/4)
-- **Reduce:** for each key, sum the values
-- Emit (key, sum)
-- Reducer for "data": values [1,1,...] → ("data", 2)
-- Reducer for "eng": [1] → ("eng", 1)
+### Algorithm
+1. **Map R:** $(k, v_R) \rightarrow (k, ("R", v_R))$
+2. **Map S:** $(k, v_S) \rightarrow (k, ("S", v_S))$
+3. **Shuffle:** Group by $k$
+4. **Reduce:** Cross-product R-tagged and S-tagged values
 
-## Running Example — Step-by-Step (4/4)
-- **Output:** ("data", 2), ("eng", 1), ("fun", 1)
-- With combiner: map-side pre-aggregation
-- Could emit ("data", 2) once per map; less shuffle
+### Cost Analysis
+$$
+C_{\text{shuffle}} = |R| + |S|
+$$
+$$
+T_{\text{reduce}} = O\left(\sum_k |R_k| \cdot |S_k|\right)
+$$
 
-## Running Example — Shuffle Groups (Diagram)
-- Map emits (word, 1); partition by hash(word)
-- Skew: if one word appears in most lines, one reducer gets most
-![](../../diagrams/week7/week7_lecture_slide19_example_shuffle.png)
+### Memory Requirement
+- Must buffer one side for each key
+- **Failure:** Key $k$ with $|R_k| = 10^6$, $|S_k| = 10^6$ → $10^{12}$ output pairs
 
-## Running Example — Engineering Conclusion
-- **Trade-off:** combiner reduces shuffle; adds CPU
-- Must be semantically valid (sum ok; distinct count not)
-- **Scale:** for 1 TB text, combiner cuts network and spill
+## Map-Side Join (Broadcast Join)
 
-## Cost & Scaling Analysis (1/3)
-- **Time model:** T ≈ T_map + T_shuffle + T_reduce
-- T_shuffle often dominant
-- **Map:** O(input size / parallelism)
-- **Reduce:** O(intermediate size per reducer)
-- **Bottleneck:** reducer that receives most data (skew)
+### Condition
+- One table fits in mapper memory: $|R| \leq M$
 
-## Cost & Scaling Analysis (2/3)
-- **Memory:** map output buffer → spill when full
-- Reduce fetches partitions → merge
-- **Storage:** intermediate (k,v) written to local disk
-- Read by reducers over network
-- **Spill:** multiple spills merged with sort
+### Algorithm
+1. Load $R$ into hash table on each mapper
+2. Stream $S$; for each $(k, v_S)$, probe $R[k]$
+3. Emit $(k, v_R, v_S)$ for each match
 
-## Cost & Scaling Analysis (3/3)
-- **Network:** shuffle bytes ≈ map output (minus combiner)
-- **Throughput:** limited by disk and network
-- Skew causes one reducer to receive most traffic
-- **Latency:** job latency = max(reducer finish times)
+### Cost Analysis
+$$
+C_{\text{shuffle}} = 0
+$$
+$$
+C_{\text{broadcast}} = |R| \cdot P_m
+$$
+- No shuffle of $S$; broadcast $R$ to all mappers
 
-## Execution Flow — Map to Reduce
-- 1. Map: read split → emit (k,v)
-- 2. Shuffle: partition → sort → transfer
-- 3. Reduce: consume (k, [v]) → emit (k,v')
-![](../../diagrams/week7/week7_lecture_slide24_execution_flow.png)
+### When to Use
+- $|R| \ll |S|$ (orders of magnitude)
+- $|R| < \text{mapper memory}$
+- Join selectivity doesn't explode output
 
-## Pitfalls & Failure Modes (1/3)
-- **Skew:** one or few keys get majority of values
-- One reducer OOM or very slow
-- **Straggler:** one task runs much longer; job waits
-- **Hot key:** same key in join or group-by
+## Semi-Join (Filter Join)
 
-## Pitfalls & Failure Modes (2/3)
-- **OOM:** reducer receives more (k,v) than heap can hold
-- No spill on reduce side for values
-- **Timeout:** single reducer exceeds allowed time
-- **Default partitioner:** hash(key) can still concentrate keys
+### Use Case
+- Large $S$, small $R$, but only need $S$ rows matching $R$
 
-## Pitfalls & Failure Modes (3/3)
-- **Detection:** monitor reducer input sizes, task durations
-- High variance → skew
-- **Mitigation:** combiner, custom partitioner, salting
+### Algorithm
+1. **Job 1:** Extract distinct keys from $R$: $K_R = \{k \mid k \in R\}$
+2. **Job 2:** Broadcast $K_R$; filter $S$ to rows where $k \in K_R$
+3. **Job 3:** Standard join on filtered $S$
 
-## Failure Scenario — Hot Key to OOM
-- **Scenario:** join Users (small) with Clicks (large)
-- user_id 888 is bot with 1B clicks
-- Default partition: all 1B (888, click) go to one reducer
-- ⇒ OOM
-![](../../diagrams/week7/week7_lecture_slide28_failure_skew.png)
+### Cost
+- Reduces $|S|$ before expensive shuffle
+- Useful when join selectivity is low
 
-## Skew Detection
-- **Metrics:** reducer input bytes or record count
-- Max / mean or standard deviation
-- **Logs:** task duration per partition
-- **Sampling:** sample keys to estimate per-key cardinality
+## Join Algorithm Decision Tree
 
-## Skew Mitigation — Salting (Concept)
+| Condition | Algorithm | Shuffle Cost |
+|-----------|-----------|--------------|
+| $\|R\| < M$ | Broadcast | $0$ |
+| Skewed key $k^*$ | Salted reduce-side | $\|R_{hot}\| \cdot S + \|R\| + \|S\|$ |
+| Low selectivity | Semi-join | $\|K_R\| + \|S_{filtered}\| + \|R\|$ |
+| General case | Reduce-side | $\|R\| + \|S\|$ |
 
-## Salting Approach
-- For hot key K, emit (K-1, v), (K-2, v), ... (K-N, v)
-- Replicate small-table row for K to all N partitions
-- Each reducer gets 1/N of hot key data
-- Join still correct after grouping by K
+---
 
-## Salting Cost
-- Small table row replicated N times for hot key
-- Acceptable if small table is small
+# Part VI: Cost Estimation Formulas
 
-## Skew Mitigation — Combiner and Partitioner
+## Shuffle Size Estimation
+$$
+B_{\text{shuffle}} = N_{\text{emit}} \times s_{\text{pair}}
+$$
+- $N_{\text{emit}}$: Total map emissions
+- $s_{\text{pair}}$: Average bytes per (key, value) pair
 
-## Combiner
-- Reduces map output size
-- Use when reduce is associative (sum, max)
+## Example Calculation
+- 1B records, 10 words/record → 10B word occurrences
+- Each $(word, 1)$: 20 bytes
+- **Without combiner:** $10B \times 20 = 200$ GB shuffle
+- **With combiner:** $\sim 1B$ unique pairs → 20 GB shuffle
 
-## Custom Partitioner
-- Send known hot keys to dedicated reducers or spread
-- **Trade-off:** combiner is transparent to logic
-- Partitioner and salting require key design
+## Reducer Memory Estimation
+$$
+M_{\text{reducer}} = \max_k |V_k| \times s_{\text{value}}
+$$
+- $|V_k|$: Number of values for key $k$
+- **Constraint:** $M_{\text{reducer}} < M_{\text{heap}}$
 
-## Best Practices (1/2)
-- Use combiners when reduce is associative and commutative
-- Sample or profile key distribution before large jobs
-- Prefer salting for joins with one very large side
-- Set reducer count based on data size
-- Avoid too few (skew) or too many (overhead)
+## Network Time Estimation
+$$
+T_{\text{network}} = \frac{B_{\text{shuffle}}}{B_{\text{bandwidth}} \times P}
+$$
+- $B_{\text{bandwidth}}$: Per-node bandwidth
+- $P$: Degree of parallelism
 
-## Best Practices (2/2)
-- Monitor reducer input size variance; alert on high skew
-- Document partition strategy when using custom partitioner
-- Test with skewed samples (inject hot key)
-- Prefer engine features (Spark AQE) when available
-- Understand underlying MR semantics
+## Worked Example
+- **Input:** 1TB of logs, 100B per record → 10B records
+- **Map:** Emit $(user\_id, 1)$; 10B emissions
+- **Pair size:** 20 bytes
+- **Shuffle:** $10B \times 20 = 200$ GB
+- **Bandwidth:** 10 Gbps = 1.25 GB/s per node; 100 nodes
+- **Time:** $\frac{200}{1.25 \times 100} = 1.6$ seconds (theoretical minimum)
+- **With skew:** Hottest reducer has 10× average → 16 seconds
+
+---
+
+# Part VII: Shuffle Internals
+
+## Shuffle Phases
+1. **Partition:** Map output → bucket by $h(k) \mod R$
+2. **Spill:** Buffer full → sort → write to disk
+3. **Merge:** Multiple spills → single sorted file per mapper
+4. **Transfer:** Reducer fetches partitions from all mappers
+5. **Merge-sort:** Reducer merges fetched partitions
+
+## Shuffle Cost Components
+- **Disk I/O:** Spill writes + merge reads + reducer reads
+- **Network:** Transfer from mappers to reducers
+- **CPU:** Sorting and merging
+$$
+T_{\text{shuffle}} = T_{\text{spill}} + T_{\text{transfer}} + T_{\text{merge}}
+$$
+
+## Optimization Levers
+| Lever | Impact | Trade-off |
+|-------|--------|-----------|
+| Larger buffer | Fewer spills | More memory per mapper |
+| Combiner | Less data to spill/transfer | CPU overhead |
+| Compression | Less transfer bytes | CPU for compress/decompress |
+| More reducers | More parallelism | More shuffle connections |
+
+---
+
+# Part VIII: Running Example — Skewed Join
+
+## Scenario
+- **Users table:** 10M users, 100 bytes/row → 1 GB
+- **Clicks table:** 1B clicks, 50 bytes/row → 50 GB
+- **Join:** `Users ⋈ Clicks ON user_id`
+- **Skew:** user_id 888 (bot) has 800M clicks
+
+## Reduce-Side Join Analysis
+- **Shuffle:** 1 GB (Users) + 50 GB (Clicks) = 51 GB
+- **Reducer for 888:** 800M clicks × 50 B = 40 GB
+- **Other reducers:** Average $\frac{200M}{999} \approx 200K$ clicks each
+- **Skew ratio:** $\frac{800M}{200K} = 4000\times$
+- **Result:** Reducer 888 OOMs or takes 4000× longer
+
+## Broadcast Join Analysis
+- **Condition:** Users (1 GB) fits in mapper memory
+- **Algorithm:** Load Users; stream Clicks; probe and emit
+- **Shuffle:** 0 GB
+- **Memory:** 1 GB hash table per mapper
+- **Result:** No skew; each mapper processes Clicks partition independently
+
+## Salted Join Analysis
+- **Hot key:** user_id 888 with 800M clicks
+- **Salt buckets:** S = 100
+- **Users:** Replicate 888's row 100 times; emit $(888||s, user\_data)$ for $s \in [0,99]$
+- **Clicks:** Emit $(888||hash(click\_id) \mod 100, click\_data)$
+- **Per-reducer load:** $\frac{800M}{100} = 8M$ clicks
+- **Memory:** 8M × 50 B = 400 MB (manageable)
+
+---
+
+# Part IX: Failure Modes and Detection
+
+## Failure Mode 1: Reducer OOM
+- **Cause:** Hot key with too many values
+- **Detection:** Monitor reducer heap usage
+- **Mitigation:** Salting, combiner, increase memory
+
+## Failure Mode 2: Straggler
+- **Cause:** Skew → one reducer much slower
+- **Detection:** Reducer duration variance; $\frac{\max T_i}{\text{median } T_i} > 5$
+- **Mitigation:** Salting, speculative execution
+
+## Failure Mode 3: Shuffle Timeout
+- **Cause:** Map output too large; disk/network saturated
+- **Detection:** Shuffle progress stalls
+- **Mitigation:** Combiner, compression, more reducers
+
+## Failure Mode 4: Incorrect Results
+- **Cause:** Invalid combiner (non-associative operation)
+- **Detection:** Results differ with/without combiner
+- **Mitigation:** Verify combiner correctness mathematically
+
+## Monitoring Dashboard
+| Metric | Healthy | Investigate | Critical |
+|--------|---------|-------------|----------|
+| Skew ratio | < 2 | 2–10 | > 10 |
+| Reducer duration CV | < 0.5 | 0.5–1.0 | > 1.0 |
+| Shuffle bytes/record | < 100 | 100–500 | > 500 |
+
+---
+
+# Part X: Best Practices
+
+## Design Checklist
+1. **Profile key distribution** before running large jobs
+2. **Use combiner** when operation is associative + commutative
+3. **Salt hot keys** when skew ratio > 10
+4. **Prefer broadcast join** when one table fits in memory
+5. **Set reducer count** proportional to shuffle size / target partition size
+
+## Cost Reduction Priority
+1. Filter early (reduce input size)
+2. Combiner (reduce shuffle size)
+3. Broadcast join (eliminate shuffle)
+4. Salting (balance load)
+5. Compression (reduce network)
+
+## Testing with Skew
+- Inject synthetic hot key (80% of data)
+- Verify job completes without OOM
+- Measure duration increase vs. uniform case
+
+---
+
+# Summary
 
 ## Recap — Engineering Judgment
-- **Shuffle is the bottleneck:** think in data movement
-- Intermediate size and partition balance determine success
-- Combiner is the first lever when reduce is associative
-- **Skew is first-class failure:** one key with most values
-- One reducer OOM or straggler
-- Design partition strategy and salting
-- **Measure before and after:** reducer variance, duration
-- Use combiners; profile hot keys; test with skewed samples
+- **Skew is the primary failure mode:** $\sigma \gg 1$ multiplies latency or causes OOM
+- **Combiner is the first lever:** Valid for associative + commutative; reduces $E$ to $\sum U_m$
+- **Salting distributes hot keys:** Two-phase aggregation; trades replication for balance
+- **Broadcast join eliminates shuffle:** When small table fits in memory
+- **Cost model:** $C = E \cdot s$; $T \propto \max_i n_i$
 
 ## Pointers to Practice
-- Manual walkthrough: 8–12 input records → Map → Shuffle → Reduce
-- One skew case: skewed key; one mitigation: combiner or salting
-- Cost exercise: estimate intermediate size and shuffle bytes
+- Compute skew ratio from key frequency distribution
+- Trace join execution with and without salting
+- Estimate shuffle size for real-world parameters
+- Diagram combiner and salting data flow
 
 ## Additional Diagrams
-### System Overview (slide 13)
-![](../../diagrams/week7/week7_lecture_slide13_system_overview.png)
-### Example Shuffle (slide 20)
-![](../../diagrams/week7/week7_lecture_slide20_example_shuffle.png)
-### Execution Flow (slide 28)
-![](../../diagrams/week7/week7_lecture_slide28_execution_flow.png)
-### Failure Skew (slide 42)
-![](../../diagrams/week7/week7_lecture_slide42_failure_skew.png)
+### System Overview
+![](../../diagrams/week7/week7_lecture_slide12_system_overview.png)
+### Example Shuffle
+![](../../diagrams/week7/week7_lecture_slide19_example_shuffle.png)
+### Execution Flow
+![](../../diagrams/week7/week7_lecture_slide24_execution_flow.png)
+### Failure: Skew
+![](../../diagrams/week7/week7_lecture_slide28_failure_skew.png)
 ### Practice: Skew Salting
 ![](../../diagrams/week7/week7_practice_slide18_skew_salting.png)
