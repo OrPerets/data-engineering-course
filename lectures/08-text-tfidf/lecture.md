@@ -1,466 +1,457 @@
-# Week 8: Text Processing at Scale: TF-IDF
+# Week 8: Text Processing at Scale — TF-IDF
 
 ## Purpose
-- TF-IDF is the workhorse for search, ranking, and text features
-- Combines local importance (TF) with global rarity (IDF)
-- At scale: MapReduce multi-job; vocabulary and skew drive cost
+- TF-IDF is the foundational algorithm for document ranking and search
+- Combines local term importance (TF) with global rarity (IDF)
+- At scale: multi-job pipeline; vocabulary size and skew dominate cost
 
-## Learning Objectives (1/2)
-- Define term frequency (TF) and inverse document frequency (IDF)
-- Compute TF-IDF score from a small document-term matrix
-- Explain why IDF down-weights common terms
-- Describe the role of TF-IDF in search ranking
+## Learning Objectives
+- Define TF-IDF in the vector space model framework
+- State why TF-IDF is a data engineering problem, not ML
+- Compute TF-IDF from a document-term matrix
+- Design MapReduce pipeline for distributed TF-IDF
+- Analyze sparsity constraints and storage requirements
+- Identify failure modes: stop-word skew, vocabulary explosion
 
-## Learning Objectives (2/2)
-- Design a MapReduce pipeline for TF-IDF
-- Estimate shuffle size and reducer load
-- Identify failure modes: stop-word skew, empty documents
-- Apply best practices: stop-word lists, smoothing, idempotent indexing
+---
 
-## Diagram Manifest
-- Slide 14 → week8_lecture_slide14_tfidf_pipeline_overview.puml
-- Slide 24 → week8_lecture_slide24_mapreduce_execution_flow.puml
-- Slide 26 → week8_lecture_slide26_failure_stopword_skew.puml
+# Part I: The Information Retrieval Problem
 
-## The Real Problem This Lecture Solves
+## The Problem Statement
+- **Input:** Corpus $D = \{d_1, d_2, \ldots, d_N\}$ of $N$ documents
+- **Query:** User search query $q$
+- **Goal:** Rank documents by relevance to $q$
+- **Output:** Ordered list of documents
 
-## Data Distribution Issue
-- TF-IDF pipelines fail not from the formula
-- Job 2 partitions by term
-- Term appearing in every doc (e.g. "the") sends all doc_ids to one reducer
-- ⇒ OOM or straggler
+## Why This Is a Data Engineering Problem
 
-## Storage vs Compute
-- Vocabulary V can be millions
-- Storing dense V-dimensional vectors per doc is infeasible
-- Sparse (doc_id, term, tfidf) is the only option
+### Not Machine Learning
+- No training; no model parameters learned
+- Deterministic: same corpus → same TF-IDF values
+- **Pure computation:** Count, aggregate, normalize, store
 
-## Engineering Challenge
-- Multi-job pipeline (counts → df/N → TF-IDF)
-- Global stats (N, df) and per-doc TF
-- Skew and sparsity drive cost and failure
+### The Engineering Challenge
+- $N = 10^9$ documents (web scale)
+- Vocabulary $V = 10^6$ terms
+- Computing and storing requires distributed systems
+- **Bottleneck:** Global statistics (df, N) require full corpus scan
 
-## Formal Inputs and Outputs
-- **Input:** corpus \(D = \{d_1,\ldots,d_N\}\)
-- **Vocabulary:** \(V = \bigcup_{d \in D} \text{tokens}(d)\)
-- **Output:** sparse triples \((d, t, \text{tfidf})\)
-- **Guarantee:** deterministic given tokenization rules
-- **Limit:** changing tokenizer ⇒ different V and scores
+## Why Exact Computation Is Hard at Scale
+- **Per-document TF:** Local computation; $O(|d|)$
+- **Document frequency df(t):** Global; requires counting across all $N$ docs
+- **Constraint:** $N \times |V|$ potential entries
+- **Impossibility:** Dense storage at $N = 10^9$, $|V| = 10^6$ → $10^{15}$ entries
 
-## Dimensionality and Sparsity Constraints
-- Document vector length = \(|V|\)
-- Typical document uses \(\ll |V|\) terms
-- **Constraint:** dense storage is infeasible at scale
-- **Implication:** store only non-zero TF-IDF entries
-- **Risk:** long documents inflate TF counts without normalization
+---
 
-## TF and IDF Definitions
-- Term frequency for term \(t\) in document \(d\)
+# Part II: Vector Space Model — Formal Framework
+
+## Documents as Vectors
+- **Vocabulary:** $V = \{t_1, t_2, \ldots, t_{|V|}\}$
+- **Document vector:** $\vec{d} \in \mathbb{R}^{|V|}$
+- Component $d_i$ = weight of term $t_i$ in document $d$
+- **Query vector:** $\vec{q} \in \mathbb{R}^{|V|}$
+
+## Similarity Measure
+- **Cosine similarity:**
 $$
-TF(t,d) = \frac{\text{count}(t,d)}{|d|}
+\text{sim}(q, d) = \frac{\vec{q} \cdot \vec{d}}{|\vec{q}| \cdot |\vec{d}|} = \frac{\sum_i q_i \cdot d_i}{\sqrt{\sum_i q_i^2} \cdot \sqrt{\sum_i d_i^2}}
 $$
-- Interpretation: local importance within a document
-- Engineering implication: requires per-document counts
-- Inverse document frequency with \(N\) documents
+- **Interpretation:** Angle between vectors; 1 = identical direction
+- **Ranking:** Sort documents by $\text{sim}(q, d)$ descending
+
+## The Weighting Problem
+- **Raw counts:** Common terms dominate (e.g., "the")
+- **Need:** Down-weight common terms; up-weight rare terms
+- **Solution:** TF-IDF weighting scheme
+
+---
+
+# Part III: TF-IDF — Mathematical Definition
+
+## Term Frequency (TF)
+
+### Raw Count
 $$
-IDF(t) = \log\frac{N}{df(t)}
+\text{tf}_{\text{raw}}(t, d) = f_{t,d} = \text{count of } t \text{ in } d
 $$
-- Interpretation: rarer terms get higher weight
-- Engineering implication: global aggregation over all docs
 
-## TF-IDF Vector and Sparsity
-- TF-IDF weight combines local and global signals
+### Normalized TF
 $$
-\text{TF-IDF}(t,d) = TF(t,d) \cdot IDF(t)
+\text{tf}(t, d) = \frac{f_{t,d}}{|d|}
 $$
-- Interpretation: high for terms frequent in a doc but rare overall
-- Engineering implication: compute after both TF and DF are known
-- Let \(\text{nnz}\) = non-zeros in the doc-term matrix
+- $|d|$ = total terms in document $d$
+- **Interpretation:** Fraction of document devoted to term $t$
+
+### Log-Scaled TF
 $$
-\text{Storage} = O(\text{nnz})
+\text{tf}_{\text{log}}(t, d) = 1 + \log(f_{t,d}) \quad \text{if } f_{t,d} > 0
 $$
-- Interpretation: sparse representation dominates feasibility
-- Engineering implication: store (doc_id, term, tfidf) tuples
+- **Purpose:** Diminishing returns for repeated terms
 
-## Exact vs Approximate Statistics
-- **Exact:** full scan for df and N each batch
-- **Approximate:** sample documents for df estimate
-- Estimator:
+## Document Frequency (DF)
 $$
-\widehat{df}(t) = \frac{df_{\text{sample}}(t)}{p}
+\text{df}(t) = |\{d \in D : t \in d\}|
 $$
-- **Guarantee:** unbiased estimate for sampled corpus
-- **Limit:** sampling error for rare terms
+- **Interpretation:** Number of documents containing term $t$
+- **Range:** $1 \leq \text{df}(t) \leq N$
 
-## Hashing and Collision Limits
-- Hash terms into \(B\) buckets to bound memory
-- Collision merges counts from different terms
-- **Upper bound:**
+## Inverse Document Frequency (IDF)
 $$
-\widehat{df}(t) \le df(t) + \epsilon N
+\text{idf}(t) = \log \frac{N}{\text{df}(t)}
 $$
-- **Guarantee:** bounded over-count with fixed \(B\)
-- **Limit:** frequent terms can mask rare ones
+- **Interpretation:** Rarity measure; high for rare terms
+- **Extreme cases:**
+  - $\text{df}(t) = 1$: $\text{idf}(t) = \log N$ (maximum)
+  - $\text{df}(t) = N$: $\text{idf}(t) = 0$ (no discrimination)
 
-## Batch Cost and Latency Trade-offs
-- **Batch recompute:** consistent df and TF-IDF
-- **Latency:** multi-job pipeline adds hours at scale
-- **Incremental option:** update tf per doc, refresh df nightly
-- **Trade-off:** freshness vs consistent global statistics
-- **Decision:** choose based on ranking SLA
-
-## Cost of Naïve Design (TF-IDF)
-
-## No Stop List
-- Term "the" in all N documents
-- Job 2 reducer for "the" receives N (term, doc_id) pairs
-- ⇒ OOM or extreme straggler
-- Stop-word list or df cap is non-negotiable
-
-## In-Lecture Exercise 3: Scale Cost & Skew
-- Assume 1M docs, 200 terms/doc, 100 reducers
-- Estimate Job 1 map emits
-- Estimate average pairs per reducer in Job 2
-- If "the" appears in 80% of docs, load for that reducer?
-
-## In-Lecture Exercise 3: Solution (1/2)
-- Map emits ≈ 1M × 200 = 200M pairs
-- Average per reducer: 200M / 100 = 2M pairs
-
-## In-Lecture Exercise 3: Solution (2/2)
-- "the" in 80% of docs ⇒ 0.8M pairs for one reducer
-- That reducer becomes a straggler or OOM risk
-
-## In-Lecture Exercise 3: Takeaway
-- Average load hides hot-term skew
-- Stop-word filtering is a performance safeguard
-
-## Dense Vectors When V is Large
-- Store V floats per doc for vocabulary size V=10^6
-- ⇒ 4 MB per doc; 10^6 docs ⇒ 4 TB just for vectors
-- Sparse (doc_id, term, tfidf) ⇒ O(terms per doc)
-
-## No Smoothing
-- df=0 or df=N ⇒ log(0) or division edge cases
-- Use
+## Smoothed IDF
 $$
-\log\frac{N+1}{df+1}
+\text{idf}_{\text{smooth}}(t) = \log \frac{N + 1}{\text{df}(t) + 1}
 $$
-and handle empty docs
-- Numerical robustness is production requirement
+- **Purpose:** Avoid division by zero; numerical stability
+- **Also handles:** Terms appearing in all documents
 
-## Core Concepts (1/2)
-- **Term Frequency (TF):** how often term appears in document
-- Raw count or normalized
-- **Document Frequency (df):** number of docs containing term
-- **Inverse Document Frequency (IDF):**
+## TF-IDF Weight
 $$
-\log\frac{N}{df}
+\text{tfidf}(t, d) = \text{tf}(t, d) \times \text{idf}(t)
 $$
-- N = total documents
+- **High when:** Term is frequent in $d$ AND rare overall
+- **Low when:** Term is rare in $d$ OR common overall
 
-## Core Concepts (2/2)
-- **TF-IDF:**
+---
+
+# Part IV: Why Exact TF-IDF Fails at Scale
+
+## The Storage Problem
+- **Dense representation:** $N \times |V|$ matrix
+- $N = 10^6$ docs, $|V| = 10^5$ terms → $10^{11}$ entries
+- 4 bytes per float → 400 GB just for one matrix
+- **At web scale:** $N = 10^9$ → 400 PB (impossible)
+
+## The Sparsity Solution
+- **Observation:** Each document uses $\ll |V|$ terms
+- Typical document: 100–1000 unique terms
+- $|V| = 10^6$ → sparsity = $\frac{1000}{10^6} = 0.1\%$
+- **Sparse storage:** Only store non-zero entries
+
+## Sparse Representation
 $$
-\text{tfidf}(t,d) = \text{TF}(t,d) \times \text{IDF}(t)
+\text{Storage} = O(\text{nnz}) = O\left(\sum_d |d|_{\text{unique}}\right)
 $$
-- Balances local relevance and global rarity
-- **Guarantees:** deterministic given same tokenization
-- **What breaks:** vocabulary size and df aggregation; skew
+- Store triples: $(d, t, \text{tfidf}(t, d))$
+- **Example:** $10^6$ docs × 500 terms/doc = $5 \times 10^8$ entries
+- 4 bytes per entry → 2 GB (feasible)
 
-## Data Context: 10-Doc Corpus
-- Terms: data, engineering, systems, the
-- N = 10 documents
-- Tokenize: lowercase, split on whitespace
+## The df Computation Problem
+- **For each term $t$:** Count documents containing $t$
+- **Naïve:** Scan all $N$ documents for each of $|V|$ terms → $O(N \times |V|)$
+- **Better:** Single pass, count per term → $O(\sum_d |d|)$
+- **Challenge:** Requires global aggregation; distributed shuffle
 
-## In-Lecture Exercise 1: TF and IDF Basics
-- Define TF and IDF in one sentence each
-- Write the TF-IDF formula
+---
 
-## In-Lecture Exercise 1: Solution (1/2)
-- TF: term frequency in a document (raw or normalized)
-- IDF: log-scaled inverse of document frequency
+# Part V: Manual TF-IDF Computation
 
-## In-Lecture Exercise 1: Solution (2/2)
-- TF-IDF: tfidf(t,d) = TF(t,d) × IDF(t)
+## Example Corpus
 
-## In-Lecture Exercise 1: Takeaway
-- TF captures local importance; IDF down-weights common terms
+| doc_id | text |
+|--------|------|
+| D1 | data engineering data |
+| D2 | engineering systems |
+| D3 | data data data |
 
-## Formal TF Definitions
-- **Raw count:**
+- $N = 3$ documents
+- Vocabulary: $V = \{data, engineering, systems\}$, $|V| = 3$
+
+## Step 1: Term Counts
+
+| doc | data | engineering | systems |
+|-----|------|-------------|---------|
+| D1  | 2    | 1           | 0       |
+| D2  | 0    | 1           | 1       |
+| D3  | 3    | 0           | 0       |
+
+## Step 2: Document Lengths
+- $|D1| = 3$, $|D2| = 2$, $|D3| = 3$
+
+## Step 3: Term Frequency (Normalized)
+
+| doc | tf(data) | tf(engineering) | tf(systems) |
+|-----|----------|-----------------|-------------|
+| D1  | 2/3 = 0.67 | 1/3 = 0.33 | 0 |
+| D2  | 0 | 1/2 = 0.50 | 1/2 = 0.50 |
+| D3  | 3/3 = 1.00 | 0 | 0 |
+
+## Step 4: Document Frequency
+- df(data) = 2 (D1, D3)
+- df(engineering) = 2 (D1, D2)
+- df(systems) = 1 (D2)
+
+## Step 5: IDF (Smoothed)
 $$
-\text{tf}_{\text{raw}}(t,d) = \text{count of } t \text{ in } d
+\text{idf}(t) = \log \frac{N + 1}{\text{df}(t) + 1} = \log \frac{4}{\text{df}(t) + 1}
 $$
-- **Normalized:**
+- idf(data) = $\log(4/3) = 0.29$
+- idf(engineering) = $\log(4/3) = 0.29$
+- idf(systems) = $\log(4/2) = 0.69$
+
+## Step 6: TF-IDF Weights
+
+| doc | tfidf(data) | tfidf(engineering) | tfidf(systems) |
+|-----|-------------|--------------------|--------------  |
+| D1  | 0.67 × 0.29 = 0.19 | 0.33 × 0.29 = 0.10 | 0 |
+| D2  | 0 | 0.50 × 0.29 = 0.15 | 0.50 × 0.69 = 0.35 |
+| D3  | 1.00 × 0.29 = 0.29 | 0 | 0 |
+
+## Interpretation
+- "systems" has highest weight in D2 (only doc with it)
+- "data" has highest weight in D3 (most frequent there)
+- "engineering" moderate everywhere (appears in 2/3 docs)
+
+---
+
+# Part VI: Distributed TF-IDF — MapReduce Pipeline
+
+## Pipeline Overview
+- **Job 1:** Term counts per document → $(d, t, count)$, $|d|$
+- **Job 2:** Document frequency per term → $(t, df)$, $N$
+- **Job 3:** Compute TF-IDF → $(d, t, tfidf)$
+
+## Job 1: Term Counts
+
+### Map
+- **Input:** $(doc\_id, text)$
+- **Process:** Tokenize; count terms
+- **Output:** $((doc\_id, term), 1)$
+
+### Reduce
+- **Input:** $((doc\_id, term), [1, 1, \ldots])$
+- **Output:** $(doc\_id, term, count)$
+
+### Combiner
+- Sum counts locally: $((doc\_id, term), count)$
+
+### Cost Analysis
 $$
-\text{tf}_{\text{norm}}(t,d) = \frac{\text{tf}_{\text{raw}}}{|d|}
+C_1 = \sum_d |d| \times s
 $$
-- |d| = total terms in d
-- **Log-scaled:**
+- One emission per term occurrence; combiner reduces to unique pairs
+
+## Job 2: Document Frequency
+
+### Map
+- **Input:** $(doc\_id, term, count)$
+- **Output:** $(term, 1)$ — one per unique (doc, term)
+
+### Reduce
+- **Input:** $(term, [1, 1, \ldots])$
+- **Output:** $(term, df)$
+
+### The Skew Problem
+- Stop word "the" appears in all $N$ documents
+- Reducer for "the" receives $N$ values
+- **Failure:** $N = 10^6$ → OOM
+
+### Cost Analysis
 $$
-\text{tf}_{\text{log}}(t,d) = 1 + \log(\text{tf}_{\text{raw}})
+C_2 = \text{(unique (doc, term) pairs)} \times s
 $$
-- **Use:** normalized or log-scaled avoids long-doc dominance
 
-## Intuition: Why IDF Down-weights Common Terms
-- **Search goal:** rank documents by relevance
-- Discriminative terms matter more
-- **Common terms:** "the", "a" appear in most docs
-- Low discriminative power; IDF small
-- **Rare terms:** appear in few docs; IDF large
-- **Engineering:** stop words also cause skew
+## Job 3: TF-IDF Computation
 
-## Formal IDF Definition
-- **IDF:**
+### Inputs
+- Job 1 output: $(doc\_id, term, count)$
+- Job 2 output: $(term, df)$
+- Global: $N$, $(doc\_id, |d|)$
+
+### Map/Broadcast
+- Broadcast $(term \rightarrow df)$ and $(doc\_id \rightarrow |d|)$
+- For each $(doc\_id, term, count)$:
+  - Look up $|d|$ and $df(term)$
+  - Compute $tf = count / |d|$
+  - Compute $idf = \log((N+1)/(df+1))$
+  - Emit $(doc\_id, term, tf \times idf)$
+
+### Cost Analysis
+- Shuffle: 0 if broadcast fits; otherwise join cost
+
+## Pipeline Diagram
+- (see Diagram: week8_lecture_slide14_tfidf_pipeline_overview.puml)
+
+---
+
+# Part VII: Cost and Complexity Analysis
+
+## Total Communication Cost
 $$
-\text{idf}(t) = \log\frac{N}{df(t)}
+C_{\text{total}} = C_1 + C_2 + C_3
 $$
-- N = total documents, df(t) = docs containing t
-- **Smoothing:**
+
+### Job 1 (Term Counts)
+- Without combiner: $\sum_d |d|$ pairs
+- With combiner: unique $(doc, term)$ pairs ≈ $\sum_d |d|_{unique}$
+
+### Job 2 (Document Frequency)
+- Input: unique $(doc, term)$ pairs
+- Output: $|V|$ terms with df values
+
+### Job 3 (TF-IDF)
+- Broadcast: $|V| \times s_{df} + N \times s_{len}$
+- Or join shuffle: $\sum_d |d|_{unique} + |V|$
+
+## Worked Example
+- $N = 10^6$ documents
+- Average 200 unique terms per document
+- $|V| = 500K$ vocabulary
+- Pair size: 30 bytes
+
+### Job 1
+- Map emissions (with combiner): $10^6 \times 200 = 2 \times 10^8$ pairs
+- Shuffle: $2 \times 10^8 \times 30 = 6$ GB
+
+### Job 2
+- Map emissions: $2 \times 10^8$ (one per unique doc-term)
+- Shuffle: $2 \times 10^8 \times 10 = 2$ GB
+
+### Job 3
+- Broadcast df table: $500K \times 12 = 6$ MB
+- Broadcast doc lengths: $10^6 \times 8 = 8$ MB
+- **Total broadcast:** 14 MB (fits easily)
+
+## Time Complexity
 $$
-\text{idf}(t) = \log\frac{N+1}{df(t)+1}
+T = T_1 + T_2 + T_3
 $$
-- Avoids log(0) when df = N
-- **At scale:** N and df must be computed once and broadcast
+- Each job: $O\left(\frac{\text{shuffle}}{B \cdot P}\right)$ for bandwidth $B$, parallelism $P$
 
-## Data Context: Docs 1–3 Only
-- D1: "data engineering data"
-- D2: "engineering systems"
-- D3: "data data data"
-- N = 3 documents
+---
 
-## In-Lecture Exercise 2: TF-IDF by Hand
-- Compute term counts and doc lengths for D1–D3
-- Compute df and smoothed IDF for data, engineering, systems
-- Compute TF-IDF for (D1,data) and (D2,systems)
+# Part VIII: The Stop-Word Skew Problem
 
-## In-Lecture Exercise 2: Solution (1/2)
-- Counts: D1 data=2, engineering=1; D2 engineering=1, systems=1; D3 data=3
-- Doc lengths: |D1|=3, |D2|=2, |D3|=3
-- df: data=2, engineering=2, systems=1
+## Why Stop Words Cause Failure
+- "the", "a", "is", "to" appear in nearly all documents
+- $\text{df}(\text{"the"}) \approx N$
+- Job 2 reducer for "the" receives $N$ values
+- **Memory:** $N \times s_{doc\_id}$; for $N = 10^6$, $s = 8$ → 8 MB
+- **For $N = 10^9$:** 8 GB for one reducer
 
-## In-Lecture Exercise 2: Solution (2/2)
-- IDF: data=log(4/3)=0.29; engineering=0.29; systems=log(2)=0.69
-- TF-IDF(D1,data)=2/3×0.29≈0.19
-- TF-IDF(D2,systems)=1/2×0.69≈0.35
+## Example: Hot Reducer
+- $N = 10^6$ documents
+- "the" in 80% → 800K documents
+- Reducer memory: 800K × 8 B = 6.4 MB
+- At $N = 10^9$: 6.4 GB
 
-## In-Lecture Exercise 2: Takeaway
-- TF normalizes within document length
-- IDF boosts rare terms
-- TF-IDF combines local and global signals
+## The IDF Paradox
+- Stop words have $\text{df} \approx N$
+- $\text{idf} = \log(N/N) = 0$
+- **Zero contribution to TF-IDF**
+- We shuffle massive data for terms with no discriminative value
 
-## Tokenization and Normalization
-- **Tokenize:** split on whitespace; lowercase
-- Optional: stem (Porter), remove punctuation
-- **Normalization:** same token everywhere
-- E.g. "Data" and "data" → one term
-- **Edge cases:** empty doc after tokenize ⇒ |d|=0 ⇒ division by zero
-- **Reproducibility:** version tokenization (stemmer, stop list)
+## Mitigation: Stop-Word Filtering
 
-## TF-IDF Formula and Vector
-- **Score:**
+### Pre-filter Approach
+- Maintain stop-word list: $S = \{\text{the, a, is, to, ...}\}$
+- In Job 1 map: skip $t \in S$
+- **Eliminates:** ~20% of term occurrences
+
+### DF Threshold Approach
+- After Job 2: filter terms with $\text{df}(t) > \theta \cdot N$
+- E.g., $\theta = 0.5$ → drop terms in >50% of documents
+- **Adaptive:** No predefined list needed
+
+### Cost Impact
+- 100 stop words appearing in all docs
+- Before filter: 100 × N values to shuffle
+- After filter: 0
+- **Reduction:** ~20–30% of shuffle volume
+
+---
+
+# Part IX: Approximation and Hashing
+
+## Exact vs Approximate df
+
+### Exact Computation
+- Full pass over corpus for accurate df
+- Consistent TF-IDF values
+
+### Sampling Approach
+- Sample $p$ fraction of documents
+- Estimate: $\widehat{\text{df}}(t) = \frac{\text{df}_{\text{sample}}(t)}{p}$
+- **Guarantee:** Unbiased estimator
+- **Variance:** Higher for rare terms
+
+## Feature Hashing (Hashing Trick)
+- Map terms to $B$ buckets: $h(t) \rightarrow [0, B-1]$
+- **Vocabulary:** Bounded at $B$ regardless of actual $|V|$
+- **Trade-off:** Collisions merge different terms
+
+### Collision Bound
 $$
-\text{tfidf}(t,d) = \text{TF}(t,d) \times \text{IDF}(t)
+\text{E}[\text{collisions}] = \frac{|V|}{B}
 $$
-- **Document vector:** one dimension per term in vocabulary
-- Value = TF-IDF for that term in d
-- **Query:** same weighting; similarity = dot product or cosine
-- **Engineering:** store sparse vectors or dense arrays
+- For $|V| = 10^6$, $B = 2^{20}$: ~1 collision per bucket
 
-## Sparse vs Dense Storage
-- **Sparse:** store only (doc_id, term, tfidf) where tfidf > 0
-- Typical doc has few terms vs vocabulary V
-- **Dense:** one array of length V per doc
-- Wasteful when V large and doc uses few terms
-- **Scale:** V = 10^6, 100 terms/doc ⇒ sparse: 100 entries; dense: 10^6
+### When to Use
+- Vocabulary unbounded or unknown a priori
+- Memory constraints on df table
+- Acceptable to trade some accuracy for bounded resources
 
-## TF-IDF Pipeline Overview
-- Documents → tokenize → term counts per doc
-- Compute doc lengths and df per term; then N; then IDF
-- Per (doc, term): TF from count and doc length
-- TF-IDF = TF × IDF
-![](../../diagrams/week8/week8_lecture_slide14_tfidf_pipeline_overview.png)
+---
 
-## Running Example — Data & Goal
-- **Corpus:** 3 documents
-- D1: "data engineering data"
-- D2: "engineering systems"
-- D3: "data data data"
-- **Goal:** TF-IDF per (doc_id, term)
+# Part X: Production Best Practices
 
-## Running Example — Input Table
+## Design Checklist
+1. **Filter stop words** in Job 1 map (or use df threshold)
+2. **Use combiner** in Job 1 (sum is associative)
+3. **Broadcast df** if fits in memory; else use map-side join
+4. **Store sparse:** $(doc\_id, term, tfidf)$ triples only
+5. **Version tokenization:** Same stemmer, stop list for consistency
 
-| doc_id | text                    |
-|--------|-------------------------|
-| 1      | data engineering data   |
-| 2      | engineering systems     |
-| 3      | data data data          |
+## Numerical Stability
+- Use smoothed IDF: $\log \frac{N+1}{\text{df}+1}$
+- Handle empty documents: $|d| = 0$ → skip or assign zero vector
+- Log of zero: Ensure $\text{df} \geq 1$ (add-one smoothing)
 
-- **Vocabulary:** data, engineering, systems
-- **Doc lengths:** D1: 3; D2: 2; D3: 3
+## Idempotency
+- Write output keyed by $(doc\_id, term)$
+- Upsert semantics: rerun overwrites, no duplicates
+- **Enables:** Safe retry on failure
 
-## Running Example — Step-by-Step (1/4)
-- **Step 1: Term counts per doc**
-- (1, data, 2), (1, engineering, 1)
-- (2, engineering, 1), (2, systems, 1)
-- (3, data, 3)
-- **Step 2: Doc lengths:** |D1|=3, |D2|=2, |D3|=3
+## Monitoring
+| Metric | Healthy | Investigate |
+|--------|---------|-------------|
+| Job 2 reducer max/median | < 10 | > 10 (stop-word skew) |
+| Vocabulary size | Expected | Unexpected growth |
+| Empty document rate | < 1% | > 5% |
 
-## Running Example — Step-by-Step (2/4)
-- **Step 3: Document frequency**
-- df(data)=2 (D1,D3)
-- df(engineering)=2 (D1,D2)
-- df(systems)=1 (D2); N=3
-- **IDF (with smoothing):** idf = log((N+1)/(df+1))
-- idf(data)=log(4/3), idf(engineering)=log(4/3), idf(systems)=log(2)
+---
 
-## Running Example — Step-by-Step (3/4)
-- **TF normalized:** TF(data,D1)=2/3, TF(engineering,D1)=1/3
-- TF(data,D3)=3/3=1
-- **TF-IDF:** (D1, data): (2/3)×log(4/3)≈0.19
-- (D1, engineering): (1/3)×log(4/3)≈0.10
-- (D3, data): 1×log(4/3)≈0.29
-
-## Running Example — Step-by-Step (4/4)
-- **Output:** (doc_id, term, tfidf)
-- D1: (data, 0.19), (engineering, 0.10)
-- D2: (engineering, 0.14), (systems, 0.35)
-- D3: (data, 0.29)
-- **Interpretation:** "systems" only in D2 → high IDF
-- "data" in D1 and D3 → lower IDF
-
-## MapReduce for TF-IDF — Job 1
-- **Goal:** (doc_id, term, count) and doc lengths
-- **Map:** input (doc_id, text) → tokenize
-- Emit ((doc_id, term), 1) or (doc_id, (term, 1))
-- **Reduce:** key (doc_id, term), values [1,1,...]
-- Emit (doc_id, term, sum)
-- **Doc length:** second pass or side output
-
-## MapReduce for TF-IDF — Job 2
-- **Goal:** N (total docs) and df(term)
-- **Input:** (doc_id, term, count) from Job 1
-- **Map:** emit (term, doc_id) or (term, 1) per (doc_id, term)
-- **Reduce:** key = term, values = list of doc_ids
-- df = count distinct docs; N from counter
-
-## MapReduce for TF-IDF — Job 3
-- **Goal:** (doc_id, term, tfidf)
-- **Input:** Job 1 output + Job 2 output + N
-- **Map/Join:** for each (doc_id, term, count)
-- Look up |d|, df(term), N; compute TF and IDF
-- Emit (doc_id, term, tfidf)
-- **Implementation:** broadcast (term, idf) and (doc_id, |d|)
-
-## MapReduce Execution Flow
-- Job 1: Docs → Map (tokenize) → Shuffle by (doc_id, term) → Reduce (sum)
-- Job 2: (doc_id, term) → Map (emit term) → Shuffle by term → Reduce (count df)
-- Job 3: Join → compute TF-IDF → output
-![](../../diagrams/week8/week8_lecture_slide24_mapreduce_execution_flow.png)
-
-## Key Design: Shuffle and Partitioning
-
-## Job 1 Partitioning
-- Partition by (doc_id, term)
-- Reducers get all counts for same (doc, term)
-- Balanced if terms spread
-
-## Job 2 Partitioning
-- Partition by term
-- Same term from all docs to one reducer
-- **Skew:** term "the" in every doc → one reducer gets all doc_ids
-- **Cost:** shuffle size = number of (term, doc_id) pairs
-
-## Cost & Scaling Analysis (1/3)
-- **Time model:** T = T_Job1 + T_Job2 + T_Job3
-- Each job has map + shuffle + reduce
-- **Job 1:** Map ∝ total terms; shuffle ∝ (doc_id, term, 1) emits
-- **Job 2:** Shuffle ∝ (term, doc_id) pairs; skew if few terms dominate
-
-## Cost & Scaling Analysis (2/3)
-- **Memory:** Job 2 reducer holds all doc_ids for one term
-- If term in all N docs, reducer gets N doc_ids
-- **Storage:** output (doc_id, term, tfidf) is sparse
-- Vocabulary V and doc count N ⇒ O(N × avg_terms_per_doc)
-
-## Cost & Scaling Analysis (3/3)
-- **Network:** Job 1 shuffle = map output
-- Job 2 shuffle = (term, doc_id); Job 3 = join traffic
-- **Throughput:** limited by Job 2 shuffle when term in most docs
-- **Latency:** multi-job pipeline; straggler in Job 2 delays all
-
-## Shuffle Size Example (TF-IDF)
-- **Assumptions:** 10^6 docs, 100 terms/doc avg, 500K distinct terms
-- **Job 1:** 10^8 (doc_id, term, 1) pairs; ~30 B per pair ⇒ ~3 GB
-- **Job 2:** 10^8 (term, doc_id) pairs
-- If "the" in all 10^6 docs, one reducer gets 10^6 values
-- **Combiner (Job 1):** (doc_id, term) → sum locally; fewer pairs
-
-## Pitfalls & Failure Modes (1/3)
-- **Stop-word skew:** "the", "a" appear in almost every doc
-- df ≈ N ⇒ one reducer in Job 2 gets most pairs
-- **Empty documents:** doc with no terms ⇒ division by zero
-- **Numerical edge:** log(0) if df=0; use smoothing
-
-## Pitfalls & Failure Modes (2/3)
-- **Hot reducer (Job 2):** term "the" in 10^6 docs
-- Reducer receives 10^6 values ⇒ OOM or timeout
-- **Mitigation:** stop-word list; filter high-df terms in Map
-![](../../diagrams/week8/week8_lecture_slide26_failure_stopword_skew.png)
-
-## Pitfalls & Failure Modes (3/3)
-- **Detection:** monitor reducer input sizes in Job 2
-- Alert if max ≫ median; profile term df distribution
-- **Idempotency:** rerun must not duplicate
-- Write (doc_id, term, tfidf) with overwrite or key
-- **Tokenization drift:** change in stop list ⇒ different TF-IDF
-
-## Failure Scenario — Stop-Word Hot Reducer
-- **Scenario:** Job 2 partitions by term
-- "the" appears in every document
-- **Result:** one reducer receives N (the, doc_i) values
-- Others get few
-- **Failure:** OOM or extreme straggler
-
-## Best Practices (1/2)
-- Use stop-word list or df threshold to drop terms
-- Reduces skew and noise
-- Normalize TF by doc length or use log(1+tf)
-- Smooth IDF:
-$$
-\log\frac{N+1}{df+1}
-$$
-- Store vocabulary and N, df for reproducibility
-
-## Best Practices (2/2)
-- Prefer sparse (doc_id, term, tfidf) over dense vectors
-- Make indexing idempotent: overwrite by (doc_id, term)
-- Monitor Job 2 reducer input variance
-- Version tokenization and document so reruns are comparable
-
-## Relation to Week 6–7 MapReduce
-- **Week 6:** map emits (k,v); shuffle; reduce; same model for Job 1
-- **Week 7:** skew and combiner; Job 2 partitions by term
-- Stop-word in every doc = hot reducer
-- **TF-IDF:** multi-job; Job 1 = word count per (doc, term)
-- Job 2 = df per term; Job 3 = join + TF-IDF
+# Summary
 
 ## Recap — Engineering Judgment
-- **Job 2 skew is the main risk:** partition by term
-- Stop-words send all doc_ids to one reducer
-- Stop list or df cap is non-negotiable
-- **Sparse over dense when V is large:** dense doesn't scale
-- Sparse (doc_id, term, tfidf) is production choice
-- **Multi-job pipeline:** counts, df, N, then join + TF-IDF
-- Idempotent write by (doc_id, term)
+- **TF-IDF:** $\text{tf}(t,d) \times \log \frac{N}{\text{df}(t)}$
+- High for frequent-in-doc AND rare-overall terms
+- **Vector space model:** Documents as sparse vectors; cosine similarity
+- **Storage:** Must be sparse; dense is infeasible at scale
+- **Job 2 skew:** Stop words send all doc_ids to one reducer
+- Stop-word filtering is non-negotiable
+- **Three-job pipeline:** Counts → df → TF-IDF
+- Each with specific shuffle cost and skew risk
 
 ## Pointers to Practice
-- Compute TF, IDF, and TF-IDF by hand for 3–5 docs
-- Full MapReduce walkthrough: 8–12 document records
-- One skew case: term in all docs → hot reducer
-- One mitigation: stop list or salting; diagram required
+- Compute TF-IDF by hand for 3–5 documents
+- Trace MapReduce pipeline with concrete numbers
+- Identify hot term and compute reducer load
+- Propose stop-word mitigation strategy
 
 ## Additional Diagrams
+### TF-IDF Pipeline Overview
+![](../../diagrams/week8/week8_lecture_slide14_tfidf_pipeline_overview.png)
+### MapReduce Execution Flow
+![](../../diagrams/week8/week8_lecture_slide24_mapreduce_execution_flow.png)
+### Failure: Stop-Word Skew
+![](../../diagrams/week8/week8_lecture_slide26_failure_stopword_skew.png)
 ### Practice: TF-IDF MapReduce Skew
 ![](../../diagrams/week8/week8_practice_slide20_tfidf_mapreduce_skew.png)
