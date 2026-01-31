@@ -70,22 +70,6 @@ $$
 - raw_events has duplicate event_id sample
 - MapReduce input: 4 lines ("a b a", "b a c", "a c", "b b a")
 
-## In-Lecture Exercise 1: DWH Key Check
-- What is the partition key of sales_fact?
-- What is the primary key of sales_fact?
-- Why must BI queries filter by date_key?
-
-## In-Lecture Exercise 1: Solution
-- Partition key: date_key
-- Primary key: sale_id
-
-## In-Lecture Exercise 1: Solution
-- date_key filter enables partition pruning
-- Without it, full scans cause slow, costly queries
-
-## In-Lecture Exercise 1: Takeaway
-- Partition filters are essential for OLAP performance
-
 ## Formal Formulas to Recall
 - **Partition:** partition_id = hash(k) mod R
 - Same k ⇒ same reducer
@@ -97,21 +81,6 @@ $$
 $$
 TF-IDF = TF × IDF
 - **Join size:** |A ⋈ B| ≤ |A| × |B|; with FK often ≈ fact rows
-
-## In-Lecture Exercise 2: MapReduce Trace
-- Map outputs for 4 lines ("a b a", "b a c", "a c", "b b a")
-- Shuffle groups per key
-- Reduce outputs for a, b, c
-
-## In-Lecture Exercise 2: Solution
-- Map: a emits 5, b emits 4, c emits 2 total
-- Shuffle: a→[1,1,1,1,1], b→[1,1,1,1], c→[1,1]
-
-## In-Lecture Exercise 2: Solution
-- Reduce: (a,5), (b,4), (c,2)
-
-## In-Lecture Exercise 2: Takeaway
-- Map outputs define shuffle size and reducer load
 
 ## Course Map: Weeks 1–5
 - **W1:** Intro — scale, pipeline, DE vs DS vs analytics
@@ -142,23 +111,6 @@ TF-IDF = TF × IDF
 - (1,101,'click','2025/12/01 08:00:00','{}') — duplicate
 - **events_clean:** one row per event_id; duplicate deduped
 - **sales_fact + dim_customer:** join on customer_id; filter date_key
-
-## In-Lecture Exercise 3: Partition Pruning Cost
-- Filter date_key IN (20251201, 20251202)
-- Each partition ≈ 27K rows; full table ≈ 10M rows
-- Compute rows scanned with and without filter
-- Compute reduction factor
-
-## In-Lecture Exercise 3: Solution
-- With filter: 2 × 27K ≈ 54K rows
-- Without filter: ≈ 10M rows
-
-## In-Lecture Exercise 3: Solution
-- Reduction factor: 10,000,000 / 54,000 ≈ 185×
-- Pruning drastically reduces scan cost
-
-## In-Lecture Exercise 3: Takeaway
-- Pruning is the dominant lever for DWH query cost
 
 ## Running Example — Step-by-Step
 - **Step 1 — Extract:** read raw_events where event_timestamp > watermark

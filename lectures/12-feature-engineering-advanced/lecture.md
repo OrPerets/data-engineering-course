@@ -89,21 +89,6 @@ $$
 - Backfill = range of as_of_ts; incremental = next day
 - Writes via MERGE or partition overwrite
 
-## In-Lecture Exercise 1: Backfill vs Incremental
-- Define backfill and incremental in one sentence each
-- When would you run a backfill?
-
-## In-Lecture Exercise 1: Solution
-- Backfill: compute features for a historical range
-- Incremental: compute only new as_of_ts since last run
-
-## In-Lecture Exercise 1: Solution
-- Backfill for new feature definitions or repair
-- Incremental for daily production updates
-
-## In-Lecture Exercise 1: Takeaway
-- Backfill is expensive; incremental is the default
-
 ## Cost of Naïve Design (Advanced Pipelines)
 
 ## Backfill with INSERT
@@ -120,23 +105,6 @@ $$
 - |users| × |items| × |as_of_ts| rows
 - E.g. 10M × 1M × 365 ⇒ 3.65e12 rows ⇒ OOM
 - **Restrict grid to observed (user, item) pairs in window**
-
-## In-Lecture Exercise 3: Full Grid Cost
-- 10M users, 1M items, 365 days, 60 B/row
-- Estimate full-grid storage size
-- If observed pairs average 5M/day, estimate size
-
-## In-Lecture Exercise 3: Solution
-- Full grid: 10M × 1M × 365 × 60 B ≈ 219 PB
-- Infeasible for storage or compute
-
-## In-Lecture Exercise 3: Solution
-- Observed pairs: 5M/day × 365 × 60 B ≈ 109.5 GB
-- Restricting to observed pairs makes it feasible
-
-## In-Lecture Exercise 3: Takeaway
-- Avoid full user×item grids
-- Use observed pairs to cap cost
 
 ## Hot Entity in Aggregation
 - One user or item gets most events
@@ -156,24 +124,6 @@ $$
 - **Backfill:** does not advance watermark
 
 ![Control table and watermark](../../diagrams/week12/week12_control_watermark.png)
-
-## In-Lecture Exercise 2: Incremental Control Flow
-- Read last_as_of_ts from control
-- Compute features for last_as_of_ts + 1 day
-- MERGE into feature_table for that day
-- Update control only after success
-
-## In-Lecture Exercise 2: Solution
-- last_as_of_ts = control.last_as_of_ts
-- new_as_of_ts = last_as_of_ts + 1 day
-- Compute features for new_as_of_ts only
-
-## In-Lecture Exercise 2: Solution
-- MERGE or overwrite partition for new_as_of_ts
-- Update control after commit to avoid gaps
-
-## In-Lecture Exercise 2: Takeaway
-- Control tables must advance only after durable writes
 
 ## Partition Overwrite Semantics
 - Write step writes only to partition p = as_of_ts

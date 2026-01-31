@@ -93,22 +93,6 @@ $$
 - **Partition completeness:** expected vs completed
 - **Rerun rate:** repeated runs per partition
 
-## In-Lecture Exercise 1: Idempotency Check
-- Define idempotency for a load job
-- Explain why reruns must be idempotent
-
-## In-Lecture Exercise 1: Solution
-- Idempotency: running the job N times equals running once
-- Output is identical regardless of retries
-
-## In-Lecture Exercise 1: Solution
-- Failures require reruns of the same slice
-- Without idempotency, duplicates or double counts appear
-
-## In-Lecture Exercise 1: Takeaway
-- Reruns are normal in production pipelines
-- Idempotency is a core safety property
-
 ## Source to Target Mapping (STTM): What is STTM?
 - **Definition:** instructions for source-to-target data transfer
 - Guidelines for ETL process
@@ -222,23 +206,6 @@ $$
 - sales: PRIMARY KEY sale_id; upsert needed
 - Goal: dedup in staging, then MERGE into sales
 
-## In-Lecture Exercise 2: Batch Sales Upsert
-- Deduplicate daily_sales by sale_id
-- Keep latest record per sale_id
-- Upsert into sales by sale_id
-
-## In-Lecture Exercise 2: Solution
-- Use ROW_NUMBER() PARTITION BY sale_id ORDER BY sale_date DESC
-- Keep rn = 1 as the deduped batch
-
-## In-Lecture Exercise 2: Solution
-- MERGE on sale_id; insert if not matched
-- Update if matched and source is newer
-
-## In-Lecture Exercise 2: Takeaway
-- Dedup in staging before touching the target
-- MERGE provides idempotent upserts for batch loads
-
 ## Architectural Fork: Schema-on-Read vs Write — Option A (Schema-on-Write)
 - Validate and type on load; bad row fails load
 - **Pros:** target is always typed; simpler queries
@@ -268,28 +235,6 @@ $$
 - events_clean: PRIMARY KEY event_id
 - etl_control: job_key, last_watermark, last_run_ts
 - Upper bound: NOW() - 5 minutes
-
-## In-Lecture Exercise 3: Incremental Watermark Load
-- Read last_watermark from etl_control
-- Extract slice after watermark and before upper_bound
-- Dedup by event_id; MERGE into events_clean
-- Update watermark only after successful load
-- Explain the 5-minute buffer
-
-## In-Lecture Exercise 3: Solution
-- SELECT last_watermark for job_key = 'events_sync'
-- upper_bound = NOW() - 5 minutes
-- Extract where event_time > last_watermark AND <= upper_bound
-
-## In-Lecture Exercise 3: Solution
-- Dedup by event_id; MERGE into events_clean
-- Update last_watermark only after commit
-- Buffer avoids missing late-arriving events
-
-## In-Lecture Exercise 3: Takeaway
-- Watermarks plus MERGE enable safe incremental loads
-- Update control state only after success
-- Buffers trade latency for correctness
 
 ## Running Example — Step-by-Step
 - **Step 2: Dedup (in-batch)** — one row per event_id

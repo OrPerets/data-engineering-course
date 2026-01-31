@@ -106,27 +106,6 @@ $$
 - R3: "B07 C33 A12"
 - Local emit produces (product_id, 1) per token
 
-## In-Lecture Exercise 1: Local Outputs & Repartition Groups
-- Write local emits for R1–R3
-- Group by key after repartitioning
-- Do not merge yet
-
-## In-Lecture Exercise 1: Solution
-- R1: (A12,1),(B07,1),(C33,1)
-- R2: (A12,1),(B07,1),(D44,1)
-- R3: (B07,1),(C33,1),(A12,1)
-
-## In-Lecture Exercise 1: Solution
-- A12→[1,1,1]
-- B07→[1,1,1]
-- C33→[1,1]
-- D44→[1]
-
-## In-Lecture Exercise 1: Takeaway
-- Local emits are independent and deterministic
-- Repartition groups define worker input size
-- Correct grouping is required for correct merge
-
 ## Running Example — Step-by-Step
 - **Step 3: Merge** — each worker gets one key and values
 - Sum the values for the final count
@@ -187,28 +166,6 @@ with enough workers
 - At 10 Gbps ⇒ ~160 s minimum
 - Local aggregation reduces local output before repartition
 
-## In-Lecture Exercise 2: Repartition Size Estimation
-- 10 lines, ~4 items/line ⇒ 40 local emits
-- Each (product_id,1) is 20 bytes
-- Compute total repartition size
-- With 5 workers, estimate bytes per worker
-- If "A12" appears in 8 lines, how many pairs for that key?
-
-## In-Lecture Exercise 2: Solution
-- Total local output: 40 × 20 B = 800 B
-- Repartition size equals local output: 800 B
-- Even split: 800 / 5 ≈ 160 B per worker
-
-## In-Lecture Exercise 2: Solution
-- "A12" appears 8 times ⇒ 8 (k,v) pairs
-- All 8 pairs go to one worker for key "A12"
-- That worker receives 8 × 20 B = 160 B
-
-## In-Lecture Exercise 2: Takeaway
-- Repartition size is dominated by local output
-- Even distribution is an assumption, not a guarantee
-- Hot keys concentrate bytes on one worker
-
 ## Worker Memory and Skew Risk
 - Each worker holds one key's value list in memory
 - Skew ⇒ one list huge ⇒ OOM
@@ -255,28 +212,6 @@ with enough workers
 - **Hot partition:** one worker gets most data ⇒ OOM
 - **Job latency = slowest worker**
 
-## In-Lecture Exercise 4: Hot Key Skew Impact
-- Clicks join Users on user_id
-- user_id 888 has 1B clicks; others < 1K each
-- Hash to 1,000 workers by user_id
-- Each click is 100 B
-- Compute worker load and data size for key 888
-
-## In-Lecture Exercise 4: Solution
-- All 1B clicks for 888 go to one worker
-- Data size: 1B × 100 B = 100 GB
-- That worker becomes the straggler
-
-## In-Lecture Exercise 4: Solution
-- 100 GB exceeds typical worker memory
-- OOM or timeouts likely while others finish early
-- Job latency dominated by that one worker
-
-## In-Lecture Exercise 4: Takeaway
-- Skew turns parallel jobs into single-task bottlenecks
-- Hot keys must be detected and mitigated early
-- Salting or custom partitioning are standard fixes
-
 ## Skew Detection
 - Per-partition size after repartition
 - Worker runtimes
@@ -290,26 +225,6 @@ with enough workers
 - Only when merge is associative and commutative
 
 ![](../../diagrams/week03/week3_local_aggregation.png)
-
-## In-Lecture Exercise 3: Local Aggregation Impact
-- Product count with 40 local emits
-- After combining, emits drop to 15
-- Each (k,v) is 20 bytes
-- Compute new repartition size
-- State why local aggregation is valid for product counts
-
-## In-Lecture Exercise 3: Solution
-- New repartition size: 15 × 20 B = 300 B
-- Reduction from 800 B to 300 B
-
-## In-Lecture Exercise 3: Solution
-- Product count sum is associative and commutative
-- Local sums equal global sum after repartition
-
-## In-Lecture Exercise 3: Takeaway
-- Local aggregation shrinks repartition without changing results
-- Only safe for associative, commutative merge logic
-- Always validate merge math before combining
 
 ## Mitigation 2: Salting (Split Hot Key)
 - Append random suffix: (k,v) → (k-salt,v)
