@@ -65,23 +65,6 @@ $$
 - etl_control stores last_watermark
 - Tests run on events_clean partitions
 
-## In-Lecture Exercise 1: Data Test Types
-- Name three types of data tests
-- Define a quality gate in one sentence
-- Give one example assertion per test type
-
-## In-Lecture Exercise 1: Solution
-- Types: schema, row/uniqueness, freshness/volume
-- Quality gate blocks promote when tests fail
-
-## In-Lecture Exercise 1: Solution
-- Schema: column type exists
-- Row: event_id unique
-- Freshness: max(event_time) ≥ expected bound
-
-## In-Lecture Exercise 1: Takeaway
-- Tests formalize data contracts before consumers see data
-
 ## DataOps Definition
 - Borrow from DevOps: version control, automated build, test, deploy
 - For data: pipeline as code; tests on **data** not only code
@@ -96,24 +79,6 @@ $$
 - **Difference from app CI:** data volume and freshness matter
 - Tests may be slow
 
-## In-Lecture Exercise 3: Load + Watermark
-- Read last_watermark from etl_control
-- Extract raw_events after watermark with a 5-minute buffer
-- MERGE into events_clean after dedup
-- Update watermark only after successful write
-
-## In-Lecture Exercise 3: Solution
-- upper_bound = NOW() - 5 minutes
-- Extract where event_time > last_watermark AND ≤ upper_bound
-- Dedup by event_id before MERGE
-
-## In-Lecture Exercise 3: Solution
-- MERGE into events_clean on event_id
-- Update etl_control only after commit to avoid gaps
-
-## In-Lecture Exercise 3: Takeaway
-- Watermark management is part of DataOps correctness
-
 ## Data Testing Types
 - **Schema tests:** column exists, type, nullable
 - Enforce contract
@@ -121,21 +86,6 @@ $$
 - **Referential:** FK present in dimension
 
 ![Test types](../../diagrams/week13/week13_test_types.png)
-
-## In-Lecture Exercise 2: Uniqueness Test
-- Write the assertion logic for event_id uniqueness
-- What should the test compare?
-
-## In-Lecture Exercise 2: Solution
-- Compare COUNT(*) to COUNT(DISTINCT event_id)
-- Pass if the two counts are equal
-
-## In-Lecture Exercise 2: Solution
-- Run per partition for faster CI
-- Fails when duplicates exist in events_clean
-
-## In-Lecture Exercise 2: Takeaway
-- Row-level tests catch duplicates before promotion
 
 ## Data Testing Types
 - **Freshness:** max(timestamp) ≥ now − threshold

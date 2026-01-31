@@ -82,22 +82,6 @@ $$
 - dim_product: ~1K rows; category attribute
 - dim_date: date_key, month, year
 
-## In-Lecture Exercise 1: Partition Pruning Check
-- Define partition pruning in one sentence
-- Why is a query without date_key filter expensive?
-
-## In-Lecture Exercise 1: Solution
-- Pruning skips partitions that fail the WHERE predicate
-- Only relevant partitions are scanned
-
-## In-Lecture Exercise 1: Solution
-- No date_key filter forces a full scan of all partitions
-- I/O scales with total table size, not query scope
-
-## In-Lecture Exercise 1: Takeaway
-- Partition filters are mandatory for large fact tables
-- Missing filters convert OLAP into full scans
-
 ## Data Warehouse Definition (Formal)
 
 ## Bill Inmon's Definition
@@ -188,25 +172,6 @@ Sales Fact Table:           time Dimension:
 - dollars_sold              - item_key (PK)
 - avg_sales                 - item_name, brand, type
 ```
-
-## In-Lecture Exercise 2: Join Size Reasoning
-- Query: revenue by region for December 2025
-- sales_fact pruned to December; dim_customer is small
-- Decide which side to broadcast in a distributed join
-- What if dim_customer were 10 GB instead of 10 MB?
-
-## In-Lecture Exercise 2: Solution
-- Fact slice is far larger than dim_customer
-- Broadcast dim_customer; keep fact partitions local
-
-## In-Lecture Exercise 2: Solution
-- If dim_customer is 10 GB, broadcast is too large
-- Use shuffle/hash join on customer_key instead
-
-## In-Lecture Exercise 2: Takeaway
-- Join strategy depends on relative table sizes
-- Small dimensions should be broadcast when possible
-- Size shifts can flip the optimal strategy
 
 ## The Snowflake Schema
 - **Definition:** some dimensions don't connect directly to fact
@@ -302,27 +267,6 @@ Sales Fact Table:           time Dimension:
 - Scan size ≈ (selected partitions / total) × table size
 - Pruning reduces I/O significantly
 - Engineering: require partition filter in WHERE
-
-## In-Lecture Exercise 3: Pruning Cost Math
-- 365 partitions/year; total size 1 TB
-- December query uses date_key between 20251201 and 20251231
-- Compute partitions read and bytes scanned
-- What if the date filter is missing?
-
-## In-Lecture Exercise 3: Solution
-- Partitions read: 31 (one per day in December)
-- Size per partition: 1 TB / 365 ≈ 2.7 GB
-- Bytes scanned: 31 × 2.7 GB ≈ 84 GB
-
-## In-Lecture Exercise 3: Solution
-- Without date filter: all 365 partitions scanned
-- Full 1 TB scan for every report
-- Cost and latency explode
-
-## In-Lecture Exercise 3: Takeaway
-- Partition pruning is the main cost lever in OLAP
-- Always enforce date filters in BI queries
-- Full scans break dashboards at scale
 
 ## DWH and Lake: Pipeline Overview
 - Sources (DB, logs) → ETL/ELT → DWH (star) and/or Lake (raw + processed)

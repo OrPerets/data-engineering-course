@@ -185,27 +185,6 @@ $$
 - Retention: 90 days raw; 365 days processed
 - Replication: 3×
 
-## In-Lecture Exercise 1: Storage Sizing Warm-up
-- Compute raw storage for posts, interactions, users
-- Compute Parquet size with 5× compression
-- Compute 90-day raw retention storage
-- Compute total with 3× replication
-
-## In-Lecture Exercise 1: Solution- Posts raw: 500M × 2.1 KB ≈ 1,050 GB
-- Interactions raw: 10B × 33 B ≈ 330 GB
-- Users raw: 100M × 1.2 KB ≈ 120 GB
-- Total raw ≈ 1,500 GB (1.5 TB)
-
-## In-Lecture Exercise 1: Solution- Parquet 5×: 1,500 GB / 5 ≈ 300 GB
-- 90-day raw: 27.6 GB/day × 90 ≈ 2.5 TB
-- Replication 3×: raw 7.5 TB; processed 0.9 TB
-- Total with replicas ≈ 8.4 TB
-
-## In-Lecture Exercise 1: Takeaway
-- Storage sizing must include compression, retention, replication
-- Raw and processed layers have very different footprints
-- Early sizing prevents cost surprises later
-
 ## Processing
 - Transform raw to processed
 - Clean, deduplicate, enrich
@@ -254,26 +233,6 @@ $$
 - **Streaming:** continuous; real-time; latency ms–sec
 - Complex, expensive; **breaks when** throughput spikes
 - **Hybrid:** batch for history, stream for recent
-
-## In-Lecture Exercise 2: Batch vs Streaming Trade-off
-- Trending posts needed within 5 minutes
-- Batch: run every 5 minutes; $0.10 per run
-- Streaming: always on; $2.00 per hour
-- Compute daily cost for batch vs streaming
-- Decide approach if latency < 1 minute
-
-## In-Lecture Exercise 2: Solution- Batch daily cost: 288 runs × $0.10 = $28.80
-- Streaming daily cost: 24 hours × $2.00 = $48.00
-- Streaming costs $19.20 more per day
-
-## In-Lecture Exercise 2: Solution- Latency < 1 minute: batch fails; streaming required
-- If cost dominates: batch is cheaper
-- Hybrid: stream recent, batch history for lower cost
-
-## In-Lecture Exercise 2: Takeaway
-- Latency targets can force streaming despite higher cost
-- Cost math makes trade-offs explicit and defensible
-- Hybrid designs often balance speed and budget
 
 ## Schema-on-Write vs Schema-on-Read
 - Schema-on-write: validate at ingestion (warehouse)
@@ -448,25 +407,6 @@ Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 - Step 3 (aggregate): never runs
 - Step 4 (load): never runs
 - Result: partial data, inconsistent state
-
-## In-Lecture Exercise 3: Failure Impact & Checkpointing
-- Pipeline processes 10,000 posts and 100,000 interactions
-- Failure at 30 minutes; 50% processed, 50% lost
-- Manual investigation + rerun takes 2 hours
-- Add checkpoints every 10 minutes; recompute loss and recovery
-
-## In-Lecture Exercise 3: Solution- Data loss: 5,000 posts and 50,000 interactions
-- Recovery time: 30 min + 120 min + 60 min = 210 min
-- Hourly cadence delays about 3–4 runs
-
-## In-Lecture Exercise 3: Solution- Checkpoint at 20 min: 10 minutes of data lost
-- Loss with checkpoints: 1,667 posts; 16,667 interactions
-- Recovery time: resume 40 minutes, no investigation
-
-## In-Lecture Exercise 3: Takeaway
-- Checkpointing cuts loss and recovery time dramatically
-- Failure math drives reliability investment decisions
-- Design for recovery, not just success
 
 ## Failure Propagation Diagram
 

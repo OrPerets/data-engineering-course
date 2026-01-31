@@ -92,21 +92,6 @@ $$
 - user_features key = (user_id, as_of_ts)
 - Goal: clicks_7d, views_7d per as_of_ts
 
-## In-Lecture Exercise 1: Point-in-Time Correctness
-- Define point-in-time correctness
-- Why does it prevent data leakage?
-
-## In-Lecture Exercise 1: Solution
-- Use only events with event_ts ≤ as_of_ts
-- Feature value reflects knowledge at that time
-
-## In-Lecture Exercise 1: Solution
-- Prevents future events from leaking into training
-- Keeps train and serve distributions aligned
-
-## In-Lecture Exercise 1: Takeaway
-- Point-in-time filtering is non-negotiable for features
-
 ## What Breaks at Scale
 - **Leakage at scale:** large event tables joined without as_of_ts
 - Accidental use of future data; hard to audit
@@ -138,25 +123,6 @@ $$
 - MERGE or overwrite so rerun does not duplicate
 
 ![Key and MERGE vs append](../../diagrams/week11/week11_key_merge.png)
-
-## In-Lecture Exercise 3: Incremental Feature Job
-- Read last_as_of_ts from control table
-- Compute features for next as_of_ts only
-- MERGE into user_features
-- Update control only after success
-
-## In-Lecture Exercise 3: Solution
-- last_as_of_ts = control.last_as_of_ts
-- new_as_of_ts = last_as_of_ts + 1 day
-- Compute features with ts ≤ new_as_of_ts
-
-## In-Lecture Exercise 3: Solution
-- MERGE on (user_id, as_of_ts)
-- Update control after commit to avoid gaps
-
-## In-Lecture Exercise 3: Takeaway
-- Incremental runs reduce cost and avoid reprocessing
-- Control tables must advance only on success
 
 ## Formal Model: Feature as Function
 - Let x = f(raw; t): feature value at time t
@@ -196,22 +162,6 @@ $$
 - Rerun inserts again; duplicate rows per key
 - Training and joins wrong
 - **Decision rule:** always key by (entity_id, as_of_ts); use MERGE
-
-## In-Lecture Exercise 2: Idempotent Feature Write
-- Feature rows with key (user_id, as_of_ts)
-- Write to user_features without duplicates on rerun
-- What MERGE behavior is required?
-
-## In-Lecture Exercise 2: Solution
-- MERGE on (user_id, as_of_ts) as the key
-- When matched: update clicks_7d, views_7d
-
-## In-Lecture Exercise 2: Solution
-- When not matched: insert new row
-- Rerun writes overwrite the same key
-
-## In-Lecture Exercise 2: Takeaway
-- Idempotent writes are mandatory for backtests and reruns
 
 ## Running Example — Data & Goal
 - **Source:** events (event_id, user_id, event_ts, event_type)

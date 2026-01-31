@@ -50,29 +50,6 @@ $$
 - Target: 10 nodes, balanced load
 - Peak: 100K ops/sec
 
-## In-Lecture Exercise 2: Partitioning Sizing
-- Hash partition users and orders by `user_id`
-- Compute data per node on 10 nodes
-- Check capacity for 100K peak at 10K ops/sec/node
-- Decide co-location vs separate clusters
-- Estimate transfer for full user+orders scan
-
-## In-Lecture Exercise 2: Solution
-- Users: 25/10 = 2.5 GB per node
-- Orders: 150/10 = 15 GB per node
-- Total ≈ 17.5 GB per node
-- Peak: 100K / 10 = 10K ops/sec per node
-
-## In-Lecture Exercise 2: Solution
-- Capacity at limit; prefer 12–15 nodes headroom
-- Co-locate for single-partition “orders by user”
-- Separate ⇒ cross-partition scan ≈ 175 GB transfer
-
-## In-Lecture Exercise 2: Takeaway
-- Partitioning math ties directly to capacity planning
-- Co-location can cut latency for dominant access paths
-- Cross-partition scans explode network costs
-
 ## Formal Models (Access Patterns First)
 - **Relational (SQL):** tables, keys, joins, ACID
 - **Breaks when** cross-partition joins dominate
@@ -121,26 +98,6 @@ $$
 - Peak 5× ⇒ ~6K/sec
 - **Single node:** insufficient headroom; systems break on spikes
 
-## In-Lecture Exercise 1: Single-Node Limits
-- 100M users, 500 B per record
-- Single node max 5,000 writes/sec
-- Compute storage size and load time
-- Compute nodes needed for 50,000 writes/sec
-
-## In-Lecture Exercise 1: Solution
-- Storage: 100M × 500 B ≈ 50 GB
-- Load time: 100M / 5,000 s ≈ 20,000 s
-- 20,000 s ≈ 5.56 hours
-
-## In-Lecture Exercise 1: Solution
-- 50,000 / 5,000 = 10 nodes with linear scaling
-- Still need headroom for peaks and failures
-
-## In-Lecture Exercise 1: Takeaway
-- Single-node limits appear quickly at real scale
-- Simple math exposes when distribution becomes necessary
-- Always plan for headroom, not average load
-
 ## Availability Limits
 - Single machine: 99.9% ⇒ 8.76 h/year downtime
 - E-commerce $10K/h ⇒ **$87,600/year lost**
@@ -162,28 +119,6 @@ $$
 - Replica lag ⇒ stale reads possible
 - No single point of failure; complexity increases
 
-## In-Lecture Exercise 3: Replication Trade-offs
-- 3-node cluster, 100 GB per node
-- Compare RF=2 vs RF=3
-- Write size 1 KB; 1 Gbps network
-- Compute storage, write traffic, failure tolerance
-- Estimate P(two failures) with 1%/year per node
-
-## In-Lecture Exercise 3: Solution
-- RF=2: 100 GB × 2 × 3 = 600 GB
-- RF=3: 100 GB × 3 × 3 = 900 GB
-- Write traffic: 2 KB vs 3 KB per write
-
-## In-Lecture Exercise 3: Solution
-- RF=2 tolerates 1 failure; RF=3 tolerates 2
-- P(two failures) ≈ 0.01 × 0.01 = 0.0001
-- Prefer RF=3 for availability and lower loss risk
-
-## In-Lecture Exercise 3: Takeaway
-- Replication multiplies storage and write bandwidth
-- Higher RF buys failure tolerance and read capacity
-- Small failure probabilities still matter at scale
-
 ## Network Uncertainty
 - Latency 1–100 ms between nodes
 - Bandwidth 1–10 Gbps shared
@@ -202,28 +137,6 @@ $$
 - At 1 Gbps ⇒ 160 s + compute
 
 ![Join across machines](../../diagrams/week02/week2_join_across_machines.png)
-
-## In-Lecture Exercise 4: SQL vs NoSQL Latency
-- Use case: orders for user X by category
-- SQL join moves 5 GB across partitions
-- NoSQL co-located read ≈ 3 KB
-- Compute SQL transfer time at 1 Gbps
-- Compare latency and choose the better fit
-
-## In-Lecture Exercise 4: Solution
-- SQL transfer: 5 GB × 8 = 40 Gb
-- 40 Gb / 1 Gbps ≈ 40 seconds plus join time
-- NoSQL single-partition read ≈ 1–5 ms
-
-## In-Lecture Exercise 4: Solution
-- NoSQL fits low-latency, user-scoped serving
-- SQL fits heavy aggregation and ad-hoc analysis
-- Choose based on access pattern and SLA
-
-## In-Lecture Exercise 4: Takeaway
-- Cross-partition joins are latency killers
-- Co-location enables millisecond user-scoped queries
-- Use SQL for analytics, NoSQL for serving paths
 
 ## Transactions at Scale
 - ACID ⇒ all-or-nothing; 2PC used across nodes
