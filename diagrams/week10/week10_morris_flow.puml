@@ -1,0 +1,50 @@
+@startuml
+' Morris counter: X, increment with prob 2^-X, estimate 2^X - 1
+' Flow: stream -> update -> query
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 50
+skinparam ranksep 45
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 12
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 10
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+database "**Stream**\n<size:12>elements a1..am</size>" as S #E3F2FD
+
+component "**Init: X = 0**" as INIT
+
+component "**On each element**\n<size:12>Incr X with prob 2^(-X)</size>" as UPDATE #E1F5FE
+
+component "**State**\n<size:12>X ~ log2(n)</size>" as STATE #ECEFF1
+
+component "**Query**\n<size:12>n_hat = 2^X - 1</size>" as QUERY #C8E6C9
+
+S -right-> INIT
+INIT -right-> UPDATE
+UPDATE -right-> STATE
+STATE -right-> QUERY
+@enduml

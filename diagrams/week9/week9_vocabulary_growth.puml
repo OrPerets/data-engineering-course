@@ -1,0 +1,45 @@
+@startuml
+'=================================================
+' N-GRAM VOCABULARY GROWTH - V^n bound
+' Unigram V, bigram V^2, trigram V^3
+'=================================================
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 45
+skinparam ranksep 45
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 12
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+database "**Unigram**\n<size:10>V terms</size>" as U #E3F2FD
+database "**Bigram**\n<size:10>V^2 bound</size>" as B #FFF3E0
+database "**Trigram**\n<size:10>V^3 bound</size>" as T #E8F5E9
+
+U -right-> B : <size:10>n=2</size>
+B -right-> T : <size:10>n=3</size>
+
+@enduml

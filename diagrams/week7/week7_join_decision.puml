@@ -1,0 +1,53 @@
+@startuml
+'=================================================
+' JOIN ALGORITHM DECISION - Flow
+' |R| < M -> Broadcast; hot key -> Salted; else Reduce-side
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 45
+skinparam ranksep 40
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 12
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+component "**Join R, S**\n<size:10>on key k</size>" as START
+
+component "**|R| < M?**\n<size:10>small table fits memory</size>" as Q1
+component "**Broadcast**\n<size:10>Shuffle = 0</size>" as BROAD #E8F5E9
+component "**Hot key k*?**\n<size:10>skew risk</size>" as Q2
+component "**Salted**\n<size:10>Two-phase</size>" as SALT #FFF3E0
+component "**Reduce-side**\n<size:10>Shuffle |R| + |S|</size>" as RED #E3F2FD
+
+START -down-> Q1
+Q1 -down-> BROAD : <size:10>yes</size>
+Q1 -down-> Q2 : <size:10>no</size>
+Q2 -down-> SALT : <size:10>yes</size>
+Q2 -down-> RED : <size:10>no</size>
+
+@enduml

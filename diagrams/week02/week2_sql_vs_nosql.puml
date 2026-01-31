@@ -1,0 +1,15 @@
+@startuml
+!include ../_template_styles.puml
+' SQL vs NoSQL - Engineering choice
+left to right direction
+
+card "**SQL**\n\n<size:14>Strong consistency (ACID)</size>\n<size:14>Cross-partition transactions</size>\n<size:14>Joins supported</size>\n<size:14>Fixed schema</size>\n<size:14>Latency 10-100 ms (joins)</size>\n<size:14>Complex queries</size>" as SQL <<Control>>
+
+card "**NoSQL**\n\n<size:14>Eventual consistency (BASE)</size>\n<size:14>Single-partition only</size>\n<size:14>No joins</size>\n<size:14>Flexible schema</size>\n<size:14>Latency 1-5 ms (key lookup)</size>\n<size:14>Simple lookups</size>" as NOSQL <<Task>>
+
+card "**Choose from**\n\n<size:13>Access patterns</size>\n<size:13>Latency and cost</size>\n<size:13>Bank -> CP / SQL</size>\n<size:13>Social feed -> AP / NoSQL</size>" as CHOICE <<Primary>>
+
+SQL -down[#1565C0,thickness=2]-> CHOICE : <color:#3949AB>when</color>
+NOSQL -down[#00897B,thickness=2]-> CHOICE : <color:#3949AB>when</color>
+
+@enduml

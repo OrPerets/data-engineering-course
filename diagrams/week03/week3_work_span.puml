@@ -1,0 +1,15 @@
+@startuml
+!include ../_template_styles.puml
+' WORK W and SPAN S - Parallel time bound T_p ≥ max(W/p, S) Speedup ≤ W/S
+top to bottom direction
+
+rectangle "**Work W**\n\n<size:14>Total operations</size>\n<size:14>over all workers</size>\n\n<size:13>More workers =></size>\n<size:13>W/p per worker</size>" as W <<Control>>
+
+rectangle "**Span S**\n\n<size:14>Critical path</size>\n<size:14>Longest dependency chain</size>\n\n<size:13>Bottleneck:</size>\n<size:13>cannot parallelize</size>" as S <<Schema>>
+
+rectangle "**Time bound**\n\n<size:14>T_p >= max(W/p, S)</size>\n<size:14>Speedup <= W/S</size>\n\n<size:12>Low S => near-linear scale</size>\n<size:12>Remove sequential bottlenecks first</size>" as BOUND <<Primary>>
+
+W -down[#1565C0,thickness=2]-> BOUND
+S -down[#FF6F00,thickness=2]-> BOUND
+
+@enduml

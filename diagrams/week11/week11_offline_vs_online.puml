@@ -1,0 +1,57 @@
+@startuml
+' Offline (batch) vs online (serving) feature computation
+' Same definition; different access pattern
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 50
+skinparam ranksep 50
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 14
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+rectangle "OFFLINE" #E3F2FD {
+    component "**Batch compute**\n<size:12>Many (entity_id, as_of_ts)</size>" as B1
+    component "**Feature table**\n<size:12>Training reads by range</size>" as B2
+    B1 -down-> B2
+}
+
+rectangle "ONLINE" #E8F5E9 {
+    component "**Lookup**\n<size:12>One entity_id, latest</size>" as O1
+    component "**Low latency**\n<size:12>ms; cache/index</size>" as O2
+    O1 -down-> O2
+}
+
+database "**Same definition**\n<size:12>Train/serve consistency</size>" as SAME #FFF9C4
+B2 -down-> SAME
+O2 -down-> SAME
+@enduml

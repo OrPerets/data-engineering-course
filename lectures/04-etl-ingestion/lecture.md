@@ -38,24 +38,21 @@
 - **Transform:** filter event_type; cast to proper types
 - **Load:** MERGE into events_clean; key = event_id
 
-## Diagram Manifest
-- Slide 13 → week4_lecture_slide13_pipeline_overview.puml
-- Slide 14 → week4_lecture_bad_architecture.puml
-- Slide 15 → week4_lecture_evolution_v1_v2.puml
-- Slide 22 → week4_lecture_slide22_execution_flow.puml
-- Slide 38 → week4_lecture_slide38_failure_rerun.puml
-
-## Core Concepts (1/2)
+## Core Concepts
 - **ETL:** Extract → Transform → Load
 - **ELT:** Extract → Load → Transform (SQL in place)
 - **Batch:** periodic bulk load (e.g. nightly)
 - **Incremental:** only new/changed rows
 
-## Core Concepts (2/2)
+![](../../diagrams/week04/week4_etl_vs_elt.png)
+
+## Core Concepts
 - **Idempotency:** running job N times = running once
 - **Watermark:** last_loaded_at or max(id)
 - Next run reads only data after watermark
 - **CDC:** change data capture; apply from source log
+
+![](../../diagrams/week04/week4_idempotency.png)
 
 ## Formal Pipeline Stages
 - Raw dataset \(D_{raw}\) becomes cleaned \(D_{clean}\), then modeled \(D_{modeled}\)
@@ -100,11 +97,11 @@ $$
 - Define idempotency for a load job
 - Explain why reruns must be idempotent
 
-## In-Lecture Exercise 1: Solution (1/2)
+## In-Lecture Exercise 1: Solution
 - Idempotency: running the job N times equals running once
 - Output is identical regardless of retries
 
-## In-Lecture Exercise 1: Solution (2/2)
+## In-Lecture Exercise 1: Solution
 - Failures require reruns of the same slice
 - Without idempotency, duplicates or double counts appear
 
@@ -218,6 +215,8 @@ $$
 - **Cons:** only idempotent at partition level
 - **Decision:** MERGE for row-level upsert; overwrite for full partitions
 
+![](../../diagrams/week04/week4_merge_vs_overwrite.png)
+
 ## Data Context: daily_sales → sales
 - daily_sales: 5M rows/day; duplicates by sale_id
 - sales: PRIMARY KEY sale_id; upsert needed
@@ -228,11 +227,11 @@ $$
 - Keep latest record per sale_id
 - Upsert into sales by sale_id
 
-## In-Lecture Exercise 2: Solution (1/2)
+## In-Lecture Exercise 2: Solution
 - Use ROW_NUMBER() PARTITION BY sale_id ORDER BY sale_date DESC
 - Keep rn = 1 as the deduped batch
 
-## In-Lecture Exercise 2: Solution (2/2)
+## In-Lecture Exercise 2: Solution
 - MERGE on sale_id; insert if not matched
 - Update if matched and source is newer
 
@@ -258,7 +257,7 @@ $$
 - **Target:** events_clean; event_time TIMESTAMP; no duplicates
 - **Goal:** load raw → clean; dedup by event_id; idempotent rerun
 
-## Running Example — Step-by-Step (1/4)
+## Running Example — Step-by-Step
 - **Step 1: Extract** — read raw_events with watermark
 - Filter event_type IN ('click','view','purchase')
 - Cast event_timestamp → TIMESTAMP; validate format
@@ -277,12 +276,12 @@ $$
 - Update watermark only after successful load
 - Explain the 5-minute buffer
 
-## In-Lecture Exercise 3: Solution (1/2)
+## In-Lecture Exercise 3: Solution
 - SELECT last_watermark for job_key = 'events_sync'
 - upper_bound = NOW() - 5 minutes
 - Extract where event_time > last_watermark AND <= upper_bound
 
-## In-Lecture Exercise 3: Solution (2/2)
+## In-Lecture Exercise 3: Solution
 - Dedup by event_id; MERGE into events_clean
 - Update last_watermark only after commit
 - Buffer avoids missing late-arriving events
@@ -292,20 +291,20 @@ $$
 - Update control state only after success
 - Buffers trade latency for correctness
 
-## Running Example — Step-by-Step (2/4)
+## Running Example — Step-by-Step
 - **Step 2: Dedup (in-batch)** — one row per event_id
 - ROW_NUMBER() OVER (PARTITION BY event_id ORDER BY event_time)
 - Keep WHERE rn = 1; drop rest
 - Ensures staging does not insert duplicate keys
 
-## Running Example — Step-by-Step (3/4)
+## Running Example — Step-by-Step
 - **Step 3: Load (MERGE)** — MERGE INTO events_clean
 - ON target.event_id = source.event_id
 - WHEN NOT MATCHED THEN INSERT
 - WHEN MATCHED AND newer THEN UPDATE (optional)
 - Rerun with same source: no new rows inserted (idempotent)
 
-## Running Example — Step-by-Step (4/4)
+## Running Example — Step-by-Step
 - **Result:** events_clean has one row per event_id
 - Correct types; no duplicates
 - **Trade-off:** MERGE cost = join; index on event_id critical
@@ -319,6 +318,7 @@ $$
 ## ETL Pipeline Overview
 - Sources (DB, files, API) → Extract → Staging → Transform → Load
 - Staging allows schema-on-read and validation
+
 ![](../../diagrams/week04/week4_lecture_slide13_pipeline_overview.png)
 
 ## Bad Architecture: Why This Fails — Anti-Pattern
@@ -331,6 +331,7 @@ $$
 - Job fails after writing half the partitions
 - Rerun re-inserts those partitions ⇒ duplicates
 - **No dedup:** upstream retry sends same batch twice
+
 ![](../../diagrams/week04/week4_lecture_bad_architecture.png)
 
 ## Cost of Naïve Design (Ingestion): Naïve Choices and Costs
@@ -354,21 +355,22 @@ $$
 - Staging + dedup; MERGE
 - Update watermark only after success
 - Safe rerun; partition-level resume
+
 ![](../../diagrams/week04/week4_lecture_evolution_v1_v2.png)
 
-## Cost & Scaling Analysis (1/3)
+## Cost & Scaling Analysis
 - **Time model:** T ≈ read + transform + write
 - Read: I/O and network from source
 - Write: target load (indexes, constraints)
 - Batch size vs latency: larger = fewer runs, higher per-run time
 
-## Cost & Scaling Analysis (2/3)
+## Cost & Scaling Analysis
 - **Memory / storage:** staging holds one batch
 - Target grows monotonically
 - Peak disk = max(staging size, target write buffer)
 - Partition target by date for pruning
 
-## Cost & Scaling Analysis (3/3)
+## Cost & Scaling Analysis
 - **Network / throughput:** extract and load move bytes
 - Compression (Parquet, gzip) reduces transfer
 - Trade CPU for bandwidth
@@ -399,6 +401,8 @@ $$
 - Update watermark only after successful load
 - Rerun skips already-loaded data
 
+![](../../diagrams/week04/week4_watermark_incremental.png)
+
 ## Watermark and Late-Arriving Data
 - Safety buffer: upper_bound = NOW() - 5 min
 - Ensures committed transactions are included
@@ -408,6 +412,7 @@ $$
 - Trigger → read source with watermark → transform → write
 - After successful write: update watermark in control table
 - On failure: do not update; next run re-reads (idempotent)
+
 ![](../../diagrams/week04/week4_lecture_slide22_execution_flow.png)
 
 ## Failure Story 1: Rerun Duplicates Revenue — Incident
@@ -432,7 +437,7 @@ $$
 - Validate in transform; valid → target; invalid → DLQ
 - Pipeline stays green; fix schema from DLQ analysis
 
-## Pitfalls & Failure Modes (1/3)
+## Pitfalls & Failure Modes
 - **Non-idempotent load:** INSERT without dedup ⇒ duplicates
 - **No watermark:** full scan every run ⇒ slow and risky
 - **Overwrite instead of merge:** reprocessing overwrites good data
@@ -454,7 +459,9 @@ $$
 - Valid rows → target, invalid → DLQ
 - Pipeline does not crash; bad rows auditable
 
-## Pitfalls & Failure Modes (2/3)
+![](../../diagrams/week04/week4_dlq_flow.png)
+
+## Pitfalls & Failure Modes
 - **Summary:** partial run, duplicate source, bad data
 - All need design for rerun and validation
 - Next: diagram of partial failure and idempotent rerun
@@ -516,6 +523,7 @@ $$
 - Job processes P1, P2, P3; fails after P2
 - Rerun processes only P3
 - Target must not contain duplicate rows for P1, P2
+
 ![](../../diagrams/week04/week4_lecture_slide38_failure_rerun.png)
 
 ## Failure Scenario: Summary
@@ -523,19 +531,19 @@ $$
 - Rerun: only process 12-03; no re-insert of 12-01, 12-02
 - Control table: mark 12-01 and 12-02 completed
 
-## Pitfalls & Failure Modes (3/3)
+## Pitfalls & Failure Modes
 - **Detection:** row counts, watermark lag, DLQ size
 - **Mitigation:** idempotent writes; watermark + buffer
 - **CDC for deletes:** use log-based CDC if deletes matter
 
-## Best Practices (1/2)
+## Best Practices
 - Use staging for raw load; validate and dedup before target
 - Design for idempotency: MERGE or INSERT ON CONFLICT
 - Watermark incremental loads; update only after commit
 - Partition target by date for pruning and safe rerun
 - Route bad rows to DLQ; do not fail entire batch
 
-## Best Practices (2/2)
+## Best Practices
 - Use transactions so partial write does not leave half-state
 - Document schema, keys, and expected volumes
 - Monitor load duration, row counts, watermark lag
@@ -559,4 +567,5 @@ $$
 
 ## Additional Diagrams
 ### Practice: Incremental Rerun
+
 ![](../../diagrams/week04/week4_practice_slide18_incremental_rerun.png)

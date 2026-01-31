@@ -1,0 +1,50 @@
+@startuml
+'=================================================
+' INMON DWH - Four characteristics feed DWH
+' Short labels; flow into central node
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 45
+skinparam ranksep 40
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 12
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+rectangle "**Subject-Oriented**\n<size:10>Customer, product, sales</size>" as SUBJ #E3F2FD
+rectangle "**Integrated**\n<size:10>One model from many sources</size>" as INT #E8F5E9
+rectangle "**Time-Variant**\n<size:10>History, 5-10 years</size>" as TIME #FFF3E0
+rectangle "**Non-Volatile**\n<size:10>Read-only; append/refresh</size>" as NONV #F3E5F5
+
+database "**Data Warehouse**\n<size:10>Analytics, decision support</size>" as DWH #C8E6C9
+
+SUBJ -down[#1976D2,thickness=2]-> DWH
+INT -down[#388E3C,thickness=2]-> DWH
+TIME -down[#F57C00,thickness=2]-> DWH
+NONV -down[#7B1FA2,thickness=2]-> DWH
+
+@enduml

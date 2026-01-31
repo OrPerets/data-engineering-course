@@ -1,127 +1,108 @@
-# Lecture & Diagram Quality — Task List
+# Diagram styling refinement – agent instructions
 
-**Goals:**
-1. Review each week's `lecture.md` + existing diagrams.
-2. Add relevant diagrams to enrich the lecture (create `.puml` → render → reference in `lecture.md`).
-3. Fix **empty-slide** issues for pandoc→pptx: slides that are only a title (e.g. `## Core Concepts (1/3)` or `## Data Pipeline` with only bullets below) — either **add a diagram** on that slide or **remove/merge the title** so no slide is title-only.
-4. Work in sprints to keep each batch focused and reviewable.
+## Goal
+
+Refine **all** PlantUML diagrams under `diagrams/` so they use the **template styling** defined in `diagrams/template.puml`: elegant, professional, and visually consistent (deep blue theme, ortho lines, rounded corners, clear hierarchy).
 
 ---
 
-## Empty-slide rule (pandoc → pptx)
+## Reference: template styling (`diagrams/template.puml`)
 
-- A slide that is **only** `## Some Title` with no image and no body text can render as an empty slide.
-- **Fix:** For every such slide, either:
-  - **Option A:** Add a diagram (create `.puml` in `diagrams/weekNN/`, render to PNG, add `![](path/to/diagram.png)` under the title in `lecture.md`), or
-  - **Option B:** Remove the standalone title (merge into previous/next section or fold under a parent heading).
+- **Layout:** `top to bottom direction`, `skinparam linetype ortho`, `skinparam shadowing true`, `skinparam roundcorner 12`, `nodesep 60`, `ranksep 50`
+- **Font:** `Segoe UI, Arial, sans-serif`, size 18 (default), color `#1A237E`
+- **Background:** `#FAFBFC`
+- **Rectangles:** `#E8EAF6` bg, `#3949AB` border, thickness 2.5, padding 22, round 12
+- **Components:** white / `#E8EAF6` (by stereotype), `#5C6BC0` border, thickness 2, padding 16
+- **Databases:** `#E8EAF6` bg, `#3949AB` border, thickness 2.5
+- **Arrows:** `#5C6BC0` color, thickness 2, label color `#3949AB`
+- **Semantic stereotypes (use these for meaning):**
+  - `<<A>>` – primary / role (indigo)
+  - `<<B>>` – control / runtime (blue)
+  - `<<C>>` – function / task (teal)
+  - `<<D>>` – schema / model (orange)
+  - `<<Bad>>` – bad / failure path (red)
+  - `<<V1>>` / `<<V2>>` – version or variant (orange / teal)
+  - `<<up>>` / `<<down>>` or `<<success>>` / `<<failure>>` – outcome (green / red)
 
----
-
-## Sprint 1 — Weeks 01–04 (Intro, Distributed DB, Parallelism, ETL)
-
-### Week 01 — Introduction
-- [x] Review `lectures/01-intro/lecture.md` and `diagrams/week01/`.
-- [x] List all `##` headings that are title-only or title + bullets with no diagram.
-- [x] For each empty-slide candidate: add a diagram (Option A) or remove/merge title (Option B).
-  - Examples to fix: `## Core Concepts (1/3)`, `## Data Pipeline`, `## Business Intelligence Context`, `## Data Engineering vs Data Science`, etc.
-- [x] Add new diagrams where they would enrich the narrative (e.g. pipeline flow, BI context, Data-to-Wisdom, DE vs DS).
-- [x] Create `.puml` files, render PNGs, and add `![](...)` references in `lecture.md`.
-- [x] Re-run pandoc to pptx and confirm no empty slides.
-
-### Week 02 — Distributed DB
-- [x] Review `lectures/02-distributed-db/lecture.md` and `diagrams/week02/`.
-- [x] Identify title-only / empty-slide sections; fix with diagram or title merge.
-- [x] Propose and add 1–3 new diagrams that clarify distributed DB concepts.
-- [x] Create `.puml`, render, reference in `lecture.md`; verify pptx.
-
-### Week 03 — Parallelism
-- [x] Review `lectures/03-parallelism/lecture.md` and `diagrams/week03/`.
-- [x] Fix empty slides (diagram or merge).
-- [x] Add diagrams where they help (e.g. parallelism vs concurrency, execution flow).
-- [x] Create `.puml`, render, reference; verify pptx.
-
-### Week 04 — ETL / Ingestion
-- [x] Review `lectures/04-etl-ingestion/lecture.md` and `diagrams/week04/`.
-- [x] Fix empty slides (diagram or merge).
-- [x] Enrich with diagrams (e.g. ETL flow, idempotency/rerun).
-- [x] Create `.puml`, render, reference; verify pptx.
-
-**Sprint 1 done when:** All weeks 01–04 reviewed, empty slides fixed, new diagrams added and referenced, pptx build clean. **Done.**
+Use `template.puml` as the **single source of truth** for these values when refining each diagram.
 
 ---
 
-## Sprint 2 — Weeks 05–08 (DWH/Data Lake, MapReduce, Text/TF-IDF)
+## What to do per diagram
 
-### Week 05 — DWH & Data Lake
-- [ ] Review `lectures/05-dwh-datalake/lecture.md` and `diagrams/week05/`.
-- [ ] Fix empty slides; add diagrams (e.g. DWH vs data lake, schema layers).
-- [ ] Create `.puml`, render, reference; verify pptx.
+1. **Apply template styling**
+   - Either:
+     - **Option A:** Create `diagrams/_template_styles.puml` containing only the skinparam block from `template.puml` (no `@startuml`, no example boxes/flows). Then at the top of each `.puml` (after `@startuml`), add: `!include ../_template_styles.puml` (or the correct relative path from that week folder to `diagrams/`).
+     - **Option B:** Copy the full skinparam section from `template.puml` into each diagram (no new file), and remove any duplicate or conflicting skinparam/theme blocks from that file.
+   - Ensure layout/direction (e.g. `top to bottom` or `left to right`) is set; keep the diagram’s intended direction if it differs from the template example.
 
-### Week 06 — MapReduce
-- [ ] Review `lectures/06-mapreduce/lecture.md` and `diagrams/week06/`.
-- [ ] Fix empty slides; add diagrams (map/reduce flow, shuffle, failure).
-- [ ] Create `.puml`, render, reference; verify pptx.
+2. **Remove local overrides**
+   - Delete any local `skinparam` blocks that conflict with the template (e.g. different fonts, colors, shadowing false, roundcorner 8, gray theme).
+   - Remove inline color overrides on shapes (e.g. `#FFF9C4`, `#C8E6C9`) unless they are intentional semantic accents that match the template palette (e.g. green/red for success/failure).
 
-### Week 07 — MapReduce Advanced
-- [ ] Review `lectures/07-mapreduce-advanced/lecture.md` and `diagrams/week7/`.
-- [ ] Fix empty slides; add diagrams where they clarify advanced patterns.
-- [ ] Create `.puml`, render, reference; verify pptx.
+3. **Map stereotypes to the template set**
+   - Replace ad‑hoc stereotypes (e.g. `<<UI>>`, `<<Agent>>`, `<<Tool>>`, `<<Config>>`) with the template’s semantic set where it makes sense:
+     - Control/routing → `<<B>>`
+     - Function/task/worker → `<<C>>`
+     - Schema/model → `<<D>>`
+     - Bad path / failure → `<<Bad>>` or `<<failure>>`
+     - Good path / success → `<<success>>` or `<<up>>`
+     - Version or variant → `<<V1>>` / `<<V2>>`
+   - If a diagram has no stereotypes, add them only when they improve clarity (e.g. failure vs success).
+   - **Use all five entity styles for visual variety:** assign `<<A>>` (primary/role, indigo), `<<B>>` (control, blue), `<<C>>` (function/task, teal), `<<D>>` (schema/model, orange), and `<<Bad>>` (failure, red) across components, storage, cloud, card, and database elements so that diagrams do not look monochrome. Prefer spreading A/B/C/D across the diagram rather than giving most entities the same stereotype.
+   - **In real diagrams use meaningful stereotype names, not letter codes:** use `<<Primary>>`, `<<Control>>`, `<<Task>>`, `<<Schema>>`, `<<Failure>>` (and `<<success>>` / `<<failure>>` / `<<up>>` / `<<down>>` for outcomes) so the rendered diagram shows readable labels. Reserve `<<A>>`, `<<B>>`, `<<C>>`, `<<D>>`, `<<Bad>>` for the reference template only (`template.puml`).
 
-### Week 08 — Text & TF-IDF
-- [ ] Review `lectures/08-text-tfidf/lecture.md` and `diagrams/week8/`.
-- [ ] Fix empty slides; add diagrams (text pipeline, TF-IDF flow).
-- [ ] Create `.puml`, render, reference; verify pptx.
+4. **Arrows and labels**
+   - Use template-like arrow styling: thickness 2, colors from the template (e.g. `#5C6BC0`, `#00897B`, `#1565C0`, `#7C4DFF` for emphasis). Prefer `#3949AB` or `#0D47A1` for label text.
 
-**Sprint 2 done when:** Weeks 05–08 reviewed, empty slides fixed, diagrams added and referenced, pptx build clean.
+5. **Content and structure**
+   - Do **not** change the logical content, box names, or structure of the diagram; only styling, skinparams, stereotypes, and arrow/label appearance.
 
----
-
-## Sprint 3 — Weeks 09–11 (Text Advanced, Streaming, Feature Engineering)
-
-### Week 09 — Text Advanced
-- [ ] Review `lectures/09-text-advanced/lecture.md` and `diagrams/week9/`.
-- [ ] Fix empty slides; add diagrams to enrich advanced text topics.
-- [ ] Create `.puml`, render, reference; verify pptx.
-
-### Week 10 — Streaming
-- [ ] Review `lectures/10-streaming/lecture.md` and `diagrams/week10/`.
-- [ ] Fix empty slides; add diagrams (streaming vs batch, windows, late data).
-- [ ] Create `.puml`, render, reference; verify pptx.
-
-### Week 11 — Feature Engineering
-- [ ] Review `lectures/11-feature-engineering/lecture.md` and `diagrams/week11/`.
-- [ ] Fix empty slides; add diagrams (feature pipeline, leakage, rerun).
-- [ ] Create `.puml`, render, reference; verify pptx.
-
-**Sprint 3 done when:** Weeks 09–11 reviewed, empty slides fixed, diagrams added and referenced, pptx build clean.
+6. **Regenerate PNGs**
+   - After changing any `.puml`, re-run the project’s diagram render script (e.g. `render_diagrams.sh` or equivalent) so all corresponding `.png` files are updated.
 
 ---
 
-## Sprint 4 — Weeks 12–14 (Feature Eng Advanced, DataOps, Review)
+## Sprints and todo list
 
-### Week 12 — Feature Engineering Advanced
-- [ ] Review `lectures/12-feature-engineering-advanced/lecture.md` and `diagrams/week12/`.
-- [ ] Fix empty slides; add diagrams where they help.
-- [ ] Create `.puml`, render, reference; verify pptx.
+Work **week by week** to avoid mixing unrelated changes. Each sprint = “apply template to that week’s diagrams + re-render PNGs.”
 
-### Week 13 — DataOps
-- [ ] Review `lectures/13-dataops/lecture.md` and `diagrams/week13/`.
-- [ ] Fix empty slides; add diagrams (CI/CD for data, monitoring, versioning).
-- [ ] Create `.puml`, render, reference; verify pptx.
-
-### Week 14 — Review
-- [ ] Review `lectures/14-review/lecture.md` and `diagrams/week14/`.
-- [ ] Fix empty slides; add summary/recap diagrams if useful.
-- [ ] Create `.puml`, render, reference; verify pptx.
-
-**Sprint 4 done when:** Weeks 12–14 reviewed, empty slides fixed, diagrams added and referenced, pptx build clean.
+| Sprint | Scope | Todo |
+|--------|--------|------|
+| **0** | Setup (optional) | [x] Create `diagrams/_template_styles.puml` from `template.puml` (skinparams only) if using Option A |
+| **1** | week01 | [x] Apply template styling to all `diagrams/week01/*.puml`; re-render week01 PNGs |
+| **2** | week02 | [x] Apply template styling to all `diagrams/week02/*.puml`; re-render week02 PNGs |
+| **3** | week03 | [x] Apply template styling to all `diagrams/week03/*.puml`; re-render week03 PNGs |
+| **4** | week04 | [ ] Apply template styling to all `diagrams/week04/*.puml`; re-render week04 PNGs |
+| **5** | week05 | [ ] Apply template styling to all `diagrams/week05/*.puml`; re-render week05 PNGs |
+| **6** | week06 | [ ] Apply template styling to all `diagrams/week06/*.puml`; re-render week06 PNGs |
+| **7** | week7  | [ ] Apply template styling to all `diagrams/week7/*.puml`; re-render week7 PNGs |
+| **8** | week8  | [ ] Apply template styling to all `diagrams/week8/*.puml`; re-render week8 PNGs |
+| **9** | week9  | [ ] Apply template styling to all `diagrams/week9/*.puml`; re-render week9 PNGs |
+| **10** | week10 | [ ] Apply template styling to all `diagrams/week10/*.puml`; re-render week10 PNGs |
+| **11** | week11 | [ ] Apply template styling to all `diagrams/week11/*.puml`; re-render week11 PNGs |
+| **12** | week12 | [ ] Apply template styling to all `diagrams/week12/*.puml`; re-render week12 PNGs |
+| **13** | week13 | [ ] Apply template styling to all `diagrams/week13/*.puml`; re-render week13 PNGs |
+| **14** | week14 | [ ] Apply template styling to all `diagrams/week14/*.puml`; re-render week14 PNGs |
+| **Final** | All | [ ] Run full diagram render; spot-check PNGs for consistency and readability |
 
 ---
 
-## Checklist per week (copy when working)
+## Checklist (per file)
 
-- [ ] Read full `lecture.md` and list every `##` that could be an empty slide.
-- [ ] For each: add diagram **or** remove/merge title.
-- [ ] Decide 1–3 new diagrams that would enrich the lecture.
-- [ ] Add `.puml` under `diagrams/weekNN/`, run render script, add `![](...)` in `lecture.md`.
-- [ ] Run pandoc to pptx for that week and confirm no empty slides.
+- [ ] Template skinparams applied (include or in-file)
+- [ ] No conflicting local skinparam/theme
+- [ ] Stereotypes aligned with template set (or removed if redundant)
+- [ ] Arrow/label colors from template palette
+- [ ] Diagram structure and text unchanged
+- [ ] PNG regenerated
+
+---
+
+## Notes for the agent
+
+- Prefer **one option** (A or B) for the whole repo and apply it consistently.
+- If a diagram uses a stereotype not in the template (e.g. `<<Config>>`), map it to the closest template stereotype or drop it and rely on default component style.
+- Keep `template.puml` itself unchanged; it remains the reference diagram and style definition.
+- **Five entity styles:** Use the five semantic stereotypes (`<<A>>`, `<<B>>`, `<<C>>`, `<<D>>`, `<<Bad>>`) to create visual variety. Avoid having almost all entities the same color; spread indigo (A), blue (B), teal (C), orange (D), and red (Bad) across the diagram so roles are visually distinct. The template defines these for component, storage, cloud, card, database, and rectangle.
+- **Meaningful labels in diagrams:** In real diagrams (week01, week02, …) use the readable stereotype names `<<Primary>>`, `<<Control>>`, `<<Task>>`, `<<Schema>>`, `<<Failure>>` so the PNG shows "Primary", "Control", etc., not "A", "B". Keep `<<A>>` / `<<B>>` / `<<C>>` / `<<D>>` / `<<Bad>>` only in `template.puml` as the reference key.

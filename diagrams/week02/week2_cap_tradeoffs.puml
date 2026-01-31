@@ -1,0 +1,18 @@
+@startuml
+!include ../_template_styles.puml
+' CAP THEOREM - Pick two of three
+left to right direction
+
+card "**Consistency**\n\n<size:14>All nodes see same data</size>\n<size:14>Strong guarantees</size>" as C <<Control>>
+
+card "**Availability**\n\n<size:14>Every request gets response</size>\n<size:14>No blocking</size>" as A <<Task>>
+
+card "**Partition tolerance**\n\n<size:14>Works despite network splits</size>\n<size:14>Distributed reality</size>" as P <<Schema>>
+
+card "**Pick two**\n\n<size:13>CP: strong consistency, possible downtime</size>\n<size:13>AP: always available, stale reads</size>\n<size:13>CA: not realistic in distributed</size>" as CHOICE <<Primary>>
+
+C -down[#1565C0,thickness=2]-> CHOICE
+A -down[#00897B,thickness=2]-> CHOICE
+P -down[#FF6F00,thickness=2]-> CHOICE
+
+@enduml

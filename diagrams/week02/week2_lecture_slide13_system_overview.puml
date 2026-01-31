@@ -1,161 +1,31 @@
 @startuml
-'=================================================
-' CANONICAL DIAGRAM TEMPLATE - DATA ENGINEERING
-'=================================================
-
-top to bottom direction
-skinparam linetype ortho
-skinparam shadowing false
-skinparam roundcorner 8
-skinparam handwritten false
-skinparam nodesep 24
-skinparam ranksep 28
-
-'-------------------------
-' FONT & GLOBAL STYLE
-'-------------------------
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam defaultFontColor #2C3E50
-
-'-------------------------
-' GENERIC BOX STYLE
-'-------------------------
-skinparam rectangle {
-    BackgroundColor #F8F9FA
-    BorderColor #90A4AE
-    BorderThickness 2
-    FontColor #263238
-    FontSize 14
-    FontStyle bold
-    Padding 20
-}
-
-skinparam component {
-    BackgroundColor #FFFFFF
-    BorderColor #78909C
-    BorderThickness 1.5
-    FontSize 14
-    Padding 12
-}
-
-skinparam database {
-    BackgroundColor #ECEFF1
-    BorderColor #546E7A
-    BorderThickness 1.5
-    FontSize 14
-    FontColor #263238
-}
-
-skinparam arrow {
-    Color #607D8B
-    Thickness 1.5
-    FontSize 11
-    FontColor #546E7A
-}
-
-'-------------------------
-' SEMANTIC STEREOTYPES
-'-------------------------
-skinparam component<<UI>> {
-    BorderColor #8E24AA
-    BackgroundColor #F3E5F5
-    FontColor #4A148C
-}
-
-skinparam component<<Agent>> {
-    BorderColor #0288D1
-    BackgroundColor #E1F5FE
-    FontColor #01579B
-}
-
-skinparam component<<Tool>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<Config>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<Bad>> {
-    BorderColor #C62828
-    BackgroundColor #FFEBEE
-    FontColor #B71C1C
-}
-
-skinparam component<<V1>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<V2>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam database<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam database<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam component<<success>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<failure>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-'=================================================
-
+!include ../_template_styles.puml
 ' DISTRIBUTED DB SYSTEM OVERVIEW - Mixed layout for PPTX
+top to bottom direction
 
 together {
-    component "**App / Query**\n<size:10>Read / Write</size>" as CLIENT
-    component "**Router**\n<size:10>Route to partition</size>" as ROUTER
-    component "**Partition Map**\n<size:10>hash(key) mod N</size>" as PMAP <<Config>>
+    component "**App / Query**\n<size:10>Read / Write</size>" as CLIENT <<Primary>>
+    component "**Router**\n<size:10>Route to partition</size>" as ROUTER <<Control>>
+    component "**Partition Map**\n<size:10>hash(key) mod N</size>" as PMAP <<Schema>>
 }
 
-rectangle "DATA NODES" #F8F9FA {
-    database "**Node 1**\n<size:10>P0, P3</size>" as N1
-    database "**Node 2**\n<size:10>P1, P4</size>" as N2
-    database "**Node 3**\n<size:10>P2, P5</size>" as N3
+rectangle "DATA NODES" #FFFFFF {
+    database "**Node 1**\n<size:10>P0, P3</size>" as N1 <<Schema>>
+    database "**Node 2**\n<size:10>P1, P4</size>" as N2 <<Schema>>
+    database "**Node 3**\n<size:10>P2, P5</size>" as N3 <<Schema>>
     N1 -[hidden]right- N2
     N2 -[hidden]right- N3
 }
 
-component "**Replication**\n<size:10>Sync / async</size>" as REPL <<Agent>>
+component "**Replication**\n<size:10>Sync / async</size>" as REPL <<Control>>
 
-CLIENT -right-> ROUTER : "request"
-ROUTER -right-> PMAP : "lookup"
-ROUTER -down-> N1 : "P0/P3"
-ROUTER -down-> N2 : "P1/P4"
-ROUTER -down-> N3 : "P2/P5"
-N1 -down-> REPL : "sync"
-N2 -down-> REPL : "sync"
-N3 -down-> REPL : "sync"
+CLIENT -right[#5C6BC0,thickness=2]-> ROUTER : <color:#3949AB>request</color>
+ROUTER -right[#5C6BC0,thickness=2]-> PMAP : <color:#3949AB>lookup</color>
+ROUTER -down[#5C6BC0,thickness=2]-> N1 : <color:#3949AB>P0/P3</color>
+ROUTER -down[#5C6BC0,thickness=2]-> N2 : <color:#3949AB>P1/P4</color>
+ROUTER -down[#5C6BC0,thickness=2]-> N3 : <color:#3949AB>P2/P5</color>
+N1 -down[#00897B,thickness=2]-> REPL : <color:#3949AB>sync</color>
+N2 -down[#00897B,thickness=2]-> REPL : <color:#3949AB>sync</color>
+N3 -down[#00897B,thickness=2]-> REPL : <color:#3949AB>sync</color>
 
 @enduml

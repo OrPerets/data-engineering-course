@@ -1,36 +1,17 @@
 @startuml
+!include ../_template_styles.puml
 ' Core Concepts (2/3) — Batch vs Streaming vs Hybrid
 top to bottom direction
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam roundcorner 15
-skinparam shadowing true
-skinparam linetype ortho
-skinparam nodesep 60
-skinparam ranksep 50
-
-skinparam card {
-    FontStyle bold
-    Padding 30
-    BorderThickness 2.5
-}
-
-skinparam arrow {
-    Thickness 2.5
-    FontSize 13
-}
-
-title <size:22><b>Processing Models</b></size>\n<size:14>Batch vs Streaming vs Hybrid</size>
 
 package "Processing Paradigms" {
-    card "📦 **BATCH PROCESSING**\n\n<size:14><b>Characteristics:</b>\n• Process in chunks\n• Hourly / Daily schedules\n• High throughput\n• Lower cost per record\n\n<b>Use Cases:</b>\nHistorical analysis, ETL</size>" as B #E3F2FD
+    card "**BATCH**\n\n<size:14><b>Characteristics:</b></size>\n<size:14>• Process chunks</size>\n<size:14>• Hourly/Daily</size>\n<size:14>• High throughput</size>\n<size:14>• Lower cost</size>\n\n<size:14><b>Use:</b> ETL</size>" as B <<Control>>
 
-    card "⚡ **STREAM PROCESSING**\n\n<size:14><b>Characteristics:</b>\n• Continuous flow\n• Real-time / sub-second\n• Low latency\n• Event-driven\n\n<b>Use Cases:</b>\nAlerts, live dashboards</size>" as S #C8E6C9
+    card "**STREAM**\n\n<size:14><b>Characteristics:</b></size>\n<size:14>• Continuous</size>\n<size:14>• Real-time</size>\n<size:14>• Low latency</size>\n<size:14>• Event-driven</size>\n\n<size:14><b>Use:</b> Alerts</size>" as S <<Task>>
 }
 
-card "🔄 **HYBRID ARCHITECTURE**\n\n<size:15><b>Best of Both Worlds:</b></size>\n\n<size:14>• Batch for historical data & aggregates\n• Stream for recent & real-time events\n• Lambda or Kappa architecture\n• Unified serving layer</size>\n\n<size:13><i>Example: Last 2 years batch + last 24h streaming</i></size>" as H #FFF9C4
+card "**HYBRID**\n\n<size:15><b>Best of Both:</b></size>\n\n<size:14>• Batch for history</size>\n<size:14>• Stream for recent</size>\n<size:14>• Lambda/Kappa</size>\n<size:14>• Unified serving</size>\n\n<size:13><i>Ex: 2yr batch + 24h stream</i></size>" as H <<Schema>>
 
-B -[#1976D2,thickness=3]-> H : <size:12><color:#0D47A1>Historical\naccuracy</color></size>
-S -[#388E3C,thickness=3]-> H : <size:12><color:#1B5E20>Real-time\nfreshness</color></size>
+B -down[#1565C0,thickness=2]-> H : <color:#3949AB>History</color>
+S -down[#00897B,thickness=2]-> H : <color:#3949AB>Real-time</color>
 
 @enduml

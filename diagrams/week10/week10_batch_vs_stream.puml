@@ -1,0 +1,53 @@
+@startuml
+' Batch vs Stream - comparison flow
+' Bounded vs unbounded; one pass; memory
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 50
+skinparam ranksep 50
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 14
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+rectangle "BATCH" #E3F2FD {
+    component "**Bounded data**\n<size:12>Finite set, known size</size>" as B1
+    component "**Multiple passes**\n<size:12>Can re-scan</size>" as B2
+    component "**Full memory OK**\n<size:12>Load partition</size>" as B3
+    B1 -down-> B2
+    B2 -down-> B3
+}
+
+rectangle "STREAM" #E8F5E9 {
+    component "**Unbounded data**\n<size:12>Infinite, one pass</size>" as S1
+    component "**One pass**\n<size:12>No rewind</size>" as S2
+    component "**Bounded memory**\n<size:12>s << m</size>" as S3
+    S1 -down-> S2
+    S2 -down-> S3
+}
+
+B1 -[hidden]right- S1
+@enduml

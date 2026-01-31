@@ -1,28 +1,15 @@
 @startuml
+!include ../_template_styles.puml
 ' Data Pipeline — Input → Transform → Output
 left to right direction
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam roundcorner 15
-skinparam shadowing true
-skinparam linetype ortho
-skinparam nodesep 45
-skinparam ranksep 70
 
-skinparam arrow {
-    Thickness 3.5
-    FontSize 13
-}
+storage "**INPUT**\n\n<size:14>Sources:</size>\n<size:14>• CSV</size>\n<size:14>• JSON APIs</size>\n<size:14>• DB dumps</size>\n<size:14>• Streams</size>" as I <<Primary>>
 
-title <size:20><b>Data Pipeline Architecture</b></size>
+component "**TRANSFORM**\n\n<size:14>Processing:</size>\n<size:14>• Clean</size>\n<size:14>• Deduplicate</size>\n<size:14>• Enrich</size>\n<size:14>• Normalize</size>" as T <<Task>>
 
-storage "📥 **INPUT**\n\n<size:14>Raw data sources:\n• CSV files\n• JSON APIs\n• Database dumps\n• Event streams</size>" as I #ECEFF1
+database "**OUTPUT**\n\n<size:14>Ready:</size>\n<size:14>• Validated</size>\n<size:14>• Consistent</size>\n<size:14>• Quality</size>\n<size:14>• Partitioned</size>" as O <<Schema>>
 
-component "🔄 **TRANSFORM**\n\n<size:14><b>Data Processing:</b>\n• Clean nulls & outliers\n• Deduplicate records\n• Enrich with metadata\n• Normalize formats</size>" as T #E3F2FD
-
-database "✅ **OUTPUT**\n\n<size:14>Ready for use:\n• Validated schema\n• Consistent format\n• Quality checked\n• Partitioned</size>" as O #C8E6C9
-
-I -[#1976D2,thickness=4]-> T : <size:13><color:#0D47A1>**Ingest**</color></size>
-T -[#388E3C,thickness=4]-> O : <size:13><color:#1B5E20>**Write**</color></size>
+I -[#5C6BC0,thickness=2]-> T : <color:#3949AB>**Ingest**</color>
+T -[#00897B,thickness=2]-> O : <color:#3949AB>**Write**</color>
 
 @enduml

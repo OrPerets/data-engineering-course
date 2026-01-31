@@ -1,0 +1,64 @@
+@startuml
+'=================================================
+' STOP-WORD FILTER - Job 1 Map reduces skew
+' Filter in Job 1; Job 2 hot reducer avoided
+'=================================================
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 45
+skinparam ranksep 45
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 12
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+skinparam component<<Bad>> {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
+}
+skinparam component<<Tool>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+
+component "**Job 1 Map**\n<size:10>No filter</size>" as MAP_BAD <<Bad>>
+database "**Job 2**\n<size:10>the gets N values</size>" as J2_BAD <<Bad>>
+
+component "**Job 1 Map**\n<size:10>Skip stop words</size>" as MAP_GOOD <<Tool>>
+database "**Job 2**\n<size:10>Balanced</size>" as J2_GOOD
+
+MAP_BAD -right-> J2_BAD : <size:10>skew</size>
+MAP_GOOD -right-> J2_GOOD : <size:10>filter</size>
+
+MAP_BAD -[hidden]down- MAP_GOOD
+@enduml

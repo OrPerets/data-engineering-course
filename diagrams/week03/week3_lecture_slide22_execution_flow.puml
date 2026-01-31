@@ -1,157 +1,27 @@
 @startuml
-'=================================================
-' CANONICAL DIAGRAM TEMPLATE - DATA ENGINEERING
-'=================================================
-
-left to right direction
-skinparam linetype ortho
-skinparam shadowing false
-skinparam roundcorner 8
-skinparam handwritten false
-skinparam nodesep 24
-skinparam ranksep 28
-
-'-------------------------
-' FONT & GLOBAL STYLE
-'-------------------------
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam defaultFontColor #2C3E50
-
-'-------------------------
-' GENERIC BOX STYLE
-'-------------------------
-skinparam rectangle {
-    BackgroundColor #F8F9FA
-    BorderColor #90A4AE
-    BorderThickness 2
-    FontColor #263238
-    FontSize 14
-    FontStyle bold
-    Padding 20
-}
-
-skinparam component {
-    BackgroundColor #FFFFFF
-    BorderColor #78909C
-    BorderThickness 1.5
-    FontSize 14
-    Padding 12
-}
-
-skinparam database {
-    BackgroundColor #ECEFF1
-    BorderColor #546E7A
-    BorderThickness 1.5
-    FontSize 14
-    FontColor #263238
-}
-
-skinparam arrow {
-    Color #607D8B
-    Thickness 1.5
-    FontSize 11
-    FontColor #546E7A
-}
-
-'-------------------------
-' SEMANTIC STEREOTYPES
-'-------------------------
-skinparam component<<UI>> {
-    BorderColor #8E24AA
-    BackgroundColor #F3E5F5
-    FontColor #4A148C
-}
-
-skinparam component<<Agent>> {
-    BorderColor #0288D1
-    BackgroundColor #E1F5FE
-    FontColor #01579B
-}
-
-skinparam component<<Tool>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<Config>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<Bad>> {
-    BorderColor #C62828
-    BackgroundColor #FFEBEE
-    FontColor #B71C1C
-}
-
-skinparam component<<V1>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<V2>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam database<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam database<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam component<<success>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<failure>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-'=================================================
-
+!include ../_template_styles.puml
 ' MAP-SHUFFLE-REDUCE EXECUTION FLOW - Mixed layout for PPTX
+left to right direction
 
-rectangle "MAP PHASE" #E8F5E9 {
-    database "**Records**\n<size:10>r1, r2, r3...</size>" as RECS
-    component "**Map**\n<size:10>emit (k,v)</size>" as MAP_FN <<Tool>>
-    RECS -down-> MAP_FN : "read"
+rectangle "MAP PHASE" #FFFFFF {
+    database "**Records**\n<size:10>r1, r2, r3...</size>" as RECS <<Schema>>
+    component "**Map**\n<size:10>emit (k,v)</size>" as MAP_FN <<Task>>
+    RECS -down[#5C6BC0,thickness=2]-> MAP_FN : <color:#3949AB>read</color>
 }
 
-rectangle "SHUFFLE PHASE" #FFF3E0 {
-    component "**Sort & Transfer**\n<size:10>Group by key</size>" as SORT_XFER <<Agent>>
-    database "**Groups**\n<size:10>k->[v1,v2,...]</size>" as GROUPS
-    SORT_XFER -down-> GROUPS : "partition"
+rectangle "SHUFFLE PHASE" #FFFFFF {
+    component "**Sort & Transfer**\n<size:10>Group by key</size>" as SORT_XFER <<Control>>
+    database "**Groups**\n<size:10>k->[v1,v2,...]</size>" as GROUPS <<Schema>>
+    SORT_XFER -down[#5C6BC0,thickness=2]-> GROUPS : <color:#3949AB>partition</color>
 }
 
-rectangle "REDUCE PHASE" #E1F5FE {
-    component "**Reduce**\n<size:10>aggregate</size>" as RED <<Tool>>
-    database "**Output**\n<size:10>(k, result)</size>" as OUT
-    RED -down-> OUT : "write"
+rectangle "REDUCE PHASE" #FFFFFF {
+    component "**Reduce**\n<size:10>aggregate</size>" as RED <<Task>>
+    database "**Output**\n<size:10>(k, result)</size>" as OUT <<Schema>>
+    RED -down[#00897B,thickness=2]-> OUT : <color:#3949AB>write</color>
 }
 
-MAP_FN -right-> SORT_XFER : "(k,v) pairs"
-GROUPS -right-> RED : "iterator"
+MAP_FN -right[#00897B,thickness=2]-> SORT_XFER : <color:#3949AB>(k,v) pairs</color>
+GROUPS -right[#5C6BC0,thickness=2]-> RED : <color:#3949AB>iterator</color>
 
 @enduml

@@ -1,162 +1,32 @@
 @startuml
-'=================================================
-' CANONICAL DIAGRAM TEMPLATE - DATA ENGINEERING
-'=================================================
-
-left to right direction
-skinparam linetype ortho
-skinparam shadowing false
-skinparam roundcorner 8
-skinparam handwritten false
-skinparam nodesep 24
-skinparam ranksep 28
-
-'-------------------------
-' FONT & GLOBAL STYLE
-'-------------------------
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam defaultFontColor #2C3E50
-
-'-------------------------
-' GENERIC BOX STYLE
-'-------------------------
-skinparam rectangle {
-    BackgroundColor #F8F9FA
-    BorderColor #90A4AE
-    BorderThickness 2
-    FontColor #263238
-    FontSize 14
-    FontStyle bold
-    Padding 20
-}
-
-skinparam component {
-    BackgroundColor #FFFFFF
-    BorderColor #78909C
-    BorderThickness 1.5
-    FontSize 14
-    Padding 12
-}
-
-skinparam database {
-    BackgroundColor #ECEFF1
-    BorderColor #546E7A
-    BorderThickness 1.5
-    FontSize 14
-    FontColor #263238
-}
-
-skinparam arrow {
-    Color #607D8B
-    Thickness 1.5
-    FontSize 11
-    FontColor #546E7A
-}
-
-'-------------------------
-' SEMANTIC STEREOTYPES
-'-------------------------
-skinparam component<<UI>> {
-    BorderColor #8E24AA
-    BackgroundColor #F3E5F5
-    FontColor #4A148C
-}
-
-skinparam component<<Agent>> {
-    BorderColor #0288D1
-    BackgroundColor #E1F5FE
-    FontColor #01579B
-}
-
-skinparam component<<Tool>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<Config>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<Bad>> {
-    BorderColor #C62828
-    BackgroundColor #FFEBEE
-    FontColor #B71C1C
-}
-
-skinparam component<<V1>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<V2>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam database<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam database<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam component<<success>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<failure>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-'=================================================
-
+!include ../_template_styles.puml
 ' SKEW MITIGATION: SALTING FLOW (Reasoning) - Mixed layout for PPTX
+left to right direction
 
-rectangle "BEFORE (Skew)" #FFEBEE {
-    component "**Large table**\n<size:10>key 888 -> 1B rows</size>" as LARGE1
-    component "**Shuffle**\n<size:10>one reducer</size>" as SHUFFLE1
-    component "**Reducer**\n<size:10>OOM</size>" as REDUCE1 <<Bad>>
-    LARGE1 -right-> SHUFFLE1
-    SHUFFLE1 -right-> REDUCE1
+rectangle "BEFORE (Skew)" #FFFFFF {
+    component "**Large table**\n<size:10>key 888 -> 1B rows</size>" as LARGE1 <<Schema>>
+    component "**Shuffle**\n<size:10>one reducer</size>" as SHUFFLE1 <<Control>>
+    component "**Reducer**\n<size:10>OOM</size>" as REDUCE1 <<Failure>>
+    LARGE1 -right[#5C6BC0,thickness=2]-> SHUFFLE1
+    SHUFFLE1 -right[#D32F2F,thickness=2]-> REDUCE1
 }
 
-rectangle "SALTING SOLUTION" #E8F5E9 {
-    component "**Large table**\n<size:10>key 888 -> 1B rows</size>" as LARGE2
-    component "**Map: salt**\n<size:10>key-1..key-N</size>" as SALT
-    component "**Small table**\n<size:10>replicate</size>" as REPL
-    LARGE2 -right-> SALT
+rectangle "SALTING SOLUTION" #FFFFFF {
+    component "**Large table**\n<size:10>key 888 -> 1B rows</size>" as LARGE2 <<Schema>>
+    component "**Map: salt**\n<size:10>key-1..key-N</size>" as SALT <<Task>>
+    component "**Small table**\n<size:10>replicate</size>" as REPL <<Schema>>
+    LARGE2 -right[#5C6BC0,thickness=2]-> SALT
 }
 
-rectangle "AFTER (Balanced)" #E8F5E9 {
-    component "**Shuffle**\n<size:10>key-salt</size>" as SHUFFLE2
+rectangle "AFTER (Balanced)" #FFFFFF {
+    component "**Shuffle**\n<size:10>key-salt</size>" as SHUFFLE2 <<Control>>
     component "**N Reducers**\n<size:10>~1B/N each</size>" as REDUCE2 <<success>>
-    component "**Merge**\n<size:10>by key</size>" as MERGE
-    SHUFFLE2 -right-> REDUCE2
-    REDUCE2 -right-> MERGE
+    component "**Merge**\n<size:10>by key</size>" as MERGE <<Task>>
+    SHUFFLE2 -right[#00897B,thickness=2]-> REDUCE2
+    REDUCE2 -right[#00897B,thickness=2]-> MERGE
 }
 
-SALT -down-> SHUFFLE2
-REPL -down-> SHUFFLE2
+SALT -down[#5C6BC0,thickness=2]-> SHUFFLE2
+REPL -down[#5C6BC0,thickness=2]-> SHUFFLE2
 
 @enduml

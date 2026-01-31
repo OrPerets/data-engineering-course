@@ -1,0 +1,25 @@
+@startuml
+!include ../_template_styles.puml
+' TRANSACTIONS AT SCALE - 2PC blocks on failure
+top to bottom direction
+
+component "**Coordinator**\n<size:11>2PC</size>\n<size:11>blocks until all ack</size>" as COORD <<Control>>
+
+database "**Node 1**\n<size:10>prepare</size>" as N1 <<Schema>>
+database "**Node 2**\n<size:10>prepare</size>" as N2 <<Schema>>
+database "**Node 3**\n<size:10>prepare</size>" as N3 <<Schema>>
+database "**Node 4**\n<size:10>prepare</size>" as N4 <<Schema>>
+database "**Node 5**\n<size:10>fail / timeout</size>" as N5 <<down>>
+
+COORD -down[#5C6BC0,thickness=2]-> N1 : <color:#3949AB>prepare</color>
+COORD -down[#5C6BC0,thickness=2]-> N2
+COORD -down[#5C6BC0,thickness=2]-> N3
+COORD -down[#5C6BC0,thickness=2]-> N4
+COORD -down[#D32F2F,thickness=2,dashed]-> N5 : <color:#3949AB>block</color>
+
+note bottom of COORD
+  <size:10>1 node fails -> block until timeout (30 s)</size>
+  <size:10>Throughput can drop to near zero</size>
+end note
+
+@enduml

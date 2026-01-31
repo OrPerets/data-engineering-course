@@ -48,6 +48,8 @@ $$
 - Interpretation: no future leakage into features
 - Engineering implication: joins must use as_of_ts filters
 - Training and serving should match
+
+![Point-in-time correctness](../../diagrams/week11/week11_point_in_time.png)
 $$
 f_{\text{train}}(e,t) = f_{\text{serve}}(e,t)
 $$
@@ -70,23 +72,20 @@ $$
 - Interpretation: unbiased estimate; variance grows as \(1/p\)
 - Engineering implication: lower cost, higher noise; pick \(p\) by SLA
 
-## Diagram Manifest
-- Slide 15 → week11_lecture_slide08_feature_pipeline_overview.puml
-- Slide 21 → week11_lecture_slide12_execution_flow.puml
-- Slide 23 → week11_lecture_slide16_failure_leakage_rerun.puml
-
-## Core Concepts (1/2)
+## Core Concepts
 - **Feature:** numeric or categorical input derived from raw data
 - Consumed by model or analytics
 - **Feature pipeline:** raw sources → transform → feature table
 - **Point-in-time (as-of):** for given as_of_ts, use only data with ts ≤ as_of_ts
 
-## Core Concepts (2/2)
+## Core Concepts
 - **Offline features:** batch-computed; stored with (entity_id, as_of_ts)
 - Used for training
 - **Online features:** low-latency lookup by entity_id
 - Often latest snapshot or real-time compute
 - **Train/serve consistency:** same definition and data availability
+
+![Offline vs online](../../diagrams/week11/week11_offline_vs_online.png)
 
 ## Data Context: Events → User Features
 - events: (user_id, event_ts, event_type)
@@ -97,11 +96,11 @@ $$
 - Define point-in-time correctness
 - Why does it prevent data leakage?
 
-## In-Lecture Exercise 1: Solution (1/2)
+## In-Lecture Exercise 1: Solution
 - Use only events with event_ts ≤ as_of_ts
 - Feature value reflects knowledge at that time
 
-## In-Lecture Exercise 1: Solution (2/2)
+## In-Lecture Exercise 1: Solution
 - Prevents future events from leaking into training
 - Keeps train and serve distributions aligned
 
@@ -138,18 +137,20 @@ $$
 - Every join filtered by ts ≤ as_of_ts
 - MERGE or overwrite so rerun does not duplicate
 
+![Key and MERGE vs append](../../diagrams/week11/week11_key_merge.png)
+
 ## In-Lecture Exercise 3: Incremental Feature Job
 - Read last_as_of_ts from control table
 - Compute features for next as_of_ts only
 - MERGE into user_features
 - Update control only after success
 
-## In-Lecture Exercise 3: Solution (1/2)
+## In-Lecture Exercise 3: Solution
 - last_as_of_ts = control.last_as_of_ts
 - new_as_of_ts = last_as_of_ts + 1 day
 - Compute features with ts ≤ new_as_of_ts
 
-## In-Lecture Exercise 3: Solution (2/2)
+## In-Lecture Exercise 3: Solution
 - MERGE on (user_id, as_of_ts)
 - Update control after commit to avoid gaps
 
@@ -169,6 +170,8 @@ $$
 - Leakage occurs if any input violates this constraint
 - Interpretation: model sees future evidence during training
 - Engineering implication: treat leakage as a correctness bug
+
+![Leakage vs correct](../../diagrams/week11/week11_leakage_vs_correct.png)
 
 ## Architectural Fork: Offline vs Online
 
@@ -199,11 +202,11 @@ $$
 - Write to user_features without duplicates on rerun
 - What MERGE behavior is required?
 
-## In-Lecture Exercise 2: Solution (1/2)
+## In-Lecture Exercise 2: Solution
 - MERGE on (user_id, as_of_ts) as the key
 - When matched: update clicks_7d, views_7d
 
-## In-Lecture Exercise 2: Solution (2/2)
+## In-Lecture Exercise 2: Solution
 - When not matched: insert new row
 - Rerun writes overwrite the same key
 
@@ -217,19 +220,20 @@ $$
 - (3, 102, '2025-12-01 09:00', 'click')
 - **Goal:** one row per (user_id, as_of_ts) with clicks_7d
 
-## Running Example — Step-by-Step (1/4)
+## Running Example — Step-by-Step
 - **Step 1:** For each (user_id, as_of_ts)
 - Select events where event_ts ≤ as_of_ts AND event_ts > as_of_ts - 7d
 - Filter event_type = 'click'; count per user_id
+
 ![](../../diagrams/week11/week11_lecture_slide08_feature_pipeline_overview.png)
 
-## Running Example — Step-by-Step (2/4)
+## Running Example — Step-by-Step
 - **Step 2:** Generate (user_id, as_of_ts) grid
 - Join to event counts; fill 0 where no clicks
 - Point-in-time count for each (user_id, as_of_ts)
 - Ensures every combination has a row
 
-## Running Example — Step-by-Step (3/4)
+## Running Example — Step-by-Step
 - **Step 3:** Write to feature table
 - (user_id, as_of_ts, clicks_7d); key = (user_id, as_of_ts)
 - MERGE INTO user_features ON (user_id, as_of_ts)
@@ -237,46 +241,48 @@ $$
 - WHEN NOT MATCHED THEN INSERT
 - Partition by as_of_ts for efficient reads
 
-## Running Example — Step-by-Step (4/4)
+## Running Example — Step-by-Step
 - **Output:** feature table with one row per (user_id, as_of_ts)
 - clicks_7d correct as of that time
 - **Trade-off:** full scan of events per as_of_ts window
 - Optimize with partitioned reads and incremental aggregation
 - **Conclusion:** point-in-time filter + key gives correct features
 
-## Cost & Scaling Analysis (1/3)
+## Cost & Scaling Analysis
 - **Time model:** T ∝ |events| × |as_of_ts grid| for naive
 - Reduce by partition pruning on event_ts and as_of_ts
 - **Incremental:** recompute only new as_of_ts dates
 - **Example:** 100M events/day × 365 as_of_ts → naive 36.5B scans
 
-## Cost & Scaling Analysis (2/3)
+## Cost & Scaling Analysis
 - **Memory / storage:** feature table size ≈ N_entity × N_as_of × bytes/row
 - Partition and compress
 - **Retention:** keep as_of_ts range needed for training backtest
 - Archive old partitions
 - **Example:** 10M users × 365 days × 100 B ≈ 365 GB
 
-## Cost & Scaling Analysis (3/3)
+## Cost & Scaling Analysis
 - **Request flow:** offline = batch read by (entity_ids, as_of_ts range)
 - Online = key lookup (entity_id, latest)
+
 ![](../../diagrams/week11/week11_lecture_slide12_execution_flow.png)
 - **Latency:** offline dominated by scan; online requires index/cache
 
-## Pitfalls & Failure Modes (1/3)
+## Pitfalls & Failure Modes
 - **Leakage:** using future data when computing feature for as_of_ts
 - Model sees "answer" in training
 - **Detection:** audit feature SQL/logic
 - No table joined without ts ≤ as_of_ts filter
 
-## Pitfalls & Failure Modes (2/3)
+## Pitfalls & Failure Modes
 - **Rerun duplicates:** job writes with INSERT; rerun appends same keys
 - Training sees double rows
 - **Failure:** duplicate rows per (entity_id, as_of_ts)
 - ⇒ wrong aggregates and broken backtests
+
 ![](../../diagrams/week11/week11_lecture_slide16_failure_leakage_rerun.png)
 
-## Pitfalls & Failure Modes (3/3)
+## Pitfalls & Failure Modes
 - **Mitigation:** write with MERGE/OVERWRITE on (entity_id, as_of_ts)
 - Or partition overwrite per as_of_ts
 - **Schema drift:** new feature column; old jobs still write old schema
@@ -289,7 +295,7 @@ $$
 - **Duplicate key rate:** violations per (entity_id, as_of_ts)
 - **Null spike:** sudden rise in missing feature values
 
-## Best Practices (1/2)
+## Best Practices
 - Always key feature table by (entity_id, as_of_ts)
 - Enforce as_of_ts in every join and filter
 - Use partition overwrite or MERGE for idempotency
@@ -297,7 +303,7 @@ $$
 - Test with known dates and spot-check for leakage
 - Separate offline and online paths; align definitions
 
-## Best Practices (2/2)
+## Best Practices
 - Retain as_of_ts range needed for backtests
 - Archive old partitions to control storage cost
 - Validate schema and nullability when adding features
@@ -323,4 +329,5 @@ $$
 
 ## Additional Diagrams
 ### Practice: Reasoning Feature Flow
+
 ![](../../diagrams/week11/week11_practice_slide20_reasoning_feature_flow.png)

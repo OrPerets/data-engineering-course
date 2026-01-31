@@ -448,10 +448,14 @@ $$
 
 ## Additional Diagrams
 ### TF-IDF Pipeline Overview
+
 ![](../../diagrams/week8/week8_lecture_slide14_tfidf_pipeline_overview.png)
 ### MapReduce Execution Flow
+
 ![](../../diagrams/week8/week8_lecture_slide24_mapreduce_execution_flow.png)
 ### Failure: Stop-Word Skew
+
 ![](../../diagrams/week8/week8_lecture_slide26_failure_stopword_skew.png)
 ### Practice: TF-IDF MapReduce Skew
+
 ![](../../diagrams/week8/week8_practice_slide20_tfidf_mapreduce_skew.png)

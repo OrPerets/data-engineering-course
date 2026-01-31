@@ -93,6 +93,8 @@ $$
 - **Interpretation:** Communication cost scales with map output size
 - **Engineering:** Reduce $E$ via filtering, combining, smaller keys
 
+![](../../diagrams/week06/week6_shuffle_cost.png)
+
 ## Time Complexity
 - **Map phase:** $T_{\text{map}} = O\left(\frac{n}{P_m}\right)$ with $P_m$ mappers
 - **Shuffle phase:** $T_{\text{shuffle}} = O\left(\frac{E \cdot s}{B}\right)$ with bandwidth $B$
@@ -190,6 +192,8 @@ $$
 - **Reduction ratio:** $\frac{\sum_m U_m}{E}$
 - **Example:** 1M occurrences of 10K words → 10K pairs after combine
 
+![](../../diagrams/week06/week6_combiner_flow.png)
+
 ## When Combiner is Valid
 | Operation | Associative? | Commutative? | Combiner Valid? |
 |-----------|--------------|--------------|-----------------|
@@ -285,6 +289,9 @@ $$
 | Reduce-side | $\|R\| + \|S\|$ | High | $O(\max_k \|R_k\| \cdot \|S_k\|)$ |
 | Map-side (broadcast) | $0$ | None | $O(\|R\|)$ per mapper |
 
+
+![](../../diagrams/week06/week6_join_reduce_vs_broadcast.png)
+
 ---
 
 # Part IX: Production Failure Case Study
@@ -353,11 +360,17 @@ $$
 - Draw execution flow diagram
 
 ## Additional Diagrams
+### Shuffle cost, combiner, join
+- week6_shuffle_cost.png, week6_combiner_flow.png, week6_join_reduce_vs_broadcast.png
 ### System Overview
+
 ![](../../diagrams/week06/week6_lecture_slide17_system_overview.png)
 ### Execution Flow
+
 ![](../../diagrams/week06/week6_lecture_slide20_execution_flow.png)
 ### Failure: Skew
+
 ![](../../diagrams/week06/week6_lecture_slide29_failure_skew.png)
 ### Practice: Skew Mitigation
+
 ![](../../diagrams/week06/week6_practice_slide18_skew_mitigation.png)

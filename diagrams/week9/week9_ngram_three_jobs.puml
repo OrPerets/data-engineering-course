@@ -1,0 +1,56 @@
+@startuml
+'=================================================
+' N-GRAM TF-IDF THREE-JOB PIPELINE - Flow
+' Same structure as unigram: counts -> df -> tfidf
+'=================================================
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 45
+skinparam ranksep 45
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 12
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+database "**Docs**\n<size:10>Corpus</size>" as DOCS #E3F2FD
+component "**Job 1**\n<size:10>(doc, ngram, count)</size>" as J1
+component "**Job 2**\n<size:10>(ngram, df)</size>" as J2
+component "**Job 3**\n<size:10>(doc, ngram, tfidf)</size>" as J3
+database "**Output**\n<size:10>Sparse ngram tfidf</size>" as OUT #C8E6C9
+
+DOCS -right-> J1 : <size:10>extract ngrams</size>
+J1 -right-> J2 : <size:10>unique pairs</size>
+J2 -right-> J3 : <size:10>df + N</size>
+J3 -right-> OUT
+
+@enduml

@@ -1,170 +1,40 @@
 @startuml
-'=================================================
-' CANONICAL DIAGRAM TEMPLATE - DATA ENGINEERING
-'=================================================
-
-top to bottom direction
-skinparam linetype ortho
-skinparam shadowing false
-skinparam roundcorner 8
-skinparam handwritten false
-skinparam nodesep 24
-skinparam ranksep 28
-
-'-------------------------
-' FONT & GLOBAL STYLE
-'-------------------------
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam defaultFontColor #2C3E50
-
-'-------------------------
-' GENERIC BOX STYLE
-'-------------------------
-skinparam rectangle {
-    BackgroundColor #F8F9FA
-    BorderColor #90A4AE
-    BorderThickness 2
-    FontColor #263238
-    FontSize 14
-    FontStyle bold
-    Padding 20
-}
-
-skinparam component {
-    BackgroundColor #FFFFFF
-    BorderColor #78909C
-    BorderThickness 1.5
-    FontSize 14
-    Padding 12
-}
-
-skinparam database {
-    BackgroundColor #ECEFF1
-    BorderColor #546E7A
-    BorderThickness 1.5
-    FontSize 14
-    FontColor #263238
-}
-
-skinparam arrow {
-    Color #607D8B
-    Thickness 1.5
-    FontSize 11
-    FontColor #546E7A
-}
-
-'-------------------------
-' SEMANTIC STEREOTYPES
-'-------------------------
-skinparam component<<UI>> {
-    BorderColor #8E24AA
-    BackgroundColor #F3E5F5
-    FontColor #4A148C
-}
-
-skinparam component<<Agent>> {
-    BorderColor #0288D1
-    BackgroundColor #E1F5FE
-    FontColor #01579B
-}
-
-skinparam component<<Tool>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<Config>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<Bad>> {
-    BorderColor #C62828
-    BackgroundColor #FFEBEE
-    FontColor #B71C1C
-}
-
-skinparam component<<V1>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<V2>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam database<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam database<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam component<<success>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<failure>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-'=================================================
-
+!include ../_template_styles.puml
 ' PARALLEL PIPELINE OVERVIEW (MAPREDUCE) - Mixed layout for PPTX
+top to bottom direction
 
-database "**Input**\n<size:10>Chunks</size>" as INP
+database "**Input**\n<size:10>Chunks</size>" as INP <<Schema>>
 
-component "**Split**\n<size:10>Partition</size>" as SPLIT
+component "**Split**\n<size:10>Partition</size>" as SPLIT <<Control>>
 
-rectangle "MAP PHASE" #E8F5E9 {
-    component "**W1**\n<size:10>Map</size>" as W1 <<Tool>>
-    component "**W2**\n<size:10>Map</size>" as W2 <<Tool>>
-    component "**W3**\n<size:10>Map</size>" as W3 <<Tool>>
+rectangle "MAP PHASE" #FFFFFF {
+    component "**W1**\n<size:10>Map</size>" as W1 <<Task>>
+    component "**W2**\n<size:10>Map</size>" as W2 <<Task>>
+    component "**W3**\n<size:10>Map</size>" as W3 <<Task>>
     W1 -[hidden]down- W2
     W2 -[hidden]down- W3
 }
 
-component "**Shuffle**\n<size:10>Group by key</size>" as SORT_XFER <<Agent>>
+component "**Shuffle**\n<size:10>Group by key</size>" as SORT_XFER <<Control>>
 
-rectangle "REDUCE PHASE" #E1F5FE {
-    component "**R1**\n<size:10>Aggregate</size>" as R1 <<Tool>>
-    component "**R2**\n<size:10>Aggregate</size>" as R2 <<Tool>>
+rectangle "REDUCE PHASE" #FFFFFF {
+    component "**R1**\n<size:10>Aggregate</size>" as R1 <<Task>>
+    component "**R2**\n<size:10>Aggregate</size>" as R2 <<Task>>
     R1 -[hidden]down- R2
 }
 
-database "**Result**\n<size:10>Output</size>" as OUT
+database "**Result**\n<size:10>Output</size>" as OUT <<Schema>>
 
-INP -right-> SPLIT
-SPLIT -right-> W1 : "c1"
-SPLIT -right-> W2 : "c2"
-SPLIT -right-> W3 : "c3"
-W1 -right-> SORT_XFER
-W2 -right-> SORT_XFER
-W3 -right-> SORT_XFER
-SORT_XFER -right-> R1 : "keys A"
-SORT_XFER -right-> R2 : "keys B"
-R1 -right-> OUT
-R2 -right-> OUT
+INP -right[#5C6BC0,thickness=2]-> SPLIT
+SPLIT -right[#5C6BC0,thickness=2]-> W1 : <color:#3949AB>c1</color>
+SPLIT -right[#5C6BC0,thickness=2]-> W2 : <color:#3949AB>c2</color>
+SPLIT -right[#5C6BC0,thickness=2]-> W3 : <color:#3949AB>c3</color>
+W1 -right[#00897B,thickness=2]-> SORT_XFER
+W2 -right[#00897B,thickness=2]-> SORT_XFER
+W3 -right[#00897B,thickness=2]-> SORT_XFER
+SORT_XFER -right[#5C6BC0,thickness=2]-> R1 : <color:#3949AB>keys A</color>
+SORT_XFER -right[#5C6BC0,thickness=2]-> R2 : <color:#3949AB>keys B</color>
+R1 -right[#00897B,thickness=2]-> OUT
+R2 -right[#00897B,thickness=2]-> OUT
 
 @enduml

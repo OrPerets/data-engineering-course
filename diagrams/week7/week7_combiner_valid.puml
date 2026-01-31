@@ -1,0 +1,61 @@
+@startuml
+'=================================================
+' COMBINER VALID - When associative + commutative
+' Sum/count/max yes; mean use (sum, count)
+'=================================================
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 50
+skinparam ranksep 45
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 12
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+rectangle "**Valid**" #E8F5E9 {
+    component "**Sum**\n<size:10>a + b</size>" as SUM
+    component "**Count**\n<size:10>a + b</size>" as CNT
+    component "**Max / Min**\n<size:10>max(a,b)</size>" as MAX
+    SUM -[hidden]right- CNT
+    CNT -[hidden]right- MAX
+}
+
+rectangle "**Trick**" #FFF3E0 {
+    component "**Mean**\n<size:10>emit (sum, count)</size>" as MEAN
+    component "**Reduce**\n<size:10>sum/count</size>" as RED
+    MEAN -right-> RED
+}
+
+rectangle "**Invalid**" #FFEBEE {
+    component "**Distinct**\n<size:10>needs set</size>" as DIST
+    component "**Median**\n<size:10>non-assoc</size>" as MED
+    DIST -[hidden]right- MED
+}
+
+SUM -[hidden]down- MEAN
+MEAN -[hidden]down- DIST
+@enduml

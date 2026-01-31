@@ -1,0 +1,18 @@
+@startuml
+!include ../_template_styles.puml
+' SINGLE-NODE LIMITS - Why distribution is needed
+top to bottom direction
+
+card "**Single node**\n\n<size:14>Storage: ~10 TB practical</size>\n<size:14>Throughput: ~10K writes/sec</size>\n<size:14>Availability: 99.9% (8.76 h/year)</size>" as NODE_SINGLE <<Primary>>
+
+card "**Storage limit**\n\n<size:13>1B users x 1 KB ~ 1 TB</size>\n<size:13>Growth 10%/month</size>\n<size:13>I/O becomes bottleneck</size>" as LIMIT_S <<Failure>>
+
+card "**Throughput limit**\n\n<size:13>100M users, 1 write/day</size>\n<size:13>Peak 5x ~ 6K/sec</size>\n<size:13>Single node insufficient</size>" as LIMIT_T <<Failure>>
+
+card "**Availability limit**\n\n<size:13>99.9% = $87.6K/year lost</size>\n<size:13>at $10K/h downtime</size>\n<size:13>Distributed 99.99% = $8.76K</size>" as LIMIT_A <<Failure>>
+
+NODE_SINGLE -down[#D32F2F,thickness=2]-> LIMIT_S : <color:#3949AB>hits</color>
+NODE_SINGLE -down[#D32F2F,thickness=2]-> LIMIT_T
+NODE_SINGLE -down[#D32F2F,thickness=2]-> LIMIT_A
+
+@enduml

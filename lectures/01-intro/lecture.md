@@ -14,6 +14,7 @@
 - Reason about trade-offs: batch vs streaming, SQL vs NoSQL
 
 ## What is Data Engineering?
+
 ![](../../diagrams/week01/week1_what_is_de.png)
 
 ## Constraints, Not Definitions
@@ -40,58 +41,54 @@ $$
 - Engineering implication: cost scales linearly in volume and replication
 
 ## Business Intelligence Context
+
 ![](../../diagrams/week01/week1_bi_context.png)
 
-## What is Business Intelligence? (1/2)
-- **Definition:** methodologies and technologies transforming raw data
+## What is Business Intelligence?- **Definition:** methodologies and technologies transforming raw data
 - Converts raw data into significant business information
 - Enables decision-making, not replaces it
 - Use technology as a tool for business purpose
 
-## What is Business Intelligence? (2/2)
-- **Benefits:** handle large amounts of data efficiently
+## What is Business Intelligence?- **Benefits:** handle large amounts of data efficiently
 - Identify and evolve new opportunities
 - Provide comparable market benefit and long-term stability
 - Enable data-driven decision making
 
-## Data to Wisdom Pyramid (1/2)
+## Data to Wisdom Pyramid
+
 ![](../../diagrams/week01/week1_data_to_wisdom.png)
 - **Data:** raw facts describing event characteristics
 - Example: 51, 77, 58, 82, 64, 70
 - **Information:** data converted into meaningful insights
 - Example: "Test scores; average is 67"
 
-## Data to Wisdom Pyramid (2/2)
-- **Knowledge:** skills and experience coupled with information
+## Data to Wisdom Pyramid- **Knowledge:** skills and experience coupled with information
 - Creates intellectual resources from information
 - **Wisdom:** applied knowledge — knowing what to do
 - Example: "I better stop the car!" at red light
 - **DE builds:** pipeline from raw data to information
 
-## Data Mining in Data Engineering (1/2)
-- **Definition:** computational process discovering patterns in data
+## Data Mining in Data Engineering- **Definition:** computational process discovering patterns in data
 - Uses AI, ML, statistics, and database systems
 - Operates on large data sets
 
-## Data Mining in Data Engineering (2/2)
-- **Tasks:** classification, estimation, prediction
+## Data Mining in Data Engineering- **Tasks:** classification, estimation, prediction
 - **Tasks:** affinity grouping, description (finding patterns)
 - **Techniques:** market basket, clustering, PCA, decision trees
 - **Role in DE:** provides clean data that mining consumes
 
-## Knowledge Discovery in Databases (1/2)
-- **Definition:** automatic extraction of hidden knowledge
+## Knowledge Discovery in Databases- **Definition:** automatic extraction of hidden knowledge
 - Extracts non-obvious patterns from large data volumes
 - **Process:** Cleaning → Integration → Selection → Mining → Evaluation
 
-## Knowledge Discovery in Databases (2/2)
-- **Intersecting fields:** databases, statistics, machine learning
+## Knowledge Discovery in Databases- **Intersecting fields:** databases, statistics, machine learning
 - Databases store and provide access
 - Statistics infer information from samples
 - ML provides algorithms that improve through experience
 - **DWH role:** integrated data; OLAP enables KDD at scale
 
 ## Data Engineering vs Data Science
+
 ![](../../diagrams/week01/week1_de_vs_ds.png)
 
 ## Data Science Focus
@@ -113,6 +110,7 @@ $$
 - Science informs engineering requirements
 
 ## Data Engineering vs Analytics
+
 ![](../../diagrams/week01/week1_de_vs_analytics.png)
 
 ## Analytics Focus
@@ -134,6 +132,7 @@ $$
 - Clear separation of concerns
 
 ## Why Data Engineering Exists
+
 ![](../../diagrams/week01/week1_why_de_exists.png)
 
 ## The Scale Problem
@@ -163,6 +162,7 @@ $$
 - **Design for failure from day one**
 
 ## Data Engineering Lifecycle
+
 ![](../../diagrams/week01/week1_lifecycle_phases.png)
 
 ## Ingestion
@@ -191,14 +191,12 @@ $$
 - Compute 90-day raw retention storage
 - Compute total with 3× replication
 
-## In-Lecture Exercise 1: Solution (1/2)
-- Posts raw: 500M × 2.1 KB ≈ 1,050 GB
+## In-Lecture Exercise 1: Solution- Posts raw: 500M × 2.1 KB ≈ 1,050 GB
 - Interactions raw: 10B × 33 B ≈ 330 GB
 - Users raw: 100M × 1.2 KB ≈ 120 GB
 - Total raw ≈ 1,500 GB (1.5 TB)
 
-## In-Lecture Exercise 1: Solution (2/2)
-- Parquet 5×: 1,500 GB / 5 ≈ 300 GB
+## In-Lecture Exercise 1: Solution- Parquet 5×: 1,500 GB / 5 ≈ 300 GB
 - 90-day raw: 27.6 GB/day × 90 ≈ 2.5 TB
 - Replication 3×: raw 7.5 TB; processed 0.9 TB
 - Total with replicas ≈ 8.4 TB
@@ -221,10 +219,12 @@ $$
 - Feed ML models
 
 ## Lifecycle Diagram
+
 ![](../../diagrams/week01/week1_lecture_slide12_lifecycle.png)
 
 
-## Core Concepts (1/3)
+## Core Concepts
+
 ![](../../diagrams/week01/week1_data_pipeline.png)
 
 ## Data Pipeline
@@ -233,20 +233,19 @@ $$
 - **Failure in one step must not leave partial state**
 - **Constraint:** design so reruns produce same result (idempotency)
 
-## ETL vs ELT (1/2)
-- **ETL:** Extract → Transform → Load
+## ETL vs ELT- **ETL:** Extract → Transform → Load
 - Transform before load; smaller storage, faster queries
 - **ELT:** Extract → Load → Transform
 - Load raw first; preserve raw data, flexible analytics later
 
-## ETL vs ELT (2/2)
-- **ETL cost:** compute up front + less storage
+## ETL vs ELT- **ETL cost:** compute up front + less storage
 - **ELT cost:** more storage + compute on demand
 - ETL: good when schema and consumers are stable
 - ELT: good when requirements change
 - **Opinion:** keep raw immutable; prefer ELT-style raw layer
 
-## Core Concepts (2/3)
+## Core Concepts
+
 ![](../../diagrams/week01/week1_core_concepts_2.png)
 
 ## Batch vs Streaming
@@ -263,13 +262,11 @@ $$
 - Compute daily cost for batch vs streaming
 - Decide approach if latency < 1 minute
 
-## In-Lecture Exercise 2: Solution (1/2)
-- Batch daily cost: 288 runs × $0.10 = $28.80
+## In-Lecture Exercise 2: Solution- Batch daily cost: 288 runs × $0.10 = $28.80
 - Streaming daily cost: 24 hours × $2.00 = $48.00
 - Streaming costs $19.20 more per day
 
-## In-Lecture Exercise 2: Solution (2/2)
-- Latency < 1 minute: batch fails; streaming required
+## In-Lecture Exercise 2: Solution- Latency < 1 minute: batch fails; streaming required
 - If cost dominates: batch is cheaper
 - Hybrid: stream recent, batch history for lower cost
 
@@ -285,19 +282,16 @@ $$
 - **Flexible**, risk of garbage-in
 - **Trade-off:** strict schema vs agility
 
-## Core Concepts (3/3)
-- **One clear choice per pipeline:** ETL or ELT
+## Core Concepts- **One clear choice per pipeline:** ETL or ELT
 - Choose batch or stream; schema-on-write or -read
 - Mixing without boundaries leads to cost overruns
 - Results in unmaintainable pipelines
 
-## Cost of Naïve Design — What Goes Wrong Without Discipline (1/2)
-- **Naïve:** "one script, one DB, run nightly"
+## Cost of Naïve Design — What Goes Wrong Without Discipline- **Naïve:** "one script, one DB, run nightly"
 - Works until volume doubles; then 20-hour runs
 - Timeouts, no observability
 
-## What Goes Wrong Without Discipline (2/2)
-- **Naïve:** no raw layer — cannot reprocess on schema change
+## What Goes Wrong Without Discipline- **Naïve:** no raw layer — cannot reprocess on schema change
 - **Cost:** full re-ingestion or lost history
 - **Naïve:** no idempotency — rerun doubles counts
 - **Takeaway:** constraints force pipeline design
@@ -320,7 +314,7 @@ $$
 - Cost: minimize compute hours
 - Quality: handle missing user_ids
 
-## Running Example — Step-by-Step (1/4): Ingestion
+## Running Example — Step-by-Step: Ingestion
 - Read log files from S3
 - Parse JSON events
 - Validate: timestamp, page present
@@ -328,9 +322,10 @@ $$
 - Output: 10M events, 5 GB
 
 ## Ingestion Diagram
+
 ![](../../diagrams/week01/week1_lecture_slide20_ingestion.png)
 
-## Running Example — Step-by-Step (2/4): Transformation
+## Running Example — Step-by-Step: Transformation
 - Filter: only "page_view" events
 - Extract: product_id from page URL
 - Clean: remove invalid product_ids
@@ -346,7 +341,7 @@ Group: (date(timestamp), product_id)
 Output: (date, product_id, view_count)
 ```
 
-## Running Example — Step-by-Step (3/4): Aggregation
+## Running Example — Step-by-Step: Aggregation
 - Input: filtered events (8M after filter)
 - Group by: (date, product_id)
 - Aggregate: count(*) as views
@@ -360,7 +355,7 @@ Result: 1,250 views for product_123
 Output row: (2024-01-15, product_123, 1250)
 ```
 
-## Running Example — Step-by-Step (4/4): Load to Analytics
+## Running Example — Step-by-Step: Load to Analytics
 - Write aggregated results
 - Format: Parquet, partitioned by date
 - Destination: data warehouse
@@ -373,7 +368,7 @@ Output row: (2024-01-15, product_123, 1250)
 - Reliability: 99.95% success rate
 - Trade-off: 1-hour delay acceptable
 
-## Cost & Scaling Analysis (1/3): Time Model
+## Cost & Scaling Analysis: Time Model
 - Ingestion: 10 minutes (I/O bound)
 - Transformation: 20 minutes (CPU bound)
 - Aggregation: 10 minutes (CPU bound)
@@ -393,7 +388,7 @@ T_parallel = T_sequential / N_workers
 Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 ```
 
-## Cost & Scaling Analysis (2/3): Memory Model
+## Cost & Scaling Analysis: Memory Model
 - Raw data: 5 GB (compressed)
 - Intermediate: 2 GB (after filter)
 - Final output: 5 MB (aggregated)
@@ -411,7 +406,7 @@ Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 - Compression: 5× reduction possible
 - Compressed: $6.90/month
 
-## Cost & Scaling Analysis (3/3): Network Model
+## Cost & Scaling Analysis: Network Model
 - Ingestion: 5 GB from source
 - Processing: 0 GB (local)
 - Output: 5 MB to warehouse
@@ -429,7 +424,7 @@ Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 - Bottleneck: network if > 1 Gbps needed
 - Solution: parallel transfers
 
-## Pitfalls & Failure Modes (1/3): Missing Data
+## Pitfalls & Failure Modes: Missing Data
 - Problem: user_id null in 5% of events
 - Impact: undercounted page views
 - Detection: count nulls, alert if > 1%
@@ -447,7 +442,7 @@ Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 - Detection: schema validation errors
 - Mitigation: schema evolution, versioning
 
-## Pitfalls & Failure Modes (2/3): Pipeline Failure Scenario
+## Pitfalls & Failure Modes: Pipeline Failure Scenario
 - Step 1 (ingestion): succeeds
 - Step 2 (transform): fails at 50%
 - Step 3 (aggregate): never runs
@@ -460,13 +455,11 @@ Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 - Manual investigation + rerun takes 2 hours
 - Add checkpoints every 10 minutes; recompute loss and recovery
 
-## In-Lecture Exercise 3: Solution (1/2)
-- Data loss: 5,000 posts and 50,000 interactions
+## In-Lecture Exercise 3: Solution- Data loss: 5,000 posts and 50,000 interactions
 - Recovery time: 30 min + 120 min + 60 min = 210 min
 - Hourly cadence delays about 3–4 runs
 
-## In-Lecture Exercise 3: Solution (2/2)
-- Checkpoint at 20 min: 10 minutes of data lost
+## In-Lecture Exercise 3: Solution- Checkpoint at 20 min: 10 minutes of data lost
 - Loss with checkpoints: 1,667 posts; 16,667 interactions
 - Recovery time: resume 40 minutes, no investigation
 
@@ -476,6 +469,7 @@ Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 - Design for recovery, not just success
 
 ## Failure Propagation Diagram
+
 ![](../../diagrams/week01/week1_lecture_slide35_failure.png)
 
 ## Recovery Strategies
@@ -484,7 +478,7 @@ Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 - Rollback: delete partial outputs
 - Manual: investigate, fix, rerun
 
-## Pitfalls & Failure Modes (3/3): Late Data
+## Pitfalls & Failure Modes: Late Data
 - Problem: events arrive 2 hours late
 - Impact: yesterday's report incomplete
 - Detection: watermark, late event metrics
@@ -502,7 +496,7 @@ Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 - Detection: cost alerts, daily reports
 - Mitigation: optimize queries, compress data
 
-## Best Practices (1/2): Start with Business Questions
+## Best Practices: Start with Business Questions
 - What decisions need data? Who consumes it?
 - What latency is acceptable?
 - **Don't build pipelines without purpose**
@@ -518,14 +512,12 @@ Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 - **You can't fix what you don't measure**
 - **Version:** code (Git), schema (versioned), data (timestamped)
 
-## Best Practices (2/2): CRISP-DM Methodology (1/2)
-- **Cross-Industry Standard Process for Data Mining**
+## Best Practices: CRISP-DM Methodology- **Cross-Industry Standard Process for Data Mining**
 - Most widely-used analytics model
 - **Six phases:** Business → Data Understanding → Preparation
 - Continues: Modeling → Evaluation → Deployment
 
-## CRISP-DM Methodology (2/2)
-- Data preparation is often 60-80% of work
+## CRISP-DM Methodology- Data preparation is often 60-80% of work
 - Data engineering enables all phases
 - **Iterative nature:** phases cycle back
 - Pipelines must support reprocessing and iteration
@@ -582,4 +574,5 @@ Bottleneck: max(T_ingest, T_transform, T_aggregate, T_load)
 
 ## Additional Diagrams
 ### Practice: Architecture
+
 ![](../../diagrams/week01/week1_practice_slide15_architecture.png)

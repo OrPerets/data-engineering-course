@@ -1,0 +1,63 @@
+@startuml
+'=================================================
+' SALTING - Two-phase aggregation for hot key
+' Phase 1: (k||salt, v); Phase 2: (k, final)
+'=================================================
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 40
+skinparam ranksep 45
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 12
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+rectangle "**Phase 1**" #FFF3E0 {
+    component "**Map**\n<size:10>emit (k||salt, v)</size>" as M1
+    component "**Shuffle**\n<size:10>by k||salt</size>" as SH1
+    component "**Reduce**\n<size:10>(k||salt, agg)</size>" as R1
+    M1 -right-> SH1
+    SH1 -right-> R1
+}
+
+rectangle "**Phase 2**" #E8F5E9 {
+    component "**Map**\n<size:10>emit (k, agg)</size>" as M2
+    component "**Shuffle**\n<size:10>by k</size>" as SH2
+    component "**Reduce**\n<size:10>(k, final)</size>" as R2
+    M2 -right-> SH2
+    SH2 -right-> R2
+}
+
+R1 -right-> M2 : <size:10>output</size>
+
+@enduml

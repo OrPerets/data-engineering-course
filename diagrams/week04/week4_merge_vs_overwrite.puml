@@ -1,0 +1,41 @@
+@startuml
+'=================================================
+' MERGE vs PARTITION OVERWRITE - Load options
+' Row-level upsert vs replace partition
+'=================================================
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 50
+skinparam ranksep 60
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 18
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 12
+}
+
+rectangle "**MERGE / Upsert**\n\n<size:14>ON key match: update or insert</size>\n<size:14>Rerun safe (idempotent)</size>\n\n<size:13>Pros: handles duplicates, late updates</size>\n<size:13>Cons: join cost; needs index</size>" as MERGE #E8F5E9
+
+rectangle "**Partition Overwrite**\n\n<size:14>Replace whole partition (e.g. by date)</size>\n<size:14>Idempotent at partition level</size>\n\n<size:13>Pros: simple, no join</size>\n<size:13>Cons: full partition reload only</size>" as OVER #FFF3E0
+
+rectangle "**Choose**\n\n<size:14>MERGE: row-level upsert</size>\n<size:14>Overwrite: full day reload</size>" as CHOICE #E3F2FD
+
+MERGE -down[#388E3C,thickness=2]-> CHOICE
+OVER -down[#F57C00,thickness=2]-> CHOICE
+
+@enduml

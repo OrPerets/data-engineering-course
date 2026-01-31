@@ -1,0 +1,59 @@
+@startuml
+'=================================================
+' FEATURE PIPELINE vs MODEL TRAINING
+' Deterministic transform vs learning
+'=================================================
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 50
+skinparam ranksep 45
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 12
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+database "**Raw text**\n<size:10>Input</size>" as TEXT #E3F2FD
+component "**Feature pipeline**\n<size:10>Deterministic</size>\n<size:10>TF-IDF, ngrams, embed</size>" as FEAT <<Tool>>
+database "**Features**\n<size:10>Numerical</size>" as FEAT_OUT #E8F5E9
+
+database "**Features + labels**\n<size:10>Training data</size>" as TRAIN_IN #FFF3E0
+component "**Model training**\n<size:10>Learns parameters</size>" as TRAIN
+database "**Weights**\n<size:10>Output</size>" as WEIGHTS #F3E5F5
+
+TEXT -right-> FEAT
+FEAT -right-> FEAT_OUT
+FEAT_OUT -right-> TRAIN_IN
+TRAIN_IN -right-> TRAIN
+TRAIN -right-> WEIGHTS
+
+@enduml

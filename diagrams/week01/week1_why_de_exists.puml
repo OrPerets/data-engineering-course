@@ -1,37 +1,18 @@
 @startuml
+!include ../_template_styles.puml
 ' Why Data Engineering Exists — four problems (4 V's)
-left to right direction
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam roundcorner 15
-skinparam shadowing true
-skinparam linetype ortho
-skinparam nodesep 40
-skinparam ranksep 50
+top to bottom direction
 
-skinparam card {
-    FontStyle bold
-    Padding 28
-    BorderThickness 2.5
-}
+card "**SCALE**\n<size:14>Volume</size>\n\n<size:13>• TB to PB</size>\n<size:13>• More events</size>\n<size:13>• Cost</size>" as S <<Primary>>
 
-skinparam arrow {
-    Thickness 2
-    FontSize 12
-}
+card "**VARIETY**\n<size:14>Sources</size>\n\n<size:13>• Multiple formats</size>\n<size:13>• SQL & NoSQL</size>\n<size:13>• Structured</size>" as V <<Control>>
 
-title <size:20><b>Why Data Engineering Exists: The 4 V's</b></size>
+card "**VELOCITY**\n<size:14>Speed</size>\n\n<size:13>• Streaming</size>\n<size:13>• Batch</size>\n<size:13>• Low latency</size>" as Ve <<Task>>
 
-card "📈 **SCALE**\n<size:14>Growing Volume</size>\n\n<size:13>• Terabytes to Petabytes\n• More users, events\n• Storage & compute cost</size>" as S #FFCDD2
+card "**RELIABILITY**\n<size:14>Resilience</size>\n\n<size:13>• Handle fails</size>\n<size:13>• Late data</size>\n<size:13>• Quality</size>" as R <<Schema>>
 
-card "🎭 **VARIETY**\n<size:14>Multiple Sources</size>\n\n<size:13>• JSON, CSV, Parquet\n• SQL, NoSQL, APIs\n• Structured vs unstructured</size>" as V #FFE0B2
-
-card "⚡ **VELOCITY**\n<size:14>Speed Requirements</size>\n\n<size:13>• Real-time streaming\n• Batch processing\n• Low-latency needs</size>" as Ve #B3E5FC
-
-card "🛡️ **RELIABILITY**\n<size:14>System Resilience</size>\n\n<size:13>• Handle failures\n• Late arriving data\n• Data quality issues</size>" as R #C8E6C9
-
-S -[#E53935,thickness=2]-> V
-V -[#F57C00,thickness=2]-> Ve
-Ve -[#1976D2,thickness=2]-> R
+S -down[#5C6BC0,thickness=2]-> V
+V -right[#FF6F00,thickness=2]-> Ve
+Ve -down[#1565C0,thickness=2]-> R
 
 @enduml

@@ -1,179 +1,200 @@
 @startuml
 '=================================================
-' CANONICAL DIAGRAM TEMPLATE - DATA ENGINEERING
+' PREMIUM DIAGRAM TEMPLATE - DATA ENGINEERING
 '=================================================
-
 top to bottom direction
 skinparam linetype ortho
-skinparam shadowing false
-skinparam roundcorner 8
+skinparam shadowing true
+skinparam roundcorner 12
 skinparam handwritten false
-skinparam nodesep 30
-skinparam ranksep 40
+skinparam nodesep 60
+skinparam ranksep 50
+
 
 '-------------------------
-' FONT & GLOBAL STYLE
+' PREMIUM FONT & GLOBAL STYLE
 '-------------------------
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam defaultFontColor #2C3E50
+skinparam defaultFontName "Segoe UI, Arial, sans-serif"
+skinparam defaultFontSize 18
+skinparam defaultFontColor #1A237E
+skinparam backgroundColor #FAFBFC
 
 '-------------------------
-' GENERIC BOX STYLE
+' ENHANCED BOX STYLES - Deep Blue Theme
 '-------------------------
 skinparam rectangle {
-    BackgroundColor #F8F9FA
-    BorderColor #90A4AE
-    BorderThickness 2
-    FontColor #263238
-    FontSize 14
+    BackgroundColor #E8EAF6
+    BorderColor #3949AB
+    BorderThickness 2.5
+    FontColor #1A237E
+    FontSize 18
     FontStyle bold
-    Padding 20
+    Padding 22
+    RoundCorner 12
 }
 
 skinparam component {
     BackgroundColor #FFFFFF
-    BorderColor #78909C
-    BorderThickness 1.5
-    FontSize 14
-    Padding 12
+    BorderColor #5C6BC0
+    BorderThickness 2
+    FontSize 16
+    Padding 16
+    RoundCorner 10
 }
 
 skinparam database {
-    BackgroundColor #ECEFF1
-    BorderColor #546E7A
-    BorderThickness 1.5
-    FontSize 14
-    FontColor #263238
+    BackgroundColor #E8EAF6
+    BorderColor #3949AB
+    BorderThickness 2.5
+    FontSize 16
+    FontColor #1A237E
 }
 
 skinparam arrow {
-    Color #607D8B
-    Thickness 1.5
-    FontSize 11
-    FontColor #546E7A
+    Color #5C6BC0
+    Thickness 2
+    FontSize 14
+    FontColor #3949AB
+}
+
+skinparam package {
+    BackgroundColor #F5F7FA
+    BorderColor #C5CAE9
+    BorderThickness 1.5
+    FontColor #283593
+    FontSize 14
+    FontStyle bold
 }
 
 '-------------------------
-' SEMANTIC STEREOTYPES
+' PREMIUM SEMANTIC STEREOTYPES
 '-------------------------
-skinparam component<<UI>> {
-    BorderColor #8E24AA
-    BackgroundColor #F3E5F5
-    FontColor #4A148C
+skinparam component<<A>> {
+    BackgroundColor #E8EAF6
+    BorderColor #3949AB
+    FontColor #1A237E
+    BorderThickness 2.5
 }
 
-skinparam component<<Agent>> {
-    BorderColor #0288D1
-    BackgroundColor #E1F5FE
-    FontColor #01579B
+skinparam component<<B>> {
+    BorderColor #1565C0
+    BackgroundColor #E3F2FD
+    FontColor #0D47A1
+    BorderThickness 2.5
 }
 
-skinparam component<<Tool>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
+skinparam component<<C>> {
+    BorderColor #00897B
+    BackgroundColor #E0F2F1
+    FontColor #004D40
+    BorderThickness 2.5
 }
 
-skinparam component<<Config>> {
-    BorderColor #F57C00
+skinparam component<<D>> {
+    BorderColor #FF6F00
     BackgroundColor #FFF3E0
     FontColor #E65100
+    BorderThickness 2.5
 }
 
 skinparam component<<Bad>> {
-    BorderColor #C62828
+    BorderColor #D32F2F
     BackgroundColor #FFEBEE
     FontColor #B71C1C
+    BorderThickness 2.5
 }
 
 skinparam component<<V1>> {
     BorderColor #F57C00
     BackgroundColor #FFF3E0
     FontColor #E65100
+    BorderThickness 2.5
 }
 
 skinparam component<<V2>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
+    BorderColor #00897B
+    BackgroundColor #E0F2F1
+    FontColor #004D40
+    BorderThickness 2.5
 }
 
 skinparam component<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
+    BackgroundColor #E0F2F1
+    BorderColor #00897B
+    BorderThickness 2.5
 }
 
 skinparam component<<down>> {
     BackgroundColor #FFEBEE
-    BorderColor #C62828
+    BorderColor #D32F2F
+    BorderThickness 2.5
 }
 
 skinparam database<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
+    BackgroundColor #E0F2F1
+    BorderColor #00897B
+    BorderThickness 3
 }
 
 skinparam database<<down>> {
     BackgroundColor #FFEBEE
-    BorderColor #C62828
+    BorderColor #D32F2F
+    BorderThickness 3
 }
 
 skinparam component<<success>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
+    BackgroundColor #E0F2F1
+    BorderColor #00897B
+    BorderThickness 2.5
 }
 
 skinparam component<<failure>> {
     BackgroundColor #FFEBEE
-    BorderColor #C62828
+    BorderColor #D32F2F
+    BorderThickness 2.5
 }
 
 '=================================================
-' LAYERED PLACEHOLDERS (DO NOT REMOVE)
+' LAYERED ARCHITECTURE
 '=================================================
-
-package "LAYER 1" #F8F9FA {
-    component "**BOX-1**\n<size:10>Role • Responsibility</size>" as BOX1 <<UI>>
+package "LAYER 1" #FFFFFF {
+    component "**BOX-1**\n<size:11>Role • Responsibility" as BOX1 <<A>>
 }
 
-package "LAYER 2" #F8F9FA {
-    component "**BOX-2**\n<size:10>Control • Routing • Decisions</size>" as BOX2 <<Agent>>
+package "LAYER 2" #FFFFFF {
+    component "**BOX-2**\n<size:11><color:#0D47A1>Control • Routing • Decisions</color></size>" as BOX2 <<B>>
 }
 
-package "LAYER 3" #F8F9FA {
+package "LAYER 3" #FFFFFF {
     together {
-        component "**BOX-3**\n<size:10>Function / Task</size>" as BOX3 <<Tool>>
-        component "**BOX-4**\n<size:10>Function / Task</size>" as BOX4 <<Tool>>
-        component "**BOX-5**\n<size:10>Function / Task</size>" as BOX5 <<Tool>>
+        component "**BOX-3**\n<size:11><color:#004D40>Function / Task</color></size>" as BOX3 <<C>>
+        component "**BOX-4**\n<size:11><color:#004D40>Function / Task</color></size>" as BOX4 <<C>>
+        component "**BOX-5**\n<size:11><color:#004D40>Function / Task</color></size>" as BOX5 <<C>>
     }
 }
 
-package "LAYER 4" #F8F9FA {
-    component "**BOX-6**\n<size:10>Runtime / Engine</size>" as BOX6 <<Agent>>
-    component "**BOX-7**\n<size:10>Schema / Model</size>" as BOX7 <<Config>>
+package "LAYER 4" #FFFFFF {
+    component "**BOX-6**\n<size:11><color:#0D47A1>Runtime / Engine</color></size>" as BOX6 <<B>>
+    component "**BOX-7**\n<size:11><color:#E65100>Schema / Model</color></size>" as BOX7 <<D>>
 }
 
-package "LAYER 5" #F8F9FA {
-    database "**BOX-8**\n<size:10>Primary Data</size>" as BOX8
-    database "**BOX-9**\n<size:10>Reference / Metadata</size>" as BOX9
-
+package "LAYER 5" #FFFFFF {
+    database "**BOX-8**\n<size:11><color:#1A237E>Primary Data</color></size>" as BOX8
+    database "**BOX-9**\n<size:11><color:#1A237E>Reference / Metadata</color></size>" as BOX9
     BOX8 -[hidden]left- BOX9
 }
 
 '=================================================
-' DEFAULT FLOW (EDIT, DO NOT DELETE)
+' ENHANCED FLOW
 '=================================================
-
-BOX1 --> BOX2
-BOX2 --> BOX3
-BOX2 --> BOX4
-BOX2 --> BOX5
-
-BOX3 --> BOX7
-BOX7 --> BOX6
-BOX6 --> BOX8
-BOX6 --> BOX9
-BOX6 --> BOX2
+BOX1 -[#7C4DFF,thickness=2]left-> BOX2 
+BOX2 -[#5C6BC0,thickness=2]-> BOX3 : <color:#3949AB>Label</color>
+BOX2 -[#5C6BC0,thickness=2]-> BOX4 : <color:#3949AB>Label</color>
+BOX2 -[#5C6BC0,thickness=2]-> BOX5 : <color:#3949AB>Label</color>
+BOX3 -[#00897B,thickness=2]right-> BOX7 
+BOX7 -[#FF6F00,thickness=2]-> BOX6 
+BOX6 -[#1565C0,thickness=2]-> BOX8 : <color:#0D47A1>Label</color>
+BOX6 -[#1565C0,thickness=2]-> BOX9 : <color:#0D47A1>Label</color>
+BOX6 -[#5C6BC0,thickness=2,dashed]-> BOX2 : <color:#3949AB>Label</color>
 
 @enduml

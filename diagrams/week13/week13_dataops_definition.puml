@@ -1,0 +1,47 @@
+@startuml
+' DataOps: CI/CD, tests on data, monitoring for pipelines
+' Borrow from DevOps; tests on data not only code
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 50
+skinparam ranksep 45
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 12
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 10
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+component "**CI**\n<size:12>Commit / schedule -> pipeline -> tests</size>" as CI #E1F5FE
+
+component "**CD**\n<size:12>Promote only if tests pass</size>" as CD #E8F5E9
+
+component "**Tests on data**\n<size:12>Schema, row, freshness, volume</size>" as TESTS #FFF9C4
+
+component "**Monitoring**\n<size:12>SLAs, watermark, DLQ</size>" as MON #ECEFF1
+
+CI -down-> CD
+CD -down-> TESTS
+TESTS -down-> MON
+@enduml

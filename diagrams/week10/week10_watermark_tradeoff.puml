@@ -1,0 +1,52 @@
+@startuml
+' Watermark trade-off: aggressive vs conservative
+' "No event with event_time < W will arrive"
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 55
+skinparam ranksep 45
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 14
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+component "**Watermark W**\n<size:12>Close window when W >= end</size>" as W #F8F9FA
+
+rectangle "AGGRESSIVE" #FFEBEE {
+    component "**Small delay**\n<size:12>Fast emit</size>" as A1
+    component "**Risk:** drop late data" as A2 #FFCDD2
+    A1 -down-> A2
+}
+
+rectangle "CONSERVATIVE" #E8F5E9 {
+    component "**Large delay**\n<size:12>Wait longer</size>" as C1
+    component "**Complete**\n<size:12>Fewer late drops</size>" as C2
+    C1 -down-> C2
+}
+
+W -down-> A1
+W -down-> C1
+@enduml

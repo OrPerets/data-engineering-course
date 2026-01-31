@@ -115,6 +115,9 @@ $$
 | Variance | — | ✗ | ✗ | ✗ |
 | Distinct | $|A \cup B|$ | ✗ | — | ✗ |
 
+
+![](../../diagrams/week7/week7_combiner_valid.png)
+
 ## Computing Mean with Combiner
 - **Trick:** Emit $(k, (sum, count))$ instead of $(k, value)$
 - Combiner: $(sum_1, count_1) \oplus (sum_2, count_2) = (sum_1 + sum_2, count_1 + count_2)$
@@ -144,6 +147,8 @@ $$
 - **Phase 2:** Aggregate by original key
   - Emit $(k, \oplus_s (\oplus_s v))$
 - **Correctness:** Requires $\oplus$ associative
+
+![](../../diagrams/week7/week7_salting_two_phase.png)
 
 ## Salting Cost Trade-off
 - **Benefit:** Load balance; no OOM
@@ -235,6 +240,9 @@ $$
 | Skewed key $k^*$ | Salted reduce-side | $\|R_{hot}\| \cdot S + \|R\| + \|S\|$ |
 | Low selectivity | Semi-join | $\|K_R\| + \|S_{filtered}\| + \|R\|$ |
 | General case | Reduce-side | $\|R\| + \|S\|$ |
+
+
+![](../../diagrams/week7/week7_join_decision.png)
 
 ---
 
@@ -407,13 +415,20 @@ $$
 - Diagram combiner and salting data flow
 
 ## Additional Diagrams
+### Salting, join decision, combiner
+- week7_salting_two_phase.png, week7_join_decision.png, week7_combiner_valid.png
 ### System Overview
+
 ![](../../diagrams/week7/week7_lecture_slide12_system_overview.png)
 ### Example Shuffle
+
 ![](../../diagrams/week7/week7_lecture_slide19_example_shuffle.png)
 ### Execution Flow
+
 ![](../../diagrams/week7/week7_lecture_slide24_execution_flow.png)
 ### Failure: Skew
+
 ![](../../diagrams/week7/week7_lecture_slide28_failure_skew.png)
 ### Practice: Skew Salting
+
 ![](../../diagrams/week7/week7_practice_slide18_skew_salting.png)

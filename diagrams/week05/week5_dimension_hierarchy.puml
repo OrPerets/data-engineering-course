@@ -1,0 +1,52 @@
+@startuml
+'=================================================
+' DIMENSION HIERARCHY - Two chains for OLAP
+' Time: year -> quarter -> month -> day
+' Product: category -> brand -> product
+'=================================================
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 35
+skinparam ranksep 45
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 13
+    Padding 10
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+database "**year**" as Y #E3F2FD
+database "**quarter**" as Q #E3F2FD
+database "**month**" as M #E3F2FD
+database "**day**" as D #E3F2FD
+Y -right-> Q
+Q -right-> M
+M -right-> D : <size:10>drill-down</size>
+
+database "**category**" as C #FFF3E0
+database "**brand**" as B #FFF3E0
+database "**line**" as L #FFF3E0
+database "**product**" as P #FFF3E0
+C -right-> B
+B -right-> L
+L -right-> P
+
+Y -[hidden]down- C
+D -[hidden]right- P
+
+@enduml

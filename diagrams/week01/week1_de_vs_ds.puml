@@ -1,35 +1,16 @@
 @startuml
+!include ../_template_styles.puml
 ' Data Engineering vs Data Science
-left to right direction
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam roundcorner 15
-skinparam shadowing true
-skinparam linetype ortho
-skinparam nodesep 50
-skinparam ranksep 70
+top to bottom direction
 
-skinparam card {
-    FontStyle bold
-    Padding 35
-    BorderThickness 2.5
-}
+card "**DATA ENGINEERING**\n\n<size:15><b>Focus:</b></size>\n<size:14>Infrastructure & pipelines</size>\n\n<size:15><b>Activities:</b></size>\n<size:14>• ETL/ELT</size>\n<size:14>• Architecture</size>\n<size:14>• Scalability</size>\n<size:14>• Integration</size>\n\n<size:15><b>Output:</b></size>\n<size:14>Datasets, APIs</size>" as DE <<Primary>>
 
-skinparam arrow {
-    Thickness 2.5
-    FontSize 13
-}
+card "**DATA SCIENCE**\n\n<size:15><b>Focus:</b></size>\n<size:14>Insights from models</size>\n\n<size:15><b>Activities:</b></size>\n<size:14>• Statistics</size>\n<size:14>• ML</size>\n<size:14>• Features</size>\n<size:14>• Evaluation</size>\n\n<size:15><b>Output:</b></size>\n<size:14>Insights, Models</size>" as DS <<Task>>
 
-title <size:22><b>Data Engineering vs Data Science</b></size>\n<size:14>Complementary Disciplines with Shared Goals</size>
+card "**SHARED**\n\n<size:15><b>Collaboration:</b></size>\n\n<size:14>• Quality data</size>\n<size:14>• Large datasets</size>\n<size:14>• Feature stores</size>\n<size:14>• Exploration</size>\n<size:14>• Performance</size>\n<size:14>• Reproducibility</size>" as O <<Schema>>
 
-card "⚙️ **DATA ENGINEERING**\n\n<size:15><b>Focus:</b></size>\n<size:14>Building data infrastructure\nand pipelines</size>\n\n<size:15><b>Activities:</b></size>\n<size:14>• ETL/ELT pipelines\n• Data architecture\n• Scalability & reliability\n• Data integration</size>\n\n<size:15><b>Output:</b></size>\n<size:14>Clean datasets, APIs,\ndata platforms</size>" as DE #E3F2FD
-
-card "🔬 **DATA SCIENCE**\n\n<size:15><b>Focus:</b></size>\n<size:14>Extracting insights from\ndata using models</size>\n\n<size:15><b>Activities:</b></size>\n<size:14>• Statistical analysis\n• Machine learning\n• Feature engineering\n• Model evaluation</size>\n\n<size:15><b>Output:</b></size>\n<size:14>Insights, predictions,\nML models</size>" as DS #F3E5F5
-
-card "🤝 **SHARED AREA**\n\n<size:15><b>Collaboration Zone:</b></size>\n\n<size:14>• Clean, quality data\n• Large-scale datasets\n• Feature stores\n• Data exploration\n• Performance optimization\n• Reproducibility</size>\n\n<size:13><i>Success requires both disciplines</i></size>" as O #FFF9C4
-
-DE -[#1976D2,thickness=3]-> O : <size:13><color:#0D47A1>Provides\ninfrastructure</color></size>
-O -[#7B1FA2,thickness=3]-> DS : <size:13><color:#4A148C>Enables\nanalysis</color></size>
-DS -[#7B1FA2,thickness=2,dashed]-> DE : <size:12><color:#6A1B9A>Requirements\nfeedback</color></size>
+DE -down[#1565C0,thickness=2]-> O : <color:#3949AB>Provides</color>
+O -right[#5C6BC0,thickness=2]-> DS : <color:#3949AB>Enables</color>
+DS -up[#5C6BC0,thickness=2,dashed]-> DE : <color:#3949AB>Feedback</color>
 
 @enduml

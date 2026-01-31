@@ -441,10 +441,14 @@ $$
 
 ## Additional Diagrams
 ### Advanced Text Pipeline Overview
+
 ![](../../diagrams/week9/week9_lecture_slide20_advanced_text_pipeline_overview.png)
 ### MapReduce N-gram Flow
+
 ![](../../diagrams/week9/week9_lecture_slide26_mapreduce_ngram_flow.png)
 ### Failure: Regex and N-gram Skew
+
 ![](../../diagrams/week9/week9_lecture_slide29_failure_regex_ngram.png)
 ### Practice: N-gram Pipeline Reasoning
+
 ![](../../diagrams/week9/week9_practice_slide19_ngram_pipeline_reasoning.png)

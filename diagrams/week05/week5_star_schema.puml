@@ -1,0 +1,51 @@
+@startuml
+'=================================================
+' STAR SCHEMA - One fact table + dimension tables
+' sales_fact partitioned by date_key; FK to dims
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 45
+skinparam ranksep 50
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 16
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+    FontColor #263238
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 12
+}
+
+database "**dim_customer**\n<size:10>customer_key, name, region</size>" as DIM_C #E3F2FD
+
+database "**dim_product**\n<size:10>product_key, name, category</size>" as DIM_P #E3F2FD
+
+database "**dim_date**\n<size:10>date_key, month, year</size>" as DIM_D #E3F2FD
+
+database "**sales_fact**\n<size:10>customer_key, product_key, date_key, amount</size>\n<size:9>partition by date_key</size>" as FACT #FFF3E0
+
+DIM_C -down[#1976D2,thickness=2]-> FACT : <size:11>customer_key</size>
+DIM_P -down[#1976D2,thickness=2]-> FACT : <size:11>product_key</size>
+DIM_D -down[#1976D2,thickness=2]-> FACT : <size:11>date_key</size>
+
+@enduml

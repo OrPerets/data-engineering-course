@@ -1,159 +1,29 @@
 @startuml
-'=================================================
-' CANONICAL DIAGRAM TEMPLATE - DATA ENGINEERING
-'=================================================
-
-left to right direction
-skinparam linetype ortho
-skinparam shadowing false
-skinparam roundcorner 8
-skinparam handwritten false
-skinparam nodesep 24
-skinparam ranksep 28
-
-'-------------------------
-' FONT & GLOBAL STYLE
-'-------------------------
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam defaultFontColor #2C3E50
-
-'-------------------------
-' GENERIC BOX STYLE
-'-------------------------
-skinparam rectangle {
-    BackgroundColor #F8F9FA
-    BorderColor #90A4AE
-    BorderThickness 2
-    FontColor #263238
-    FontSize 14
-    FontStyle bold
-    Padding 20
-}
-
-skinparam component {
-    BackgroundColor #FFFFFF
-    BorderColor #78909C
-    BorderThickness 1.5
-    FontSize 14
-    Padding 12
-}
-
-skinparam database {
-    BackgroundColor #ECEFF1
-    BorderColor #546E7A
-    BorderThickness 1.5
-    FontSize 14
-    FontColor #263238
-}
-
-skinparam arrow {
-    Color #607D8B
-    Thickness 1.5
-    FontSize 11
-    FontColor #546E7A
-}
-
-'-------------------------
-' SEMANTIC STEREOTYPES
-'-------------------------
-skinparam component<<UI>> {
-    BorderColor #8E24AA
-    BackgroundColor #F3E5F5
-    FontColor #4A148C
-}
-
-skinparam component<<Agent>> {
-    BorderColor #0288D1
-    BackgroundColor #E1F5FE
-    FontColor #01579B
-}
-
-skinparam component<<Tool>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<Config>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<Bad>> {
-    BorderColor #C62828
-    BackgroundColor #FFEBEE
-    FontColor #B71C1C
-}
-
-skinparam component<<V1>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<V2>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam database<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam database<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam component<<success>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<failure>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-'=================================================
-
+!include ../_template_styles.puml
 ' QUERY / REQUEST EXECUTION FLOW - Mixed layout for PPTX
+left to right direction
 
-component "**Client**\n<size:10>Query by user_id</size>" as C
+component "**Client**\n<size:10>Query by user_id</size>" as C <<Primary>>
 
-component "**1. Route**\n<size:10>hash(user_id) mod N</size>" as R
+component "**1. Route**\n<size:10>hash(user_id) mod N</size>" as R <<Control>>
 
-rectangle "PARTITIONS" #F8F9FA {
-    database "**P0**\n<size:10>Users, Orders</size>" as P0
-    database "**P1**\n<size:10>Users, Orders</size>" as P1
-    database "**P2**\n<size:10>Users, Orders</size>" as P2
+rectangle "PARTITIONS" #FFFFFF {
+    database "**P0**\n<size:10>Users, Orders</size>" as P0 <<Schema>>
+    database "**P1**\n<size:10>Users, Orders</size>" as P1 <<Schema>>
+    database "**P2**\n<size:10>Users, Orders</size>" as P2 <<Schema>>
     P0 -[hidden]down- P1
     P1 -[hidden]down- P2
 }
 
-component "**3. Merge**\n<size:10>Result</size>" as M
+component "**3. Merge**\n<size:10>Result</size>" as M <<Task>>
 
-database "**Response**\n<size:10>User + Orders</size>" as OUT
+database "**Response**\n<size:10>User + Orders</size>" as OUT <<Schema>>
 
-C -right-> R : "user_id=123"
-R -right-> P0 : "skip"
-R -right-> P1 : "P1 (key 123)"
-R -right-> P2 : "skip"
-P1 -right-> M : "local read"
-M -right-> OUT : "~1-5 ms"
+C -right[#5C6BC0,thickness=2]-> R : <color:#3949AB>user_id=123</color>
+R -right[#5C6BC0,thickness=2]-> P0 : <color:#3949AB>skip</color>
+R -right[#5C6BC0,thickness=2]-> P1 : <color:#3949AB>P1 (key 123)</color>
+R -right[#5C6BC0,thickness=2]-> P2 : <color:#3949AB>skip</color>
+P1 -right[#00897B,thickness=2]-> M : <color:#3949AB>local read</color>
+M -right[#00897B,thickness=2]-> OUT : <color:#3949AB>~1-5 ms</color>
 
 @enduml

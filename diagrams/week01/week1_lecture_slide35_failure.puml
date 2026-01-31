@@ -1,163 +1,29 @@
 @startuml
-'=================================================
-' CANONICAL DIAGRAM TEMPLATE - DATA ENGINEERING
-'=================================================
-
+!include ../_template_styles.puml
+' FAILURE PROPAGATION — mixed layout
 top to bottom direction
-skinparam linetype ortho
-skinparam shadowing true
-skinparam roundcorner 12
-skinparam handwritten false
-skinparam nodesep 35
-skinparam ranksep 45
 
-'-------------------------
-' FONT & GLOBAL STYLE
-'-------------------------
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam defaultFontColor #2C3E50
+storage "**Input**\n<size:12>Raw events</size>" as INPUT
 
-'-------------------------
-' GENERIC BOX STYLE
-'-------------------------
-skinparam rectangle {
-    BackgroundColor #F8F9FA
-    BorderColor #90A4AE
-    BorderThickness 2
-    FontColor #263238
-    FontSize 14
-    FontStyle bold
-    Padding 20
-}
+component "**Step 1**\n<size:11>Ingestion</size>" as STEP1 <<success>>
+database "**Raw**\n<size:12>5 GB OK</size>" as RAW <<up>>
 
-skinparam component {
-    BackgroundColor #FFFFFF
-    BorderColor #78909C
-    BorderThickness 1.5
-    FontSize 14
-    Padding 12
-}
+component "**Step 2**\n<size:11>Transform</size>\n<size:11><b>OOM error</b></size>" as STEP2 <<failure>>
+database "**Partial**\n<size:12>2.5 GB</size>\n<size:12>incomplete</size>" as PARTIAL <<down>>
 
-skinparam database {
-    BackgroundColor #ECEFF1
-    BorderColor #546E7A
-    BorderThickness 1.5
-    FontSize 14
-    FontColor #263238
-}
+component "**Step 3**\n<size:11>Aggregate</size>\n<size:11>waiting</size>" as STEP3 <<down>>
 
-skinparam arrow {
-    Color #607D8B
-    Thickness 2.5
-    FontSize 12
-    FontColor #546E7A
-    FontStyle italic
-}
+component "**Step 4**\n<size:11>Load</size>\n<size:11>waiting</size>" as STEP4 <<down>>
 
-'-------------------------
-' SEMANTIC STEREOTYPES
-'-------------------------
-skinparam component<<UI>> {
-    BorderColor #8E24AA
-    BackgroundColor #F3E5F5
-    FontColor #4A148C
-}
+database "**Output**\n<size:12>Blocked</size>" as OUTPUT <<down>>
 
-skinparam component<<Agent>> {
-    BorderColor #0288D1
-    BackgroundColor #E1F5FE
-    FontColor #01579B
-}
+INPUT -left[#00897B,thickness=2]-> STEP1 : <color:#3949AB><b>ingest</b></color>
+STEP1 -down[#00897B,thickness=2]-> RAW : <color:#3949AB><b>saved</b></color>
+RAW -down[#1565C0,thickness=2]-> STEP2 : <color:#3949AB>read</color>
 
-skinparam component<<Tool>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<Config>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<Bad>> {
-    BorderColor #C62828
-    BackgroundColor #FFEBEE
-    FontColor #B71C1C
-}
-
-skinparam component<<V1>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<V2>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam database<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam database<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam component<<success>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<failure>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-'=================================================
-
-title <size:22><b>⚠️ Failure Propagation in Pipeline</b></size>\n<size:14>Sequential Dependencies Amplify Impact</size>
-
-' FAILURE PROPAGATION — sequential pipeline with failure at Step 2
-storage "📥 **Input**\n<size:12>Raw events\nfrom sources</size>" as INPUT
-
-component "✅ **Step 1: Ingestion**\n<size:11>Write raw data\nto storage</size>" as STEP1 <<success>>
-
-database "💚 **Raw Storage**\n<size:12>5 GB stored\nsuccessfully</size>" as RAW <<up>>
-
-component "❌ **Step 2: Transform**\n<size:11><b>Fails at 50%</b>\nOOM error</size>" as STEP2 <<failure>>
-
-database "⚠️ **Partial Output**\n<size:12>2.5 GB written\nincomplete</size>" as PARTIAL <<down>>
-
-component "⏸️ **Step 3: Aggregate**\n<size:11>Not executed\nwaiting...</size>" as STEP3 <<down>>
-
-component "⏸️ **Step 4: Load**\n<size:11>Not executed\nwaiting...</size>" as STEP4 <<down>>
-
-database "❌ **Output**\n<size:12>Not created\ndownstream blocked</size>" as OUTPUT <<down>>
-
-INPUT -[#388E3C,thickness=3]-> STEP1 : <color:#1B5E20><b>ingest</b></color>
-STEP1 -[#388E3C,thickness=3]-> RAW : <color:#2E7D32><b>raw saved</b></color>
-RAW -[#1976D2,thickness=3]-> STEP2 : <color:#0D47A1>read raw</color>
-STEP2 -[#C62828,thickness=4]-> PARTIAL : <color:#B71C1C><b>💥 crash</b></color>
-STEP2 -[#C62828,thickness=3,dashed]-> STEP3 : <color:#C62828>blocked</color>
-STEP3 -[#C62828,thickness=3,dashed]-> STEP4 : <color:#C62828>blocked</color>
-STEP4 -[#C62828,thickness=3,dashed]-> OUTPUT : <color:#C62828>no load</color>
-
+STEP2 -left[#D32F2F,thickness=2]-> PARTIAL : <color:#3949AB><b>crash</b></color>
+STEP2 -down[#D32F2F,thickness=2,dashed]-> STEP3 : <color:#3949AB>blocked</color>
+STEP3 -down[#D32F2F,thickness=2,dashed]-> STEP4 : <color:#3949AB>blocked</color>
+STEP4 -right[#D32F2F,thickness=2,dashed]-> OUTPUT : <color:#3949AB>no load</color>
 
 @enduml

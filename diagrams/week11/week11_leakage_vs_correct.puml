@@ -1,0 +1,49 @@
+@startuml
+' Leakage: train sees future data vs point-in-time correct
+' Train/serve skew when no as_of_ts
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 50
+skinparam ranksep 45
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 12
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 10
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+rectangle "LEAKAGE (wrong)" #FFEBEE {
+    component "**No as_of_ts filter**\n<size:12>All events up to today</size>" as L1
+    component "**Train sees future**\n<size:12>Serve sees past only</size>" as L2 #FFCDD2
+    L1 -down-> L2
+}
+
+rectangle "CORRECT" #E8F5E9 {
+    component "**Filter ts <= as_of_ts**\n<size:12>Point-in-time</size>" as C1
+    component "**Train = serve**\n<size:12>Same data availability</size>" as C2
+    C1 -down-> C2
+}
+
+L1 -[hidden]right- C1
+@enduml

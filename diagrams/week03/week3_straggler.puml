@@ -1,0 +1,26 @@
+@startuml
+!include ../_template_styles.puml
+' STRAGGLER - One slow worker delays whole job (Causes: skew, GC, network, disk)
+top to bottom direction
+
+component "**Partition / Shuffle**\n<size:12>Keys to workers</size>" as PART <<Control>>
+
+rectangle "Workers" #FFFFFF {
+    component "**W1**\n<size:12>Done</size>" as W1 <<up>>
+    component "**W2**\n<size:12>Done</size>" as W2 <<up>>
+    component "**W3 (straggler)**\n<size:12>Slow: skew, GC, I/O</size>" as W3 <<down>>
+    W1 -[hidden]right- W2
+    W2 -[hidden]right- W3
+}
+
+component "**Job output**\n<size:12>Waits for slowest</size>\n<size:12>Latency = max(task times)</size>" as OUT <<Primary>>
+
+PART -down[#5C6BC0,thickness=2]-> W1 : <color:#3949AB>balanced</color>
+PART -down[#5C6BC0,thickness=2]-> W2 : <color:#3949AB>balanced</color>
+PART -down[#D32F2F,thickness=2]-> W3 : <color:#3949AB>hot partition</color>
+
+W1 -down[#00897B,thickness=2]-> OUT : <color:#3949AB>ready</color>
+W2 -down[#00897B,thickness=2]-> OUT : <color:#3949AB>ready</color>
+W3 -down[#D32F2F,dashed,thickness=2]-> OUT : <color:#3949AB>delays job</color>
+
+@enduml

@@ -1,0 +1,15 @@
+@startuml
+!include ../_template_styles.puml
+' PARALLELISM vs CONCURRENCY - Comparison
+left to right direction
+
+rectangle "**Parallelism**\n\n<size:14>Simultaneous execution</size>\n<size:14>Multiple cores</size>\n<size:14>True at same time</size>\n\n<size:13>Pure functions enable</size>\n<size:13>safe distribution</size>" as PAR <<Control>>
+
+rectangle "**Concurrency**\n\n<size:14>Overlapping execution</size>\n<size:14>May be time-sliced</size>\n<size:14>Single or multi core</size>\n\n<size:13>Order not guaranteed</size>\n<size:13>without sync</size>" as CON <<Task>>
+
+rectangle "**Shared**\n\n<size:14>Both improve throughput</size>\n<size:14>Design for no shared</size>\n<size:14>mutable state</size>\n\n<size:13>Determinism: same input</size>\n<size:13>=> same output</size>" as SHARED <<Primary>>
+
+PAR -down[#1565C0,thickness=2]-> SHARED
+CON -down[#00897B,thickness=2]-> SHARED
+
+@enduml

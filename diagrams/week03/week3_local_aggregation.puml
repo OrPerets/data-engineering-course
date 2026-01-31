@@ -1,0 +1,23 @@
+@startuml
+!include ../_template_styles.puml
+' LOCAL AGGREGATION - Reduce repartition size (k,v1),(k,v2) → (k, v1+v2) before shuffle
+left to right direction
+
+rectangle "BEFORE (no combiner)" #FFFFFF {
+    database "**Map output**\n<size:12>40 (k,v) pairs</size>\n<size:12>e.g. (A12,1) x 8</size>" as MAP1 <<Schema>>
+    component "**Repartition**\n<size:12>800 B total</size>" as REP1 <<Control>>
+    MAP1 -right[#5C6BC0,thickness=2]-> REP1
+}
+
+rectangle "AFTER (local aggregate)" #FFFFFF {
+    component "**Combine**\n<size:12>(k,v1),(k,v2) -> (k,v1+v2)</size>\n<size:12>Associative + commutative</size>" as COMB <<Task>>
+    database "**Fewer pairs**\n<size:12>15 (k,v) -> 300 B</size>" as MAP2 <<Schema>>
+    component "**Repartition**\n<size:12>smaller traffic</size>" as REP2 <<Control>>
+    COMB -right[#00897B,thickness=2]-> MAP2
+    MAP2 -right[#00897B,thickness=2]-> REP2
+}
+
+MAP1 -down[#D32F2F,dashed,thickness=2]-> COMB : <color:#3949AB>add combiner</color>
+REP1 -[hidden]down- REP2
+
+@enduml

@@ -1,36 +1,17 @@
 @startuml
+!include ../_template_styles.puml
 ' Data Engineering vs Analytics
-left to right direction
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam roundcorner 15
-skinparam shadowing true
-skinparam linetype ortho
-skinparam nodesep 45
-skinparam ranksep 75
+top to bottom direction
 
-skinparam card {
-    FontStyle bold
-    Padding 35
-    BorderThickness 2.5
-}
+card "**DATA ENGINEERING**\n\n<size:15><b>Producer</b></size>\n\n<size:14><b>Role:</b></size>\n<size:14>• Infrastructure</size>\n<size:14>• Pipelines</size>\n<size:14>• Quality</size>\n<size:14>• Reliability</size>\n\n<size:13><i>\"Make data available\"</i></size>" as DE <<Primary>>
 
-skinparam arrow {
-    Thickness 3
-    FontSize 13
-}
+card "**CONNECTION**\n\n<size:15><b>Symbiotic:</b></size>\n\n<size:14>• Consumes DE output</size>\n<size:14>• Provides requirements</size>\n<size:14>• Collaboration</size>\n<size:14>• Data contracts</size>\n<size:14>• Common metrics</size>" as R <<Control>>
 
-title <size:22><b>Data Engineering vs Analytics</b></size>\n<size:14>Producer-Consumer Relationship</size>
+card "**ANALYTICS**\n\n<size:15><b>Consumer</b></size>\n\n<size:14><b>Role:</b></size>\n<size:14>• Reports</size>\n<size:14>• Dashboards</size>\n<size:14>• KPIs</size>\n<size:14>• Decisions</size>\n\n<size:13><i>\"Turn data to decisions\"</i></size>" as A <<Task>>
 
-card "⚙️ **DATA ENGINEERING**\n\n<size:15><b>Role: Data Producer</b></size>\n\n<size:14><b>Responsibilities:</b>\n• Build infrastructure\n• Design pipelines\n• Ensure data quality\n• Maintain reliability\n• Optimize performance</size>\n\n<size:13><i>\"Make data available\"</i></size>" as DE #E3F2FD
-
-card "🔄 **RELATIONSHIP**\n\n<size:15><b>Symbiotic Connection:</b></size>\n\n<size:14>• Analytics <b>consumes</b> DE output\n• Analytics <b>provides</b> requirements\n• Iterative collaboration\n• Shared data contracts\n• Common metrics</size>\n\n<size:13>⚖️ Balance: Self-service vs governance</size>" as R #FFF9C4
-
-card "📊 **ANALYTICS**\n\n<size:15><b>Role: Data Consumer</b></size>\n\n<size:14><b>Responsibilities:</b>\n• Create reports\n• Build dashboards\n• Define KPIs\n• Answer business questions\n• Tell data stories</size>\n\n<size:13><i>\"Turn data into decisions\"</i></size>" as A #F3E5F5
-
-DE -[#1976D2,thickness=3]-> R : <size:13><color:#0D47A1>**Provides**\nClean data</color></size>
-R -[#7B1FA2,thickness=3]-> A : <size:13><color:#4A148C>**Enables**\nInsights</color></size>
-A -[#F57C00,thickness=2,dashed]-> R : <size:12><color:#E65100>Feedback\nneeds</color></size>
-R -[#F57C00,thickness=2,dashed]-> DE : <size:12><color:#E65100>Requirements</color></size>
+DE -down[#1565C0,thickness=2]-> R : <color:#3949AB>**Provides**</color>
+R -right[#5C6BC0,thickness=2]-> A : <color:#3949AB>**Enables**</color>
+A -up[#FF6F00,thickness=2,dashed]-> R : <color:#3949AB>Feedback</color>
+R -up[#FF6F00,thickness=2,dashed]-> DE : <color:#3949AB>Needs</color>
 
 @enduml

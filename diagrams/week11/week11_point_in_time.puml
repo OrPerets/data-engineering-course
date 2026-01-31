@@ -1,0 +1,55 @@
+@startuml
+' Point-in-time correctness: f(e,t) uses only data with ts <= as_of_ts
+' No future leakage
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 50
+skinparam ranksep 45
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 12
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 10
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+database "**Events**\n<size:12>entity, ts, ...</size>" as EV #E3F2FD
+
+component "**Filter**\n<size:12>ts <= as_of_ts</size>" as FILTER #E1F5FE
+
+component "**Aggregate**\n<size:12>e.g. count in window</size>" as AGG #E8F5E9
+
+component "**Feature**\n<size:12>f(entity, as_of_ts)</size>" as FEAT #C8E6C9
+
+EV -down-> FILTER
+FILTER -down-> AGG
+AGG -down-> FEAT
+
+note bottom of FILTER : No data with ts > as_of_ts
+@enduml

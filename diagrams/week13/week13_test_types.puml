@@ -1,0 +1,55 @@
+@startuml
+' Data test types: schema, row, freshness, volume
+' Short labels per type
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 45
+skinparam ranksep 40
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 12
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 10
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+rectangle "SCHEMA" #E3F2FD {
+    component "**Column exists, type, nullable**\n<size:12>Enforce contract</size>" as S
+}
+
+rectangle "ROW" #E8F5E9 {
+    component "**Uniqueness, not-null, value in set**\n<size:12>e.g. count = count distinct</size>" as R
+}
+
+rectangle "FRESHNESS" #FFF9C4 {
+    component "**max(ts) >= now - threshold**\n<size:12>Data no older than SLA</size>" as F
+}
+
+rectangle "VOLUME" #ECEFF1 {
+    component "**Row count in bounds**\n<size:12>Min expected or z-score</size>" as V
+}
+
+S -down-> R
+R -down-> F
+F -down-> V
+@enduml

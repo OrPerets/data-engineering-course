@@ -1,164 +1,34 @@
 @startuml
-'=================================================
-' CANONICAL DIAGRAM TEMPLATE - DATA ENGINEERING
-'=================================================
-
-top to bottom direction
-skinparam linetype ortho
-skinparam shadowing false
-skinparam roundcorner 8
-skinparam handwritten false
-skinparam nodesep 24
-skinparam ranksep 28
-
-'-------------------------
-' FONT & GLOBAL STYLE
-'-------------------------
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam defaultFontColor #2C3E50
-
-'-------------------------
-' GENERIC BOX STYLE
-'-------------------------
-skinparam rectangle {
-    BackgroundColor #F8F9FA
-    BorderColor #90A4AE
-    BorderThickness 2
-    FontColor #263238
-    FontSize 14
-    FontStyle bold
-    Padding 20
-}
-
-skinparam component {
-    BackgroundColor #FFFFFF
-    BorderColor #78909C
-    BorderThickness 1.5
-    FontSize 14
-    Padding 12
-}
-
-skinparam database {
-    BackgroundColor #ECEFF1
-    BorderColor #546E7A
-    BorderThickness 1.5
-    FontSize 14
-    FontColor #263238
-}
-
-skinparam arrow {
-    Color #607D8B
-    Thickness 1.5
-    FontSize 11
-    FontColor #546E7A
-}
-
-'-------------------------
-' SEMANTIC STEREOTYPES
-'-------------------------
-skinparam component<<UI>> {
-    BorderColor #8E24AA
-    BackgroundColor #F3E5F5
-    FontColor #4A148C
-}
-
-skinparam component<<Agent>> {
-    BorderColor #0288D1
-    BackgroundColor #E1F5FE
-    FontColor #01579B
-}
-
-skinparam component<<Tool>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<Config>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<Bad>> {
-    BorderColor #C62828
-    BackgroundColor #FFEBEE
-    FontColor #B71C1C
-}
-
-skinparam component<<V1>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<V2>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam database<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam database<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam component<<success>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<failure>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-'=================================================
-
+!include ../_template_styles.puml
 ' FAILURE: NETWORK PARTITION (SPLIT-BRAIN) - Mixed layout for PPTX
+top to bottom direction
 
-rectangle "**Partition A**" #E3F2FD {
-    component "**Client A**\n<size:10>Writes</size>" as CA
+rectangle "**Partition A**" #FFFFFF {
+    component "**Client A**\n<size:10>Writes</size>" as CA <<Primary>>
     database "**Node A**\n<size:10>Accepts writes</size>" as NA <<up>>
-    CA -down-> NA : "writes"
+    CA -down[#5C6BC0,thickness=2]-> NA : <color:#3949AB>writes</color>
 }
 
-rectangle "**Partition B**" #FFF3E0 {
-    component "**Client B**\n<size:10>Writes</size>" as CB
+rectangle "**Partition B**" #FFFFFF {
+    component "**Client B**\n<size:10>Writes</size>" as CB <<Primary>>
     database "**Node B**\n<size:10>Accepts writes</size>" as NB <<up>>
     database "**Node C**\n<size:10>Replica</size>" as NC <<up>>
-    CB -down-> NB : "writes"
-    NB -right- NC : "replicate"
+    CB -down[#5C6BC0,thickness=2]-> NB : <color:#3949AB>writes</color>
+    NB -right[#00897B,thickness=2]- NC : <color:#3949AB>replicate</color>
 }
 
 component "**Network partition**\n<size:10>No sync</size>" as PART <<failure>>
 
 together {
-    component "**Conflict resolution**\n<size:10>Quorum / LWW / manual</size>" as RESOLVE <<Agent>>
-    database "**Merged state**\n<size:10>Reconciled</size>" as MERGED
+    component "**Conflict resolution**\n<size:10>Quorum / LWW / manual</size>" as RESOLVE <<Control>>
+    database "**Merged state**\n<size:10>Reconciled</size>" as MERGED <<Schema>>
 }
 
-NA -[#C62828]right.. PART
-NB -[#C62828]left.. PART
+NA -[#D32F2F,thickness=2]right.. PART
+NB -[#D32F2F,thickness=2]left.. PART
 
-NA -down-> RESOLVE : "divergent"
-NB -down-> RESOLVE : "divergent"
-RESOLVE -right-> MERGED : "reconcile"
+NA -down[#5C6BC0,thickness=2]-> RESOLVE : <color:#3949AB>divergent</color>
+NB -down[#5C6BC0,thickness=2]-> RESOLVE : <color:#3949AB>divergent</color>
+RESOLVE -right[#00897B,thickness=2]-> MERGED : <color:#3949AB>reconcile</color>
 
 @enduml

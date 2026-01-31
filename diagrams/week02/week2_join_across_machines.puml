@@ -1,0 +1,19 @@
+@startuml
+!include ../_template_styles.puml
+' SQL: JOIN ACROSS MACHINES - Data movement cost
+left to right direction
+
+database "**Node 1**\n<size:11>Table A</size>\n<size:11>100M rows</size>\n<size:11>~20 GB</size>" as N1 <<Schema>>
+database "**Node 2**\n<size:11>Table B</size>\n<size:11>50M rows</size>" as N2 <<Schema>>
+
+component "**JOIN**\n<size:11>must move data</size>" as JOIN <<Task>>
+
+N1 -right[#D32F2F,thickness=2]-> JOIN : <color:#3949AB>transfer</color>\n<size:10>20 GB @ 1 Gbps</size>\n<size:10>~160 s + compute</size>
+N2 -left[#5C6BC0,thickness=2]-> JOIN : <color:#3949AB>participate</color>
+
+note bottom of JOIN
+  <size:10>Cross-partition join</size>
+  <size:10>latency and cost explode</size>
+end note
+
+@enduml

@@ -1,0 +1,71 @@
+@startuml
+'=================================================
+' SHUFFLE COST - C = E x s (flow)
+' Map emissions -> Shuffle -> Reducers
+'=================================================
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 50
+skinparam ranksep 45
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 14
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+skinparam component<<Tool>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+skinparam component<<Agent>> {
+    BackgroundColor #E1F5FE
+    BorderColor #0288D1
+}
+
+rectangle "MAP PHASE" #F8F9FA {
+    component "**Map**\n<size:10>emit (k,v)</size>" as MAP <<Tool>>
+    database "**E pairs**\n<size:10>Total emissions</size>" as E
+    MAP -right-> E
+}
+
+rectangle "SHUFFLE PHASE" #FFF3E0 {
+    component "**Partition + transfer**\n<size:10>C = E * s bytes</size>" as SHUF <<Agent>>
+}
+
+rectangle "REDUCE PHASE" #F8F9FA {
+    component "**Reduce**\n<size:10>Group by key</size>" as RED <<Tool>>
+}
+
+E -right-> SHUF : <size:10>all (k,v)</size>
+SHUF -right-> RED : <size:10>by key</size>
+
+@enduml

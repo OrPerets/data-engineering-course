@@ -1,0 +1,49 @@
+@startuml
+' Full grid (users x items x as_of_ts) vs observed pairs
+' Join size: OOM vs feasible
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 55
+skinparam ranksep 45
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 12
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 10
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+rectangle "FULL GRID" #FFEBEE {
+    component "**|users| x |items| x |as_of_ts|**\n<size:12>Cartesian product</size>" as F1
+    component "**OOM / infeasible**\n<size:12>e.g. 3.65e12 rows</size>" as F2 #FFCDD2
+    F1 -down-> F2
+}
+
+rectangle "OBSERVED PAIRS" #E8F5E9 {
+    component "**DISTINCT (user, item)**\n<size:12>in window</size>" as O1
+    component "**Feasible**\n<size:12>e.g. 5M/day x 365</size>" as O2
+    O1 -down-> O2
+}
+
+F1 -[hidden]right- O1
+@enduml

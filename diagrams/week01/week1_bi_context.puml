@@ -1,35 +1,21 @@
 @startuml
+!include ../_template_styles.puml
 ' BI Context - From Raw Data to Business Decisions
 left to right direction
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam roundcorner 15
-skinparam shadowing true
-skinparam linetype ortho
-skinparam nodesep 40
-skinparam ranksep 65
 
-skinparam arrow {
-    Thickness 3
-    FontSize 13
-    FontStyle italic
-}
+storage "**Raw Data**\n\n<size:14>• Logs</size>\n<size:14>• DBs</size>\n<size:14>• Events</size>" as R <<Primary>>
 
-title <size:22><b>Business Intelligence Pipeline</b></size>\n<size:14>From Raw Data to Actionable Insights</size>
+component "**ETL Pipeline**\n\n<size:14>• Integration</size>\n<size:14>• Quality checks</size>\n<size:14>• Mapping</size>" as E <<Control>>
 
-storage "📄 **Raw Data**\n\n<size:14>Unstructured sources:\n• Log files\n• Transaction DBs\n• Customer events</size>" as R #ECEFF1
+database "**DWH / Lake**\n\n<size:14>• Star schema</size>\n<size:14>• Historical</size>\n<size:14>• Optimized</size>" as D <<Schema>>
 
-component "⚙️ **ETL Pipeline**\n\n<size:14>Extract, Transform, Load:\n• Data integration\n• Quality checks\n• Schema mapping</size>" as E #E3F2FD
+component "**BI & Reports**\n\n<size:14>• Dashboards</size>\n<size:14>• KPIs</size>\n<size:14>• Viz</size>" as B <<Task>>
 
-database "🏢 **DWH / Lake**\n\n<size:14>Centralized storage:\n• Star schema\n• Historical data\n• Optimized queries</size>" as D #B39DDB
+cloud "**Decisions**\n\n<size:14>• Strategy</size>\n<size:14>• Operations</size>\n<size:14>• Optimize</size>" as X <<Primary>>
 
-component "📊 **BI & Reports**\n\n<size:14>Analytics layer:\n• Dashboards\n• KPIs & Metrics\n• Visualizations</size>" as B #FFF9C4
-
-cloud "🎯 **Decisions**\n\n<size:14>Business outcomes:\n• Strategy\n• Operations\n• Optimization</size>" as X #C8E6C9
-
-R -[#1976D2,thickness=3]-> E : <size:13><color:#0D47A1>**Extract**</color></size>
-E -[#7B1FA2,thickness=3]-> D : <size:13><color:#4A148C>**Load**</color></size>
-D -[#F57C00,thickness=3]-> B : <size:13><color:#E65100>**Query**</color></size>
-B -[#388E3C,thickness=3]-> X : <size:13><color:#1B5E20>**Inform**</color></size>
+R -[#5C6BC0,thickness=2]-> E : <color:#3949AB>**Extract**</color>
+E -[#5C6BC0,thickness=2]-> D : <color:#3949AB>**Load**</color>
+D -[#5C6BC0,thickness=2]-> B : <color:#3949AB>**Query**</color>
+B -[#00897B,thickness=2]-> X : <color:#3949AB>**Inform**</color>
 
 @enduml

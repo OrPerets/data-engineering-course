@@ -1,0 +1,19 @@
+@startuml
+!include ../_template_styles.puml
+' KEY-BASED PARTITIONING - hash(key) mod N
+top to bottom direction
+
+component "**Partition key**\n<size:11>e.g. user_id</size>" as PK <<Primary>>
+
+component "**hash(key) mod N**\n<size:11>N = 3 partitions</size>" as HASH_OP <<Control>>
+
+database "**Partition 0**\n<size:11>user 123 -> 0</size>\n<size:11>subset of rows</size>" as P0 <<Schema>>
+database "**Partition 1**\n<size:11>user 456 -> 1</size>\n<size:11>subset of rows</size>" as P1 <<Schema>>
+database "**Partition 2**\n<size:11>user 789 -> 2</size>\n<size:11>subset of rows</size>" as P2 <<Schema>>
+
+PK -down[#5C6BC0,thickness=2]-> HASH_OP
+HASH_OP -down[#00897B,thickness=2]-> P0
+HASH_OP -down[#00897B,thickness=2]-> P1
+HASH_OP -down[#00897B,thickness=2]-> P2
+
+@enduml

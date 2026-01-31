@@ -1,33 +1,15 @@
 @startuml
+!include ../_template_styles.puml
 ' What is Data Engineering? — sources, pipeline, output
-top to bottom direction
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam roundcorner 12
-skinparam shadowing true
-skinparam linetype ortho
-skinparam nodesep 50
-skinparam ranksep 60
+left to right direction
 
-skinparam rectangle {
-    FontStyle bold
-    Padding 30
-    BorderThickness 2
-}
+storage "**Sources**\n<size:14>DBs · APIs</size>\n<size:14>Streaming · Batch</size>" as S <<Primary>>
 
-skinparam arrow {
-    Thickness 2.5
-    FontSize 13
-    FontStyle italic
-}
+component "**ETL**\n<size:14>Extract · Transform</size>\n<size:14>Load · Clean</size>" as P <<Task>>
 
-storage "📊 **Data Sources**\n<size:14>Databases · APIs · Files\nStreaming · Batch</size>" as S #E3F2FD
+database "**Output**\n<size:14>Structured Data</size>\n<size:14>Queryable</size>" as O <<Schema>>
 
-component "⚙️ **ETL Pipeline**\n<size:14>Extract → Transform → Load\nCleaning · Validation · Enrichment</size>" as P #FFF9C4
-
-database "✅ **Output**\n<size:14>Clean, Structured Data\nQueryable · Accessible · Reliable</size>" as O #C8E6C9
-
-S -[#1976D2,thickness=3]-> P : <size:12><color:#1565C0>**Raw Data**</color></size>
-P -[#388E3C,thickness=3]-> O : <size:12><color:#2E7D32>**Processed**</color></size>
+S -[#5C6BC0,thickness=2]-> P : <color:#3949AB>**Raw**</color>
+P -[#00897B,thickness=2]-> O : <color:#3949AB>**Clean**</color>
 
 @enduml

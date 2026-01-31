@@ -1,0 +1,62 @@
+@startuml
+'=================================================
+' SCHEMA-ON-READ vs SCHEMA-ON-WRITE
+' Two flows: validate on load vs apply at query
+'=================================================
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 50
+skinparam ranksep 45
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 14
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+database "**Load**\n<size:10>Validate + type</size>" as L1 #E3F2FD
+component "**Bad row**\n<size:10>Fail batch</size>" as R1
+database "**DWH**\n<size:10>Typed</size>" as DWH #E3F2FD
+L1 -right-> DWH : <size:10>valid</size>
+L1 -down-> R1 : <size:10>invalid</size>
+
+database "**Load raw**\n<size:10>Parquet, JSON</size>" as L2 #F3E5F5
+component "**Query**\n<size:10>Apply schema</size>" as Q2
+database "**DLQ**\n<size:10>Invalid</size>" as DLQ
+database "**Lake**\n<size:10>Raw + processed</size>" as LAKE #F3E5F5
+L2 -right-> Q2
+Q2 -right-> LAKE : <size:10>valid</size>
+Q2 -down-> DLQ : <size:10>invalid</size>
+
+L1 -[hidden]right- L2
+DWH -[hidden]right- LAKE
+
+@enduml

@@ -1,0 +1,44 @@
+@startuml
+' (epsilon, delta) approximation: P(|X_hat - X| <= epsilon*X) >= 1 - delta
+' Trade-off: smaller epsilon, delta -> more space
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 50
+skinparam ranksep 45
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 12
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 10
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+component "**(epsilon, delta)-approximation**\n<size:12>Error <= epsilon * X with prob >= 1 - delta</size>" as DEF #E8F5E9
+
+component "**Parameters**\n<size:12>epsilon = relative error</size>\n<size:12>delta = failure prob</size>" as PARAM #E1F5FE
+
+component "**Trade-off**\n<size:12>Smaller epsilon, delta => more space</size>" as TRADE #FFF9C4
+
+DEF -down-> PARAM
+PARAM -down-> TRADE
+@enduml

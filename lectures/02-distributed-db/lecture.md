@@ -14,7 +14,7 @@
 - Analyze CAP trade-offs in concrete scenarios
 - Identify failure modes and detection or mitigation
 
-## Core Concepts (1/2): Constraints, Not Definitions
+## Core Concepts: Constraints, Not Definitions
 - **Constraint:** data and compute must spread across nodes
 - Single machine hits storage or throughput limits
 - **Partition:** subset of data on one or more nodes
@@ -40,6 +40,8 @@ $$
 - Interpretation: more replicas improve availability but not free
 - Engineering implication: choose \(r\) to meet SLA vs cost
 
+![Partition & replication model](../../diagrams/week02/week2_partition_replication_model.png)
+
 ## Data Context: E-Commerce Platform
 - Users: 50M rows ≈ 25 GB
 - Orders: 500M rows ≈ 150 GB
@@ -55,13 +57,13 @@ $$
 - Decide co-location vs separate clusters
 - Estimate transfer for full user+orders scan
 
-## In-Lecture Exercise 2: Solution (1/2)
+## In-Lecture Exercise 2: Solution
 - Users: 25/10 = 2.5 GB per node
 - Orders: 150/10 = 15 GB per node
 - Total ≈ 17.5 GB per node
 - Peak: 100K / 10 = 10K ops/sec per node
 
-## In-Lecture Exercise 2: Solution (2/2)
+## In-Lecture Exercise 2: Solution
 - Capacity at limit; prefer 12–15 nodes headroom
 - Co-locate for single-partition “orders by user”
 - Separate ⇒ cross-partition scan ≈ 175 GB transfer
@@ -85,22 +87,22 @@ $$
 - **Good for** key-scale and horizontal partitioning
 - **Choose from access patterns and latency/cost**
 
-## Core Concepts (2/2): Guarantees — Why Systems Break (1/2)
+## Core Concepts: Guarantees — Why Systems Break
 - **ACID:** strong consistency
 - **Cost:** cross-partition coordination, blocking, lower throughput
 
-## Guarantees — Why Systems Break (2/2)
+## Guarantees — Why Systems Break
 - **BASE:** basically available, eventual consistency
 - **Cost:** stale reads, conflict resolution
 - **Wrong assumption** ⇒ wrong business outcomes
 
-## What Breaks at Scale (1/2)
+## What Breaks at Scale
 - **Cross-partition joins:** data movement and latency explode
 - **Single-node mental model fails**
 - **Cross-partition transactions:** 2PC blocks on any failure
 - **Throughput can drop to near zero**
 
-## What Breaks at Scale (2/2)
+## What Breaks at Scale
 - **Single partition:** hot keys and skew
 - One partition throttles; others idle
 - **Network:** latency, partitions, partial failure
@@ -125,12 +127,12 @@ $$
 - Compute storage size and load time
 - Compute nodes needed for 50,000 writes/sec
 
-## In-Lecture Exercise 1: Solution (1/2)
+## In-Lecture Exercise 1: Solution
 - Storage: 100M × 500 B ≈ 50 GB
 - Load time: 100M / 5,000 s ≈ 20,000 s
 - 20,000 s ≈ 5.56 hours
 
-## In-Lecture Exercise 1: Solution (2/2)
+## In-Lecture Exercise 1: Solution
 - 50,000 / 5,000 = 10 nodes with linear scaling
 - Still need headroom for peaks and failures
 
@@ -145,6 +147,8 @@ $$
 - Distributed 99.99% ⇒ $8,760
 - **Distribution improves availability**
 - Adds network and partial-failure complexity
+
+![Single-node limits](../../diagrams/week02/week2_single_node_limits.png)
 
 ## What "Distributed" Really Means: Multiple Machines
 - Data split across nodes
@@ -165,12 +169,12 @@ $$
 - Compute storage, write traffic, failure tolerance
 - Estimate P(two failures) with 1%/year per node
 
-## In-Lecture Exercise 3: Solution (1/2)
+## In-Lecture Exercise 3: Solution
 - RF=2: 100 GB × 2 × 3 = 600 GB
 - RF=3: 100 GB × 3 × 3 = 900 GB
 - Write traffic: 2 KB vs 3 KB per write
 
-## In-Lecture Exercise 3: Solution (2/2)
+## In-Lecture Exercise 3: Solution
 - RF=2 tolerates 1 failure; RF=3 tolerates 2
 - P(two failures) ≈ 0.01 × 0.01 = 0.0001
 - Prefer RF=3 for availability and lower loss risk
@@ -188,6 +192,7 @@ $$
 - Cannot assume instant communication
 
 ## Distributed System Overview
+
 ![](../../diagrams/week02/week2_lecture_slide13_system_overview.png)
 
 ## SQL in a Distributed World: Joins Across Machines
@@ -196,6 +201,8 @@ $$
 - Transfer: 100M × 200 B ≈ 20 GB
 - At 1 Gbps ⇒ 160 s + compute
 
+![Join across machines](../../diagrams/week02/week2_join_across_machines.png)
+
 ## In-Lecture Exercise 4: SQL vs NoSQL Latency
 - Use case: orders for user X by category
 - SQL join moves 5 GB across partitions
@@ -203,12 +210,12 @@ $$
 - Compute SQL transfer time at 1 Gbps
 - Compare latency and choose the better fit
 
-## In-Lecture Exercise 4: Solution (1/2)
+## In-Lecture Exercise 4: Solution
 - SQL transfer: 5 GB × 8 = 40 Gb
 - 40 Gb / 1 Gbps ≈ 40 seconds plus join time
 - NoSQL single-partition read ≈ 1–5 ms
 
-## In-Lecture Exercise 4: Solution (2/2)
+## In-Lecture Exercise 4: Solution
 - NoSQL fits low-latency, user-scoped serving
 - SQL fits heavy aggregation and ad-hoc analysis
 - Choose based on access pattern and SLA
@@ -224,6 +231,8 @@ $$
 - Example: 5 nodes, 1 fails ⇒ block until timeout (30 s)
 - Throughput can drop to near zero
 
+![2PC blocking at scale](../../diagrams/week02/week2_2pc_blocking.png)
+
 ## Cost Explosion
 - Single node: 1 disk read per local op
 - 3 nodes: 3 disk reads + network
@@ -236,13 +245,13 @@ $$
 - **In distributed:** DML cost scales with data distribution
 - DDL requires schema coordination across nodes
 
-## JOIN Types and Semantics (1/2)
+## JOIN Types and Semantics
 - **INNER JOIN:** rows where condition matches in both tables
 - Default when using just `JOIN`
 - **LEFT OUTER JOIN:** all rows from left table
 - Plus matched rows from right; unmatched are NULL
 
-## JOIN Types and Semantics (2/2)
+## JOIN Types and Semantics
 - **RIGHT OUTER JOIN:** all rows from right table
 - Plus matched rows from left; unmatched are NULL
 - **FULL OUTER JOIN:** all rows from both tables
@@ -535,6 +544,8 @@ FROM Sales;
 | Latency | 10–100 ms (joins) | 1–5 ms (key lookup) |
 | Use case | Complex queries | Simple lookups |
 
+![SQL vs NoSQL comparison](../../diagrams/week02/week2_sql_vs_nosql.png)
+
 ## Partitioning Intuition: Horizontal Partitioning
 - Split table by rows; each partition holds a subset
 - Example: users → partition 1 (1–333K), 2 (334K–666K), 3 (667K–1M)
@@ -543,6 +554,8 @@ FROM Sales;
 - Hash(key) mod N ⇒ partition id; N = number of partitions
 - Example: hash(user_id) mod 3
 - User 123 → 0, user 456 → 1, user 789 → 2
+
+![Key-based partitioning](../../diagrams/week02/week2_partitioning_key_based.png)
 
 ## Replication Intuition: Replicas
 - Same partition copied to multiple nodes
@@ -554,6 +567,8 @@ FROM Sales;
 - Write: primary first, then async to secondaries
 - Read: any replica
 - Example: 3 replicas; write latency ~50 ms, read ~5 ms
+
+![Replication read/write paths](../../diagrams/week02/week2_replication_read_write.png)
 
 ## CAP Intuition (Engineering View): CAP Theorem
 - Consistency: all nodes see same data
@@ -572,12 +587,14 @@ FROM Sales;
 - CA: not realistic in distributed systems
 - Bank ⇒ CP; social feed ⇒ AP
 
-## Cost of Naïve Design (Distributed DB): What Goes Wrong (1/2)
+![CAP trade-offs](../../diagrams/week02/week2_cap_tradeoffs.png)
+
+## Cost of Naïve Design (Distributed DB): What Goes Wrong
 - **Naïve:** "use SQL for everything"
 - Cross-partition joins and 2PC **kill** latency and throughput
 - **Cost:** timeouts, rewrites
 
-## What Goes Wrong (2/2)
+## What Goes Wrong
 - **Naïve:** "one partition key for all access patterns"
 - E.g. partition by user_id but query by item_id ⇒ **full scan**
 - **Naïve:** ignore hot keys
@@ -595,36 +612,37 @@ FROM Sales;
 - Latency: p99 < 50 ms for key-based reads
 - Throughput: 100M writes/day sustained
 
-## Running Example — Step-by-Step (1/4): Scale and Access Patterns
+## Running Example — Step-by-Step: Scale and Access Patterns
 - 100M events/day ⇒ ~1,157 writes/sec avg; peak ~6K/sec
 - Two access patterns: by user_id, by item_id
 - Single-node: storage and throughput insufficient
 - Need partitioning and clear access design
 
-## Running Example — Step-by-Step (2/4): SQL Design and Join Cost
+## Running Example — Step-by-Step: SQL Design and Join Cost
 - Tables: users, items, events (user_id, item_id, action, ts)
 - "Events for user X" ⇒ filter by user_id; optional join to items
 - If users and events on different partitions ⇒ cross-partition read
 - Transfer ~2 GB for 10M events ⇒ 16 s at 1 Gbps + compute
 
 ## Query Execution Flow
+
 ![](../../diagrams/week02/week2_lecture_slide35_query_flow.png)
 
-## Running Example — Step-by-Step (3/4): NoSQL Design and Partitioning
+## Running Example — Step-by-Step: NoSQL Design and Partitioning
 - Partition by user_id: hash(user_id) mod N
 - Store events co-located with user (document or wide-column)
 - "Events for user X" ⇒ single-partition read ⇒ 1–5 ms
 - "Events for item Y" ⇒ different access path needed
 - Trade-off: denormalize or maintain two views
 
-## Running Example — Step-by-Step (4/4): Output and Engineering Interpretation
+## Running Example — Step-by-Step: Output and Engineering Interpretation
 - NoSQL key-based: ~5 ms for "events for user X"
 - SQL cross-partition: tens of seconds
 - NoSQL avoids cross-partition joins for primary access
 - Trade-off: complex analytics harder in NoSQL
 - Decision: NoSQL for serving, batch/SQL for analytics
 
-## Cost & Scaling Analysis (1/3): Time Model
+## Cost & Scaling Analysis: Time Model
 - Single-node: T ∝ data size / disk bandwidth
 - Distributed: T ∝ data size / bandwidth + network latency × stages
 - Join: add shuffle time; shuffle often dominates
@@ -637,46 +655,47 @@ FROM Sales;
 - Partition by user_id; 6 partitions ⇒ ~16.7M users each
 - With RF 3: 18 nodes total; 3× storage, 2 node failures OK
 
-## Cost & Scaling Analysis (2/3): Memory and Storage
+## Cost & Scaling Analysis: Memory and Storage
 - Per-node memory: limit working set, sorts, joins
 - Storage: data size × replication factor
 - Example: 100 GB × RF 3 ⇒ 300 GB total
 - Growth: plan for 2× in 12–18 months
 
-## Cost & Scaling Analysis (3/3): Network, Throughput, Latency
+## Cost & Scaling Analysis: Network, Throughput, Latency
 - Throughput: ops/sec ≈ min(disk, network, CPU) per node × nodes
 - Latency: local read ~1–5 ms; cross-partition ~10–100 ms
 - Write amplification: 1 write ⇒ RF copies over network
 - Example: 1 KB write, RF 3 ⇒ 3 KB network per write
 
-## Pitfalls & Failure Modes (1/3): Common Pitfall — Hot Partitions
+## Pitfalls & Failure Modes: Common Pitfall — Hot Partitions
 - Single key gets disproportionate load (e.g. celebrity user)
 - One partition throttled; others idle
 - Mitigation: salt keys, cache, or split heavy keys
 
-## Pitfalls & Failure Modes (2/3): Failure Scenario — Network Partition (Split-Brain)
+## Pitfalls & Failure Modes: Failure Scenario — Network Partition (Split-Brain)
 - Nodes A and B,C in separate partitions
 - A cannot reach B,C
 - Writes accepted in both sides ⇒ divergent state
 - Merge on heal: conflicts, last-writer-wins, or manual resolution
 
 ## Failure Propagation
+
 ![](../../diagrams/week02/week2_lecture_slide42_failure_partition.png)
 
-## Pitfalls & Failure Modes (3/3): Detection and Mitigation
+## Pitfalls & Failure Modes: Detection and Mitigation
 - Monitor: latency p99, error rates, replica lag
 - Alerts: lag > threshold, partition events, node down
 - Mitigation: quorum writes, failover, idempotent producers
 - Run chaos or partition drills in non-prod
 
-## Best Practices (1/2)
+## Best Practices
 - **Design for failure:** test failover and partition scenarios
 - **Partition for hot paths:** avoid cross-partition joins
 - Choose key from access pattern
 - **Replication factor:** durability vs write amplification
 - **Single-partition ops** for latency-sensitive APIs
 
-## Best Practices (2/2)
+## Best Practices
 - Use SQL/analytics store for complex ad-hoc queries
 - Use NoSQL for serving key-based traffic
 - **Monitor:** latency p99, throughput, replica lag
@@ -702,10 +721,39 @@ FROM Sales;
 
 ## Additional Diagrams
 ### System Overview (slide 14)
+
 ![](../../diagrams/week02/week2_lecture_slide14_system_overview.png)
 ### Query Flow (slide 24)
+
 ![](../../diagrams/week02/week2_lecture_slide24_query_flow.png)
 ### Failure Partition (slide 45)
+
 ![](../../diagrams/week02/week2_lecture_slide45_failure_partition.png)
 ### Practice: Architecture
+
 ![](../../diagrams/week02/week2_practice_slide18_architecture.png)
+
+### Enrichment: Partition & replication model
+
+![](../../diagrams/week02/week2_partition_replication_model.png)
+### Enrichment: Single-node limits
+
+![](../../diagrams/week02/week2_single_node_limits.png)
+### Enrichment: Key-based partitioning
+
+![](../../diagrams/week02/week2_partitioning_key_based.png)
+### Enrichment: Replication read/write paths
+
+![](../../diagrams/week02/week2_replication_read_write.png)
+### Enrichment: CAP trade-offs
+
+![](../../diagrams/week02/week2_cap_tradeoffs.png)
+### Enrichment: SQL vs NoSQL
+
+![](../../diagrams/week02/week2_sql_vs_nosql.png)
+### Enrichment: Join across machines
+
+![](../../diagrams/week02/week2_join_across_machines.png)
+### Enrichment: 2PC blocking at scale
+
+![](../../diagrams/week02/week2_2pc_blocking.png)

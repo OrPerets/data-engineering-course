@@ -1,0 +1,49 @@
+@startuml
+' Key = (entity_id, as_of_ts); MERGE vs append-only
+' Idempotent write prevents duplicates on rerun
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 55
+skinparam ranksep 45
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 12
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 10
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+rectangle "MERGE / OVERWRITE" #E8F5E9 {
+    component "**Key = (entity_id, as_of_ts)**" as K1
+    component "**Rerun overwrites same key**\n<size:12>One row per key</size>" as K2
+    K1 -down-> K2
+}
+
+rectangle "APPEND-ONLY" #FFEBEE {
+    component "**INSERT only**" as A1
+    component "**Rerun = duplicate rows**\n<size:12>Wrong aggregates</size>" as A2 #FFCDD2
+    A1 -down-> A2
+}
+
+K1 -[hidden]right- A1
+@enduml

@@ -1,0 +1,18 @@
+@startuml
+!include ../_template_styles.puml
+' PARTITION & REPLICATION MODEL - S_node = D*r/N
+left to right direction
+
+rectangle "**Model**\n\n<size:12>D = total data</size>\n<size:12>N = nodes</size>\n<size:12>r = replication factor</size>\n\n<size:12>S_node = D * r / N</size>" as BOX_MODEL <<Primary>>
+
+rectangle "**NODES**" #FFFFFF {
+    database "**Node 1**\n<size:11>P0, P3</size>\n<size:11>S_node each</size>" as N1 <<Schema>>
+    database "**Node 2**\n<size:11>P1, P4</size>\n<size:11>S_node each</size>" as N2 <<Schema>>
+    database "**Node 3**\n<size:11>P2, P5</size>\n<size:11>S_node each</size>" as N3 <<Schema>>
+}
+
+BOX_MODEL -[#5C6BC0,thickness=2]-> N1 : <color:#3949AB>balanced</color>
+BOX_MODEL -[#5C6BC0,thickness=2]-> N2
+BOX_MODEL -[#5C6BC0,thickness=2]-> N3
+
+@enduml

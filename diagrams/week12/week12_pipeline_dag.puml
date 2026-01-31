@@ -1,0 +1,62 @@
+@startuml
+' Advanced feature pipeline DAG: raw -> entity features -> join -> derived -> table
+' Order: entity features first, then join, then derived
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 45
+skinparam ranksep 40
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 12
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 10
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+database "**Events**\n<size:12>user_id, item_id, event_ts</size>" as EV #E3F2FD
+
+rectangle "ENTITY FEATURES" #F8F9FA {
+    component "**user_features**\n<size:12>clicks_7d, views_7d</size>" as UF #E1F5FE
+    component "**item_features**\n<size:12>impressions_7d</size>" as IF #E1F5FE
+    UF -[hidden]right- IF
+}
+
+component "**Join**\n<size:12>(user_id, item_id, as_of_ts)</size>" as JOIN #FFF9C4
+
+component "**Derived**\n<size:12>ctr_7d = clicks / impressions</size>" as DERIVED #E8F5E9
+
+database "**Feature table**\n<size:12>MERGE or overwrite</size>" as FT #C8E6C9
+
+EV -down-> UF
+EV -down-> IF
+UF -down-> JOIN
+IF -down-> JOIN
+JOIN -down-> DERIVED
+DERIVED -down-> FT
+@enduml

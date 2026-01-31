@@ -1,0 +1,519 @@
+'=================================================
+' TEMPLATE STYLES - DATA ENGINEERING (skinparams only)
+' Include from weekXX/*.puml with: !include ../_template_styles.puml
+'=================================================
+skinparam linetype ortho
+skinparam shadowing true
+skinparam roundcorner 12
+skinparam handwritten false
+skinparam nodesep 80
+skinparam ranksep 50
+
+'-------------------------
+' PREMIUM FONT & GLOBAL STYLE
+'-------------------------
+skinparam defaultFontName "Segoe UI, Arial, sans-serif"
+skinparam defaultFontSize 18
+skinparam defaultFontColor #1A237E
+skinparam backgroundColor #FAFBFC
+
+'-------------------------
+' ENHANCED BOX STYLES - Deep Blue Theme
+'-------------------------
+skinparam rectangle {
+    BackgroundColor #E8EAF6
+    BorderColor #3949AB
+    BorderThickness 2.5
+    FontColor #1A237E
+    FontSize 18
+    FontStyle bold
+    Padding 22
+    RoundCorner 12
+}
+
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #5C6BC0
+    BorderThickness 2
+    FontSize 16
+    Padding 16
+    RoundCorner 10
+}
+
+skinparam database {
+    BackgroundColor #E8EAF6
+    BorderColor #3949AB
+    BorderThickness 2.5
+    FontSize 16
+    FontColor #1A237E
+}
+
+skinparam arrow {
+    Color #5C6BC0
+    Thickness 2
+    FontSize 14
+    FontColor #3949AB
+}
+
+skinparam package {
+    BackgroundColor #F5F7FA
+    BorderColor #C5CAE9
+    BorderThickness 1.5
+    FontColor #283593
+    FontSize 14
+    FontStyle bold
+}
+
+skinparam storage {
+    BackgroundColor #E8EAF6
+    BorderColor #3949AB
+    BorderThickness 2.5
+    FontColor #1A237E
+}
+
+skinparam cloud {
+    BackgroundColor #E8EAF6
+    BorderColor #3949AB
+    BorderThickness 2.5
+    FontColor #1A237E
+}
+
+skinparam card {
+    BackgroundColor #E8EAF6
+    BorderColor #3949AB
+    BorderThickness 2.5
+    FontColor #1A237E
+    Padding 22
+    RoundCorner 12
+}
+
+'-------------------------
+' PREMIUM SEMANTIC STEREOTYPES
+'-------------------------
+skinparam component<<A>> {
+    BackgroundColor #E8EAF6
+    BorderColor #3949AB
+    FontColor #1A237E
+    BorderThickness 2.5
+}
+
+skinparam component<<B>> {
+    BorderColor #1565C0
+    BackgroundColor #E3F2FD
+    FontColor #0D47A1
+    BorderThickness 2.5
+}
+
+skinparam component<<C>> {
+    BorderColor #00897B
+    BackgroundColor #E0F2F1
+    FontColor #004D40
+    BorderThickness 2.5
+}
+
+skinparam component<<D>> {
+    BorderColor #FF6F00
+    BackgroundColor #FFF3E0
+    FontColor #E65100
+    BorderThickness 2.5
+}
+
+skinparam component<<Bad>> {
+    BorderColor #D32F2F
+    BackgroundColor #FFEBEE
+    FontColor #B71C1C
+    BorderThickness 2.5
+}
+
+skinparam component<<V1>> {
+    BorderColor #F57C00
+    BackgroundColor #FFF3E0
+    FontColor #E65100
+    BorderThickness 2.5
+}
+
+skinparam component<<V2>> {
+    BorderColor #00897B
+    BackgroundColor #E0F2F1
+    FontColor #004D40
+    BorderThickness 2.5
+}
+
+skinparam component<<up>> {
+    BackgroundColor #E0F2F1
+    BorderColor #00897B
+    BorderThickness 2.5
+}
+
+skinparam component<<down>> {
+    BackgroundColor #FFEBEE
+    BorderColor #D32F2F
+    BorderThickness 2.5
+}
+
+skinparam database<<up>> {
+    BackgroundColor #E0F2F1
+    BorderColor #00897B
+    BorderThickness 3
+}
+
+skinparam database<<down>> {
+    BackgroundColor #FFEBEE
+    BorderColor #D32F2F
+    BorderThickness 3
+}
+
+skinparam component<<success>> {
+    BackgroundColor #E0F2F1
+    BorderColor #00897B
+    BorderThickness 2.5
+}
+
+skinparam component<<failure>> {
+    BackgroundColor #FFEBEE
+    BorderColor #D32F2F
+    BorderThickness 2.5
+}
+
+'-------------------------
+' FIVE ENTITY STYLES — apply to storage, cloud, card, database, rectangle
+' Use <<A>> <<B>> <<C>> <<D>> <<Bad>> for visual variety (indigo, blue, teal, orange, red)
+'-------------------------
+skinparam rectangle<<A>> {
+    BackgroundColor #E8EAF6
+    BorderColor #3949AB
+    FontColor #1A237E
+    BorderThickness 2.5
+}
+skinparam rectangle<<B>> {
+    BackgroundColor #E3F2FD
+    BorderColor #1565C0
+    FontColor #0D47A1
+    BorderThickness 2.5
+}
+skinparam rectangle<<C>> {
+    BackgroundColor #E0F2F1
+    BorderColor #00897B
+    FontColor #004D40
+    BorderThickness 2.5
+}
+skinparam rectangle<<D>> {
+    BackgroundColor #FFF3E0
+    BorderColor #FF6F00
+    FontColor #E65100
+    BorderThickness 2.5
+}
+skinparam rectangle<<Bad>> {
+    BackgroundColor #FFEBEE
+    BorderColor #D32F2F
+    FontColor #B71C1C
+    BorderThickness 2.5
+}
+
+skinparam storage<<A>> {
+    BackgroundColor #E8EAF6
+    BorderColor #3949AB
+    FontColor #1A237E
+    BorderThickness 2.5
+}
+skinparam storage<<B>> {
+    BackgroundColor #E3F2FD
+    BorderColor #1565C0
+    FontColor #0D47A1
+    BorderThickness 2.5
+}
+skinparam storage<<C>> {
+    BackgroundColor #E0F2F1
+    BorderColor #00897B
+    FontColor #004D40
+    BorderThickness 2.5
+}
+skinparam storage<<D>> {
+    BackgroundColor #FFF3E0
+    BorderColor #FF6F00
+    FontColor #E65100
+    BorderThickness 2.5
+}
+skinparam storage<<Bad>> {
+    BackgroundColor #FFEBEE
+    BorderColor #D32F2F
+    FontColor #B71C1C
+    BorderThickness 2.5
+}
+
+skinparam cloud<<A>> {
+    BackgroundColor #E8EAF6
+    BorderColor #3949AB
+    FontColor #1A237E
+    BorderThickness 2.5
+}
+skinparam cloud<<B>> {
+    BackgroundColor #E3F2FD
+    BorderColor #1565C0
+    FontColor #0D47A1
+    BorderThickness 2.5
+}
+skinparam cloud<<C>> {
+    BackgroundColor #E0F2F1
+    BorderColor #00897B
+    FontColor #004D40
+    BorderThickness 2.5
+}
+skinparam cloud<<D>> {
+    BackgroundColor #FFF3E0
+    BorderColor #FF6F00
+    FontColor #E65100
+    BorderThickness 2.5
+}
+skinparam cloud<<Bad>> {
+    BackgroundColor #FFEBEE
+    BorderColor #D32F2F
+    FontColor #B71C1C
+    BorderThickness 2.5
+}
+
+skinparam card<<A>> {
+    BackgroundColor #E8EAF6
+    BorderColor #3949AB
+    FontColor #1A237E
+    BorderThickness 2.5
+}
+skinparam card<<B>> {
+    BackgroundColor #E3F2FD
+    BorderColor #1565C0
+    FontColor #0D47A1
+    BorderThickness 2.5
+}
+skinparam card<<C>> {
+    BackgroundColor #E0F2F1
+    BorderColor #00897B
+    FontColor #004D40
+    BorderThickness 2.5
+}
+skinparam card<<D>> {
+    BackgroundColor #FFF3E0
+    BorderColor #FF6F00
+    FontColor #E65100
+    BorderThickness 2.5
+}
+skinparam card<<Bad>> {
+    BackgroundColor #FFEBEE
+    BorderColor #D32F2F
+    FontColor #B71C1C
+    BorderThickness 2.5
+}
+
+skinparam database<<A>> {
+    BackgroundColor #E8EAF6
+    BorderColor #3949AB
+    FontColor #1A237E
+    BorderThickness 2.5
+}
+skinparam database<<B>> {
+    BackgroundColor #E3F2FD
+    BorderColor #1565C0
+    FontColor #0D47A1
+    BorderThickness 2.5
+}
+skinparam database<<C>> {
+    BackgroundColor #E0F2F1
+    BorderColor #00897B
+    FontColor #004D40
+    BorderThickness 2.5
+}
+skinparam database<<D>> {
+    BackgroundColor #FFF3E0
+    BorderColor #FF6F00
+    FontColor #E65100
+    BorderThickness 2.5
+}
+skinparam database<<Bad>> {
+    BackgroundColor #FFEBEE
+    BorderColor #D32F2F
+    FontColor #B71C1C
+    BorderThickness 2.5
+}
+
+'-------------------------
+' SEMANTIC NAMES (for real diagrams — show Primary/Control/Task/Schema/Failure; keep <<A>> <<B>> only in template.puml)
+'-------------------------
+skinparam component<<Primary>> {
+    BackgroundColor #E8EAF6
+    BorderColor #3949AB
+    FontColor #1A237E
+    BorderThickness 2.5
+}
+skinparam component<<Control>> {
+    BackgroundColor #E3F2FD
+    BorderColor #1565C0
+    FontColor #0D47A1
+    BorderThickness 2.5
+}
+skinparam component<<Task>> {
+    BackgroundColor #E0F2F1
+    BorderColor #00897B
+    FontColor #004D40
+    BorderThickness 2.5
+}
+skinparam component<<Schema>> {
+    BackgroundColor #FFF3E0
+    BorderColor #FF6F00
+    FontColor #E65100
+    BorderThickness 2.5
+}
+skinparam component<<Failure>> {
+    BackgroundColor #FFEBEE
+    BorderColor #D32F2F
+    FontColor #B71C1C
+    BorderThickness 2.5
+}
+skinparam storage<<Primary>> {
+    BackgroundColor #E8EAF6
+    BorderColor #3949AB
+    FontColor #1A237E
+    BorderThickness 2.5
+}
+skinparam storage<<Control>> {
+    BackgroundColor #E3F2FD
+    BorderColor #1565C0
+    FontColor #0D47A1
+    BorderThickness 2.5
+}
+skinparam storage<<Task>> {
+    BackgroundColor #E0F2F1
+    BorderColor #00897B
+    FontColor #004D40
+    BorderThickness 2.5
+}
+skinparam storage<<Schema>> {
+    BackgroundColor #FFF3E0
+    BorderColor #FF6F00
+    FontColor #E65100
+    BorderThickness 2.5
+}
+skinparam storage<<Failure>> {
+    BackgroundColor #FFEBEE
+    BorderColor #D32F2F
+    FontColor #B71C1C
+    BorderThickness 2.5
+}
+skinparam cloud<<Primary>> {
+    BackgroundColor #E8EAF6
+    BorderColor #3949AB
+    FontColor #1A237E
+    BorderThickness 2.5
+}
+skinparam cloud<<Control>> {
+    BackgroundColor #E3F2FD
+    BorderColor #1565C0
+    FontColor #0D47A1
+    BorderThickness 2.5
+}
+skinparam cloud<<Task>> {
+    BackgroundColor #E0F2F1
+    BorderColor #00897B
+    FontColor #004D40
+    BorderThickness 2.5
+}
+skinparam cloud<<Schema>> {
+    BackgroundColor #FFF3E0
+    BorderColor #FF6F00
+    FontColor #E65100
+    BorderThickness 2.5
+}
+skinparam cloud<<Failure>> {
+    BackgroundColor #FFEBEE
+    BorderColor #D32F2F
+    FontColor #B71C1C
+    BorderThickness 2.5
+}
+skinparam card<<Primary>> {
+    BackgroundColor #E8EAF6
+    BorderColor #3949AB
+    FontColor #1A237E
+    BorderThickness 2.5
+}
+skinparam card<<Control>> {
+    BackgroundColor #E3F2FD
+    BorderColor #1565C0
+    FontColor #0D47A1
+    BorderThickness 2.5
+}
+skinparam card<<Task>> {
+    BackgroundColor #E0F2F1
+    BorderColor #00897B
+    FontColor #004D40
+    BorderThickness 2.5
+}
+skinparam card<<Schema>> {
+    BackgroundColor #FFF3E0
+    BorderColor #FF6F00
+    FontColor #E65100
+    BorderThickness 2.5
+}
+skinparam card<<Failure>> {
+    BackgroundColor #FFEBEE
+    BorderColor #D32F2F
+    FontColor #B71C1C
+    BorderThickness 2.5
+}
+skinparam database<<Primary>> {
+    BackgroundColor #E8EAF6
+    BorderColor #3949AB
+    FontColor #1A237E
+    BorderThickness 2.5
+}
+skinparam database<<Control>> {
+    BackgroundColor #E3F2FD
+    BorderColor #1565C0
+    FontColor #0D47A1
+    BorderThickness 2.5
+}
+skinparam database<<Task>> {
+    BackgroundColor #E0F2F1
+    BorderColor #00897B
+    FontColor #004D40
+    BorderThickness 2.5
+}
+skinparam database<<Schema>> {
+    BackgroundColor #FFF3E0
+    BorderColor #FF6F00
+    FontColor #E65100
+    BorderThickness 2.5
+}
+skinparam database<<Failure>> {
+    BackgroundColor #FFEBEE
+    BorderColor #D32F2F
+    FontColor #B71C1C
+    BorderThickness 2.5
+}
+skinparam rectangle<<Primary>> {
+    BackgroundColor #E8EAF6
+    BorderColor #3949AB
+    FontColor #1A237E
+    BorderThickness 2.5
+}
+skinparam rectangle<<Control>> {
+    BackgroundColor #E3F2FD
+    BorderColor #1565C0
+    FontColor #0D47A1
+    BorderThickness 2.5
+}
+skinparam rectangle<<Task>> {
+    BackgroundColor #E0F2F1
+    BorderColor #00897B
+    FontColor #004D40
+    BorderThickness 2.5
+}
+skinparam rectangle<<Schema>> {
+    BackgroundColor #FFF3E0
+    BorderColor #FF6F00
+    FontColor #E65100
+    BorderThickness 2.5
+}
+skinparam rectangle<<Failure>> {
+    BackgroundColor #FFEBEE
+    BorderColor #D32F2F
+    FontColor #B71C1C
+    BorderThickness 2.5
+}

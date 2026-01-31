@@ -1,0 +1,72 @@
+@startuml
+'=================================================
+' DWH vs DATA LAKE - Pipeline flow
+' Sources -> ETL -> Storage (DWH / Lake) -> Consumers
+'=================================================
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 50
+skinparam ranksep 40
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 14
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+rectangle "SOURCES" #F8F9FA {
+    database "**DB / Ops**\n<size:10>Transactional</size>" as S1
+    database "**Files / Logs**\n<size:10>Raw</size>" as S2
+    S1 -[hidden]right- S2
+}
+
+component "**ETL / ELT**\n<size:10>Extract, transform, load</size>" as ETL
+
+rectangle "STORAGE" #F8F9FA {
+    database "**Data Warehouse**\n<size:10>Schema-on-write, star schema</size>" as DWH #E3F2FD
+    database "**Data Lake**\n<size:10>Schema-on-read, Parquet</size>" as LAKE #F3E5F5
+    DWH -[hidden]right- LAKE
+}
+
+rectangle "CONSUMERS" #F8F9FA {
+    component "**BI / Reports**\n<size:10>Governed queries</size>" as BI
+    component "**ML / Ad-hoc**\n<size:10>Exploration</size>" as ML
+    BI -[hidden]right- ML
+}
+
+S1 -down-> ETL
+S2 -down-> ETL
+ETL -down-> DWH : <size:10>curated</size>
+ETL -down-> LAKE : <size:10>raw + processed</size>
+DWH -down-> BI
+LAKE -down-> ML
+
+@enduml

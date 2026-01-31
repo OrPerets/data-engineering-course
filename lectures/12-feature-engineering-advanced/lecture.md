@@ -58,12 +58,9 @@ $$
 - Interpretation: steady-state cost depends on new data only
 - Engineering implication: incremental is the production default
 
-## Diagram Manifest
-- Slide 9 → week12_lecture_slide09_advanced_pipeline_overview.puml
-- Slide 15 → week12_lecture_slide15_execution_flow.puml
-- Slide 17 → week12_lecture_slide17_failure_backfill_skew.puml
+![Backfill vs incremental](../../diagrams/week12/week12_backfill_vs_incremental.png)
 
-## Core Concepts (1/3)
+## Core Concepts
 - **Advanced feature pipeline:** DAG of steps
 - Raw → entity features (user, item) → join → derived → feature table
 - **Entity feature:** computed per (entity_id, as_of_ts)
@@ -71,14 +68,16 @@ $$
 - **Derived feature:** computed from other features
 - E.g. ratio, cross-entity signal
 
-## Core Concepts (2/3)
+![Pipeline DAG](../../diagrams/week12/week12_pipeline_dag.png)
+
+## Core Concepts
 - **Backfill:** compute features for a range of as_of_ts
 - Full history or [d_start, d_end]; one-time or repair
 - **Incremental:** compute only new as_of_ts
 - E.g. last_as_of_ts + 1 day; daily job
 - Watermark in control table
 
-## Core Concepts (3/3)
+## Core Concepts
 - **Idempotent backfill:** writing same range twice yields one row per key
 - Use partition overwrite or MERGE
 - **Single owner per partition:** only one job writes a given as_of_ts
@@ -94,11 +93,11 @@ $$
 - Define backfill and incremental in one sentence each
 - When would you run a backfill?
 
-## In-Lecture Exercise 1: Solution (1/2)
+## In-Lecture Exercise 1: Solution
 - Backfill: compute features for a historical range
 - Incremental: compute only new as_of_ts since last run
 
-## In-Lecture Exercise 1: Solution (2/2)
+## In-Lecture Exercise 1: Solution
 - Backfill for new feature definitions or repair
 - Incremental for daily production updates
 
@@ -127,11 +126,11 @@ $$
 - Estimate full-grid storage size
 - If observed pairs average 5M/day, estimate size
 
-## In-Lecture Exercise 3: Solution (1/2)
+## In-Lecture Exercise 3: Solution
 - Full grid: 10M × 1M × 365 × 60 B ≈ 219 PB
 - Infeasible for storage or compute
 
-## In-Lecture Exercise 3: Solution (2/2)
+## In-Lecture Exercise 3: Solution
 - Observed pairs: 5M/day × 365 × 60 B ≈ 109.5 GB
 - Restricting to observed pairs makes it feasible
 
@@ -156,18 +155,20 @@ $$
 - Otherwise next run skips that as_of_ts (gap)
 - **Backfill:** does not advance watermark
 
+![Control table and watermark](../../diagrams/week12/week12_control_watermark.png)
+
 ## In-Lecture Exercise 2: Incremental Control Flow
 - Read last_as_of_ts from control
 - Compute features for last_as_of_ts + 1 day
 - MERGE into feature_table for that day
 - Update control only after success
 
-## In-Lecture Exercise 2: Solution (1/2)
+## In-Lecture Exercise 2: Solution
 - last_as_of_ts = control.last_as_of_ts
 - new_as_of_ts = last_as_of_ts + 1 day
 - Compute features for new_as_of_ts only
 
-## In-Lecture Exercise 2: Solution (2/2)
+## In-Lecture Exercise 2: Solution
 - MERGE or overwrite partition for new_as_of_ts
 - Update control after commit to avoid gaps
 
@@ -214,29 +215,30 @@ $$
 - **Goal:** feature table (user_id, item_id, as_of_ts, ..., ctr_7d)
 - **Engineering objective:** point-in-time; idempotent backfill/incremental
 
-## Running Example — Step-by-Step (1/4)
+## Running Example — Step-by-Step
 - **Step 1:** Compute user features
 - (user_id, as_of_ts, clicks_7d, views_7d) from events
 - event_ts ≤ as_of_ts and 7d window
 - **Step 2:** Compute item features
 - (item_id, as_of_ts, impressions_7d); same point-in-time
+
 ![](../../diagrams/week12/week12_lecture_slide09_advanced_pipeline_overview.png)
 
-## Running Example — Step-by-Step (2/4)
+## Running Example — Step-by-Step
 - **Step 3:** Generate (user_id, item_id, as_of_ts) grid
 - From distinct user-item pairs and as_of_ts dates
 - Join user features and item features
 - On (user_id, as_of_ts) and (item_id, as_of_ts)
 - Fill 0 for missing; compute ctr_7d = clicks_7d / NULLIF(impressions_7d, 0)
 
-## Running Example — Step-by-Step (3/4)
+## Running Example — Step-by-Step
 - **Step 4:** Write to feature table
 - Key = (user_id, item_id, as_of_ts)
 - **Idempotent:** MERGE ON key
 - WHEN MATCHED UPDATE; WHEN NOT MATCHED INSERT
 - Or overwrite partition by as_of_ts
 
-## Running Example — Step-by-Step (4/4)
+## Running Example — Step-by-Step
 - **Output:** one row per (user_id, item_id, as_of_ts)
 - With clicks_7d, views_7d, impressions_7d, ctr_7d
 - **Trade-off:** join size can explode; restrict grid to observed pairs
@@ -270,13 +272,13 @@ $$
 | Write | MERGE or overwrite partition | Overwrite partitions d1..d2 |
 | Use case | Daily pipeline | Bootstrap, repair |
 
-## Cost & Scaling Analysis (1/3)
+## Cost & Scaling Analysis
 - **Time model (naive):** T ∝ |events| × |as_of_ts| per entity type
 - Multiplied by number of entity feature steps
 - **Backfill:** T ∝ |events| × (d2 - d1)
 - **Incremental:** T ∝ |events in window| × 1; bounded by one day
 
-## Cost & Scaling Analysis (2/3)
+## Cost & Scaling Analysis
 - **Memory / storage:** feature table size ≈ N_user × N_item × N_as_of × bytes
 - Often reduced by storing only observed (user, item) per as_of_ts
 - **Join cardinality:** grid of all (user, item, as_of_ts) can be huge
@@ -289,32 +291,36 @@ $$
 - Typically ≪ full Cartesian product
 - **Engineering rule:** build grid from SELECT DISTINCT in window
 
+![Full grid vs observed pairs](../../diagrams/week12/week12_full_grid_vs_observed.png)
+
 ## Quantitative Cost Comparison
 - **Example:** 100M events/day, 365 as_of_ts, 10M users, 1M items
 - Naive backfill: 100M × 365 ≈ 36.5B row scans per entity step
 - **Incremental (1 day):** 100M × 1 ≈ 100M row scans
 - **Join:** full grid 3.65e12; observed pairs ~5M/day × 365 ≈ 1.8e9 (feasible)
 
-## Cost & Scaling Analysis (3/3)
+## Cost & Scaling Analysis
 - **Execution flow (incremental):**
 - Read watermark → compute new as_of_ts → MERGE → update watermark
 - **Backfill flow:** request range → compute all → overwrite partitions
 - No watermark advance
+
 ![](../../diagrams/week12/week12_lecture_slide15_execution_flow.png)
 
-## Pitfalls & Failure Modes (1/3)
+## Pitfalls & Failure Modes
 - **Backfill overlap:** two jobs write same as_of_ts range
 - Both use INSERT → duplicate rows
 - **Impact:** training sees double counts; joins wrong
 - **Prevention:** single owner per partition; MERGE or overwrite
 
-## Pitfalls & Failure Modes (2/3)
+## Pitfalls & Failure Modes
 - **Aggregation skew:** one entity has orders of magnitude more events
 - Single reducer gets 1B rows → OOM or timeout
 - **Failure:** job fails or straggler; pipeline blocked
+
 ![](../../diagrams/week12/week12_lecture_slide17_failure_backfill_skew.png)
 
-## Pitfalls & Failure Modes (3/3)
+## Pitfalls & Failure Modes
 - **Detection:** duplicate key violations; reducer input sizes; duration spikes
 - **Mitigation (overlap):** MERGE or overwrite; control table after success
 - Backfill jobs use explicit range and overwrite only that range
@@ -326,14 +332,14 @@ $$
 - **Detection:** schema checks; lineage and version tags
 - **Mitigation:** version feature definitions; backfill with new schema
 
-## Best Practices (1/2)
+## Best Practices
 - Design pipeline as DAG: entity features first, then join, then derived
 - Document dependencies
 - Key feature table by (entity_id, as_of_ts) or (user_id, item_id, as_of_ts)
 - Always MERGE or partition overwrite for idempotency
 - Use control table: update only after successful write
 
-## Best Practices (2/2)
+## Best Practices
 - Limit join size: build grid from observed pairs
 - Profile for skew: monitor reducer sizes; add salting for hot entities
 - Version feature definitions and schema; validate on write
@@ -371,4 +377,5 @@ $$
 
 ## Additional Diagrams
 ### Practice: Backfill Reasoning
+
 ![](../../diagrams/week12/week12_practice_slide22_backfill_reasoning.png)

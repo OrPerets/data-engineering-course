@@ -1,0 +1,55 @@
+@startuml
+'=================================================
+' PARTITION PRUNING - Two query paths to fact
+' Full scan vs pruned scan; ScanCost = s * |F|
+'=================================================
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 55
+skinparam ranksep 50
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+skinparam component<<Bad>> {
+    BackgroundColor #FFEBEE
+    BorderColor #C62828
+}
+skinparam component<<Tool>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+
+component "**Query**\n<size:10>No WHERE date_key</size>" as Q_BAD <<Bad>>
+component "**Query**\n<size:10>WHERE date_key IN (Dec)</size>" as Q_GOOD <<Tool>>
+
+database "**sales_fact**\n<size:10>1 TB, 365 partitions</size>\n<size:10>Partition by date_key</size>" as FACT
+
+Q_BAD -right[#C62828,thickness=3]-> FACT : <size:10>Full scan\n365 parts</size>
+Q_GOOD -right[#388E3C,thickness=3]-> FACT : <size:10>Pruned\n31 parts</size>
+
+@enduml

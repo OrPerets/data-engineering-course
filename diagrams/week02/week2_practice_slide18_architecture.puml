@@ -1,176 +1,46 @@
 @startuml
-'=================================================
-' CANONICAL DIAGRAM TEMPLATE - DATA ENGINEERING
-'=================================================
-
-top to bottom direction
-skinparam linetype ortho
-skinparam shadowing false
-skinparam roundcorner 8
-skinparam handwritten false
-skinparam nodesep 24
-skinparam ranksep 28
-
-'-------------------------
-' FONT & GLOBAL STYLE
-'-------------------------
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam defaultFontColor #2C3E50
-
-'-------------------------
-' GENERIC BOX STYLE
-'-------------------------
-skinparam rectangle {
-    BackgroundColor #F8F9FA
-    BorderColor #90A4AE
-    BorderThickness 2
-    FontColor #263238
-    FontSize 14
-    FontStyle bold
-    Padding 20
-}
-
-skinparam component {
-    BackgroundColor #FFFFFF
-    BorderColor #78909C
-    BorderThickness 1.5
-    FontSize 14
-    Padding 12
-}
-
-skinparam database {
-    BackgroundColor #ECEFF1
-    BorderColor #546E7A
-    BorderThickness 1.5
-    FontSize 14
-    FontColor #263238
-}
-
-skinparam arrow {
-    Color #607D8B
-    Thickness 1.5
-    FontSize 11
-    FontColor #546E7A
-}
-
-'-------------------------
-' SEMANTIC STEREOTYPES
-'-------------------------
-skinparam component<<UI>> {
-    BorderColor #8E24AA
-    BackgroundColor #F3E5F5
-    FontColor #4A148C
-}
-
-skinparam component<<Agent>> {
-    BorderColor #0288D1
-    BackgroundColor #E1F5FE
-    FontColor #01579B
-}
-
-skinparam component<<Tool>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<Config>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<Bad>> {
-    BorderColor #C62828
-    BackgroundColor #FFEBEE
-    FontColor #B71C1C
-}
-
-skinparam component<<V1>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<V2>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam database<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam database<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam component<<success>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<failure>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-'=================================================
-
+!include ../_template_styles.puml
 ' PRACTICE: SOCIAL MEDIA ARCHITECTURE OPTIONS - Mixed layout for PPTX
+top to bottom direction
 
-rectangle "ACCESS PATTERNS" #F8F9FA {
-    component "**User profile**\n<size:10>user_id -> KV</size>" as AP1
-    component "**Posts by user**\n<size:10>user_id -> list</size>" as AP2
-    component "**Likes by post**\n<size:10>post_id -> list</size>" as AP3
-    component "**Trending**\n<size:10>aggregation</size>" as AP4
+rectangle "ACCESS PATTERNS" #FFFFFF {
+    component "**User profile**\n<size:10>user_id -> KV</size>" as AP1 <<Primary>>
+    component "**Posts by user**\n<size:10>user_id -> list</size>" as AP2 <<Primary>>
+    component "**Likes by post**\n<size:10>post_id -> list</size>" as AP3 <<Primary>>
+    component "**Trending**\n<size:10>aggregation</size>" as AP4 <<Primary>>
     AP1 -[hidden]right- AP2
     AP2 -[hidden]right- AP3
     AP3 -[hidden]right- AP4
 }
 
-rectangle "SQL OPTION" #FFEBEE {
-    database "**Users**\n<size:10>user_id</size>" as USQL
-    database "**Posts**\n<size:10>user_id</size>" as PSQL
-    database "**Likes**\n<size:10>post_id</size>" as LSQL
-    component "**Join-heavy**\n<size:10>Cross-partition</size>" as SQLJOIN <<Bad>>
+rectangle "SQL OPTION" #FFFFFF {
+    database "**Users**\n<size:10>user_id</size>" as USQL <<Schema>>
+    database "**Posts**\n<size:10>user_id</size>" as PSQL <<Schema>>
+    database "**Likes**\n<size:10>post_id</size>" as LSQL <<Schema>>
+    component "**Join-heavy**\n<size:10>Cross-partition</size>" as SQLJOIN <<Failure>>
     USQL -[hidden]right- PSQL
     PSQL -[hidden]right- LSQL
 }
 
-rectangle "NoSQL OPTION" #E8F5E9 {
-    database "**Users+Posts**\n<size:10>Co-locate</size>" as UNOSQL
-    database "**Likes**\n<size:10>post_id</size>" as LNOSQL
+rectangle "NoSQL OPTION" #FFFFFF {
+    database "**Users+Posts**\n<size:10>Co-locate</size>" as UNOSQL <<Schema>>
+    database "**Likes**\n<size:10>post_id</size>" as LNOSQL <<Schema>>
     component "**Single-partition**\n<size:10>Low-latency</size>" as NOSQLFAST <<success>>
     UNOSQL -[hidden]right- LNOSQL
 }
 
-database "**Aggregate**\n<size:10>Trending</size>" as AGG
+database "**Aggregate**\n<size:10>Trending</size>" as AGG <<Schema>>
 
-AP1 -down-> USQL
-AP1 -down-> UNOSQL
-AP2 -down-> PSQL
-AP2 -down-> UNOSQL
-AP3 -down-> LSQL
-AP3 -down-> LNOSQL
-AP4 -down-> AGG
-USQL -down-> SQLJOIN
-PSQL -down-> SQLJOIN
-UNOSQL -down-> NOSQLFAST
-LNOSQL -down-> NOSQLFAST
+AP1 -down[#5C6BC0,thickness=2]-> USQL
+AP1 -down[#5C6BC0,thickness=2]-> UNOSQL
+AP2 -down[#5C6BC0,thickness=2]-> PSQL
+AP2 -down[#5C6BC0,thickness=2]-> UNOSQL
+AP3 -down[#5C6BC0,thickness=2]-> LSQL
+AP3 -down[#5C6BC0,thickness=2]-> LNOSQL
+AP4 -down[#5C6BC0,thickness=2]-> AGG
+USQL -down[#D32F2F,thickness=2]-> SQLJOIN
+PSQL -down[#D32F2F,thickness=2]-> SQLJOIN
+UNOSQL -down[#00897B,thickness=2]-> NOSQLFAST
+LNOSQL -down[#00897B,thickness=2]-> NOSQLFAST
 
 @enduml

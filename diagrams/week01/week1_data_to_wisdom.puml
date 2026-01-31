@@ -1,37 +1,18 @@
 @startuml
+!include ../_template_styles.puml
 ' Data to Wisdom pyramid (DIKW Hierarchy)
 top to bottom direction
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 17
-skinparam roundcorner 15
-skinparam shadowing true
-skinparam linetype ortho
-skinparam nodesep 45
-skinparam ranksep 55
 
-skinparam card {
-    FontStyle bold
-    Padding 32
-    BorderThickness 3
-}
+card "**WISDOM**\n<size:15>Applied Knowledge</size>\n\n<size:14>Optimal decisions</size>\n<size:14>based on experience</size>" as W <<Primary>>
 
-skinparam arrow {
-    Thickness 3.5
-    FontSize 13
-}
+card "**KNOWLEDGE**\n<size:15>Skills + Info</size>\n\n<size:14>Patterns &</size>\n<size:14>relationships</size>" as K <<Task>>
 
-title <size:22><b>DIKW Pyramid</b></size>\n<size:14>The Journey from Data to Wisdom</size>
+card "**INFORMATION**\n<size:15>Context</size>\n\n<size:14>Structured data</size>\n<size:14>with meaning</size>" as I <<Control>>
 
-card "💎 **WISDOM**\n<size:15>Applied Knowledge</size>\n\n<size:14>Making optimal decisions\nbased on experience\nand understanding</size>" as W #1B5E20
+card "**DATA**\n<size:15>Raw Facts</size>\n\n<size:14>Observations &</size>\n<size:14>measurements</size>" as D <<Schema>>
 
-card "🧠 **KNOWLEDGE**\n<size:15>Skills + Information</size>\n\n<size:14>Understanding patterns,\nprinciples, and\nrelationships</size>" as K #388E3C
-
-card "📋 **INFORMATION**\n<size:15>Data in Context</size>\n\n<size:14>Processed data with\nmeaning, structure,\nand relevance</size>" as I #66BB6A
-
-card "📊 **DATA**\n<size:15>Raw Facts</size>\n\n<size:14>Unprocessed observations,\nmeasurements, numbers,\nand symbols</size>" as D #A5D6A7
-
-D -[#66BB6A,thickness=4]-> I : <size:13><color:#2E7D32>**Process**</color></size>
-I -[#43A047,thickness=4]-> K : <size:13><color:#1B5E20>**Analyze**</color></size>
-K -[#2E7D32,thickness=4]-> W : <size:13><color:#1B5E20>**Apply**</color></size>
+D -[#00897B,thickness=2]-> I : <color:#3949AB>**Process**</color>
+I -[#00897B,thickness=2]-> K : <color:#3949AB>**Analyze**</color>
+K -[#00897B,thickness=2]-> W : <color:#3949AB>**Apply**</color>
 
 @enduml

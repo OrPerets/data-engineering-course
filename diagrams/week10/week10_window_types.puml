@@ -1,0 +1,56 @@
+@startuml
+' Window types: tumbling, sliding, session
+' Short labels, flow
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 40
+skinparam ranksep 50
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 12
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 10
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+rectangle "TUMBLING" #E3F2FD {
+    component "**Fixed, non-overlapping**\n<size:12>[10:00,10:05) [10:05,10:10)</size>" as T1
+    component "**State:** O(keys)" as T2
+    T1 -down-> T2
+}
+
+rectangle "SLIDING" #E8F5E9 {
+    component "**Fixed size, overlap by slide**\n<size:12>Size 5 min, slide 1 min</size>" as S1
+    component "**State:** keys x size/slide" as S2
+    S1 -down-> S2
+}
+
+rectangle "SESSION" #FFF9C4 {
+    component "**Variable size**\n<size:12>Close after gap threshold</size>" as SES1
+    component "**State:** keys x active sessions" as SES2
+    SES1 -down-> SES2
+}
+
+T1 -[hidden]right- S1
+S1 -[hidden]right- SES1
+@enduml

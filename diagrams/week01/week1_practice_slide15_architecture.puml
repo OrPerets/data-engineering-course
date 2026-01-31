@@ -1,192 +1,57 @@
 @startuml
+!include ../_template_styles.puml
+' NEWS PLATFORM - mixed layout
 top to bottom direction
-skinparam linetype ortho
-skinparam shadowing true
-skinparam roundcorner 12
-skinparam handwritten false
-skinparam nodesep 35
-skinparam ranksep 50
 
-'-------------------------
-' FONT & GLOBAL STYLE
-'-------------------------
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam defaultFontColor #2C3E50
-
-'-------------------------
-' GENERIC BOX STYLE
-'-------------------------
-skinparam rectangle {
-    BackgroundColor #F8F9FA
-    BorderColor #90A4AE
-    BorderThickness 2
-    FontColor #263238
-    FontSize 14
-    FontStyle bold
-    Padding 20
-}
-
-skinparam component {
-    BackgroundColor #FFFFFF
-    BorderColor #78909C
-    BorderThickness 1.5
-    FontSize 14
-    Padding 12
-}
-
-skinparam database {
-    BackgroundColor #ECEFF1
-    BorderColor #546E7A
-    BorderThickness 1.5
-    FontSize 14
-    FontColor #263238
-}
-
-skinparam arrow {
-    Color #607D8B
-    Thickness 2.5
-    FontSize 12
-    FontColor #546E7A
-    FontStyle italic
-}
-
-skinparam package {
-    BorderThickness 2.5
-    FontSize 15
-    FontStyle bold
-}
-
-'-------------------------
-' SEMANTIC STEREOTYPES
-'-------------------------
-skinparam component<<UI>> {
-    BorderColor #8E24AA
-    BackgroundColor #F3E5F5
-    FontColor #4A148C
-}
-
-skinparam component<<Agent>> {
-    BorderColor #0288D1
-    BackgroundColor #E1F5FE
-    FontColor #01579B
-}
-
-skinparam component<<Tool>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<Config>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<Bad>> {
-    BorderColor #C62828
-    BackgroundColor #FFEBEE
-    FontColor #B71C1C
-}
-
-skinparam component<<V1>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<V2>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam database<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam database<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam component<<success>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<failure>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-'=================================================
-
-title <size:24><b>📰 News Platform Architecture</b></size>\n<size:15>End-to-End Data Engineering Solution</size>
-
-' NEWS PLATFORM ARCHITECTURE
-package "📥 DATA SOURCES"  as A #E3F2FD/B3E5FC {
-    database "📰 **News Sources**\n<size:12>1,000 news sites\nRSS & APIs</size>" as SOURCES
-    storage "👆 **User Clicks**\n<size:12>500K events/day\nClick stream</size>" as CLICKS
+package "SOURCES" as P_SRC #FFFFFF {
+    database "**News**\n<size:12>1K sites RSS</size>" as SOURCES <<Primary>>
+    storage "**Clicks**\n<size:12>500K/day</size>" as CLICKS <<Primary>>
     SOURCES -[hidden]- CLICKS
 }
 
-package "⚡ INGESTION LAYER" as B  #FFF9C4/FFF59D {
-    component "📄 **Article Ingestion**\n<size:11>10K articles/day\nPull-based</size>" as INGEST_ART <<Agent>>
-    component "📊 **Click Ingestion**\n<size:11>Real-time streaming\nEvent-driven</size>" as INGEST_CLICK <<Agent>>
+package "INGESTION" as P_ING #FFFFFF {
+    component "**Articles**\n<size:11>10K/day Pull</size>" as INGEST_ART <<Control>>
+    component "**Clicks**\n<size:11>RT Stream</size>" as INGEST_CLICK <<Control>>
     INGEST_ART -[hidden]- INGEST_CLICK
 }
 
-package "💾 STORAGE LAYER" as C #ECEFF1/CFD8DC {
-    database "📚 **Raw Articles**\n<size:12>50M articles\n515 GB total</size>" as RAW_ART
-    database "🖱️ **Raw Clicks**\n<size:12>200M clicks\n8.8 GB total</size>" as RAW_CLICK
+package "STORAGE" as P_STO #FFFFFF {
+    database "**Articles**\n<size:12>50M 515GB</size>" as RAW_ART <<Schema>>
+    database "**Clicks**\n<size:12>200M 8.8GB</size>" as RAW_CLICK <<Schema>>
     RAW_ART -[hidden]- RAW_CLICK
 }
 
-package "⚙️ PROCESSING LAYER" as D #E1F5FE/B3E5FC {
-    component "📦 **Batch Pipeline**\n<size:11>Daily aggregation\nSpark jobs</size>" as BATCH <<Tool>>
-    component "⚡ **Streaming Pipeline**\n<size:11>5-min windows\nKafka Streams</size>" as STREAM <<Tool>>
+package "PROCESSING" as P_PROC #FFFFFF {
+    component "**Batch**\n<size:11>Daily Spark</size>" as BATCH <<Task>>
+    component "**Stream**\n<size:11>5m windows</size>" as STREAM <<Task>>
     BATCH -[hidden]- STREAM
 }
 
-package "📊 ANALYTICS LAYER" as E #F3E5F5/E1BEE7 {
-    database "🏢 **Data Warehouse**\n<size:12>Star schema\nAggregated tables</size>" as WAREHOUSE
-    cloud "🔥 **Trending Service**\n<size:12>Real-time API\nTop-N articles</size>" as TRENDING
+package "ANALYTICS" as P_ANAL #FFFFFF {
+    database "**Warehouse**\n<size:12>Star schema</size>" as WAREHOUSE <<Schema>>
+    cloud "**Trending**\n<size:12>RT API</size>" as TRENDING <<Control>>
     WAREHOUSE -[hidden]- TRENDING
 }
 
-package "🎯 CONSUMPTION" as F #C8E6C9/A5D6A7 {
-    component "📈 **Analytics Dashboard**\n<size:11>Daily reports\nBI tools</size>" as DASHBOARD <<UI>>
-    component "📱 **News App**\n<size:11>Trending feed\nMobile & Web</size>" as APP <<UI>>
+package "CONSUMPTION" as P_CONS #FFFFFF {
+    component "**Analytics**\n<size:11>BI tools</size>" as DASHBOARD <<Primary>>
+    component "**App**\n<size:11>Mobile/Web</size>" as APP <<Task>>
     DASHBOARD -[hidden]- APP
 }
 
-SOURCES -[#1976D2,thickness=3]-> INGEST_ART : <color:#0D47A1><b>batch pulls</b>\nHTTP/RSS</color>
-CLICKS -[#F57C00,thickness=3]-> INGEST_CLICK : <color:#E65100><b>event stream</b>\nKafka</color>
+SOURCES -down[#1565C0,thickness=2]-> INGEST_ART : <color:#3949AB><b>batch</b></color>
+CLICKS -down[#FF6F00,thickness=2]-> INGEST_CLICK : <color:#3949AB><b>stream</b></color>
 
-INGEST_ART -[#1976D2,thickness=3]-> RAW_ART : <color:#1565C0>write\nParquet</color>
-INGEST_CLICK -[#F57C00,thickness=3]-> RAW_CLICK : <color:#EF6C00>write\nAvro</color>
+INGEST_ART -right[#1565C0,thickness=2]-> RAW_ART : <color:#3949AB>Parquet</color>
+INGEST_CLICK -right[#FF6F00,thickness=2]-> RAW_CLICK : <color:#3949AB>Avro</color>
 
-RAW_ART -[#7B1FA2,thickness=3]-> BATCH : <color:#4A148C><b>daily ETL</b>\n1x/day</color>
-RAW_CLICK -[#388E3C,thickness=3]-> STREAM : <color:#1B5E20><b>near real-time</b>\ncontinuous</color>
+RAW_ART -down[#5C6BC0,thickness=2]-> BATCH : <color:#3949AB><b>daily</b></color>
+RAW_CLICK -down[#00897B,thickness=2]-> STREAM : <color:#3949AB><b>RT</b></color>
 
-BATCH -[#7B1FA2,thickness=3]-> WAREHOUSE : <color:#6A1B9A>aggregates\nSQL</color>
-STREAM -[#388E3C,thickness=3]-> TRENDING : <color:#2E7D32>top-N\nwindows</color>
+BATCH -right[#5C6BC0,thickness=2]-> WAREHOUSE : <color:#3949AB>SQL</color>
+STREAM -right[#00897B,thickness=2]-> TRENDING : <color:#3949AB>top-N</color>
 
-WAREHOUSE -[#1976D2,thickness=3]-> DASHBOARD : <color:#0D47A1><b>BI queries</b>\nSQL</color>
-TRENDING -[#388E3C,thickness=3]-> APP : <color:#1B5E20><b>serve trends</b>\nREST API</color>
-
+WAREHOUSE -down[#1565C0,thickness=2]-> DASHBOARD : <color:#3949AB><b>BI</b></color>
+TRENDING -down[#00897B,thickness=2]-> APP : <color:#3949AB><b>REST</b></color>
 
 @enduml

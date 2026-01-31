@@ -29,6 +29,10 @@
 3. **Fast update:** $O(1)$ or $O(\log m)$ time per element
 4. **Query at end:** Return estimate after stream completes
 
+![Streaming constraints](../../diagrams/week10/week10_streaming_constraints.png)
+
+![Batch vs stream](../../diagrams/week10/week10_batch_vs_stream.png)
+
 ## Why Exact Solutions Fail
 
 ### Exact Counting
@@ -59,6 +63,8 @@ $$
 P(|\hat{X} - X| \leq \epsilon \cdot X) \geq 1 - \delta
 $$
 - **Trade-off:** Smaller $\epsilon, \delta$ require more space
+
+![(epsilon, delta) approximation](../../diagrams/week10/week10_epsilon_delta.png)
 
 ---
 
@@ -122,6 +128,8 @@ At query time:
 - Instead of counting $n$, count $\log n$ (approximately)
 - $X$ tracks roughly $\log_2 n$
 - Space: $O(\log X) = O(\log \log n)$ bits
+
+![Morris counter flow](../../diagrams/week10/week10_morris_flow.png)
 
 ## Morris Counter: Expectation
 
@@ -499,6 +507,8 @@ $$
 - Variable size; close after gap threshold
 - **State:** $O(\text{keys} \times \text{active sessions})$
 
+![Window types](../../diagrams/week10/week10_window_types.png)
+
 ## Event-Time vs Processing-Time
 - **Event-time:** When event occurred (in data)
 - **Processing-time:** When system processes it
@@ -510,6 +520,8 @@ $$
 - **Trade-off:**
   - Aggressive (small delay): Fast but drops late data
   - Conservative (large delay): Complete but slow
+
+![Watermark trade-off](../../diagrams/week10/week10_watermark_tradeoff.png)
 
 ---
 
@@ -525,6 +537,8 @@ $$
 - **At-most-once:** May lose; no duplicates
 - **At-least-once:** No loss; may duplicate
 - **Exactly-once:** No loss; no duplicates (requires transactions)
+
+![Delivery guarantees](../../diagrams/week10/week10_delivery_guarantees.png)
 
 ## Idempotent Sink Pattern
 - **Key:** $(window\_start, key)$
@@ -610,12 +624,17 @@ $$
 
 ## Additional Diagrams
 ### System Overview
+
 ![](../../diagrams/week10/week10_lecture_slide13_system_overview.png)
 ### Window Example
+
 ![](../../diagrams/week10/week10_lecture_slide18_window_example.png)
 ### Execution Flow
+
 ![](../../diagrams/week10/week10_lecture_slide22_execution_flow.png)
 ### Failure: Late Data
+
 ![](../../diagrams/week10/week10_lecture_slide38_failure_late_data.png)
 ### Practice: Window Late Reasoning
+
 ![](../../diagrams/week10/week10_practice_slide18_window_late_reasoning.png)

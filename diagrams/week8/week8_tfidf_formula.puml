@@ -1,0 +1,46 @@
+@startuml
+'=================================================
+' TF-IDF FORMULA - tf * idf flow
+' Local (tf) and global (idf) combine
+'=================================================
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 50
+skinparam ranksep 45
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 12
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+component "**TF**\n<size:10>count/|d| in doc</size>" as TF #E3F2FD
+component "**IDF**\n<size:10>log N/df(t)</size>" as IDF #FFF3E0
+component "**TF-IDF**\n<size:10>tf * idf</size>" as TFIDF #E8F5E9
+
+TF -right-> TFIDF
+IDF -right-> TFIDF
+
+@enduml

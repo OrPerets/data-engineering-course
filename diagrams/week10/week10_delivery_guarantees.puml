@@ -1,0 +1,46 @@
+@startuml
+' Delivery guarantees: at-most, at-least, exactly-once
+' Producer -> pipeline -> sink
+
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 50
+skinparam ranksep 40
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 12
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 10
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+component "**At-most-once**\n<size:12>May lose; no duplicates</size>" as AMO #FFE0B2
+component "**At-least-once**\n<size:12>No loss; may duplicate</size>" as ALO #E1F5FE
+component "**Exactly-once**\n<size:12>No loss, no duplicates</size>" as EO #C8E6C9
+
+note bottom of AMO : Fail fast, no retry
+note bottom of ALO : Retry; idempotent sink
+note bottom of EO : Transactions / dedup
+
+AMO -[hidden]right- ALO
+ALO -[hidden]right- EO
+@enduml

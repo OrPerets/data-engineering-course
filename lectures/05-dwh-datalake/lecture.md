@@ -58,26 +58,23 @@ $$
 - sales_fact partitioned by date_key
 - **Consumers:** BI tools (Tableau, Looker); analysts
 
-## Diagram Manifest
-- Slide 13 → week5_lecture_slide13_system_overview.puml
-- Slide 14 → week5_lecture_bad_architecture.puml
-- Slide 15 → week5_lecture_evolution_v1_v2.puml
-- Slide 22 → week5_lecture_slide22_query_flow.puml
-- Slide 38 → week5_lecture_slide38_failure_partition.puml
-
-## Core Concepts (1/2)
+## Core Concepts
 - **Data Warehouse (DWH):** centralized store for analytical data
 - Schema-on-write; optimized for SQL/OLAP
 - **Data Lake:** store for raw and processed data
 - Often schema-on-read; files (Parquet, ORC)
 - **OLAP:** aggregations, joins, reporting over large datasets
 
-## Core Concepts (2/2)
+![](../../diagrams/week05/week5_dwh_vs_lake.png)
+
+## Core Concepts
 - **Star schema:** one fact table + dimension tables
 - Denormalized for query speed
 - **Partitioning:** data split by key (e.g. date)
 - **Partition pruning:** skips irrelevant partitions
 - **DWH:** typically ACID; **Lake:** often eventual consistency
+
+![](../../diagrams/week05/week5_star_schema.png)
 
 ## Data Context: Star Schema (Sales)
 - sales_fact: 1 TB/year, partitioned by date_key
@@ -89,11 +86,11 @@ $$
 - Define partition pruning in one sentence
 - Why is a query without date_key filter expensive?
 
-## In-Lecture Exercise 1: Solution (1/2)
+## In-Lecture Exercise 1: Solution
 - Pruning skips partitions that fail the WHERE predicate
 - Only relevant partitions are scanned
 
-## In-Lecture Exercise 1: Solution (2/2)
+## In-Lecture Exercise 1: Solution
 - No date_key filter forces a full scan of all partitions
 - I/O scales with total table size, not query scope
 
@@ -107,12 +104,14 @@ $$
 - "A data warehouse is subject-oriented, integrated, time-variant, and nonvolatile"
 - Collection of data supporting decision-making
 
-## Key Characteristics (1/2)
+## Key Characteristics
 - **Subject Oriented:** organized around major subjects
 - Customer, product, sales
 - Focusing on modeling and analysis for decision makers
 
-## Key Characteristics (2/2)
+![](../../diagrams/week05/week5_inmon_characteristics.png)
+
+## Key Characteristics
 - **Integrated:** multiple heterogeneous data sources
 - Consistent naming conventions and encoding
 - **Time Variant:** provides historical perspective (5-10 years)
@@ -161,16 +160,18 @@ $$
 - Dimensions have attributes (date, month, year; id, city, state)
 - Hierarchies enable drill-down and roll-up in OLAP
 
+![](../../diagrams/week05/week5_dimension_hierarchy.png)
+
 ## DWH Schema Types
 
-## The Star Schema (1/2)
+## The Star Schema
 - **Definition:** relational model with one-to-many relationships
 - Between dimension tables and fact table
 - Single fact table with detail and summary data
 - Fact table PK has one key column per dimension
 - Each dimension is a single, denormalized table
 
-## The Star Schema (2/2)
+## The Star Schema
 - **Benefits:** easy to understand; intuitive mapping
 - Easy to define hierarchies; reduces joins
 - **Drawbacks:** summary data can yield poorer performance
@@ -194,11 +195,11 @@ Sales Fact Table:           time Dimension:
 - Decide which side to broadcast in a distributed join
 - What if dim_customer were 10 GB instead of 10 MB?
 
-## In-Lecture Exercise 2: Solution (1/2)
+## In-Lecture Exercise 2: Solution
 - Fact slice is far larger than dim_customer
 - Broadcast dim_customer; keep fact partitions local
 
-## In-Lecture Exercise 2: Solution (2/2)
+## In-Lecture Exercise 2: Solution
 - If dim_customer is 10 GB, broadcast is too large
 - Use shuffle/hash join on customer_key instead
 
@@ -230,6 +231,8 @@ Sales Fact Table:           time Dimension:
 - **Star:** more effective for data cube browsing (fewer joins)
 - **Engineering rule:** start with star; snowflake if proven bottleneck
 
+![](../../diagrams/week05/week5_star_vs_snowflake.png)
+
 ## Architectural Fork: Lake First vs DWH First
 
 ## Option A — Lake First
@@ -259,14 +262,14 @@ Sales Fact Table:           time Dimension:
 - **Cons:** consumers handle types; consistency is eventual
 - **Decision:** schema-on-write for curated; schema-on-read at landing
 
-## DWH vs Data Lake (1/2)
+## DWH vs Data Lake
 - **DWH:** structured; schema enforced on load
 - SQL engines (Snowflake, BigQuery, Redshift)
 - Best for curated reporting
 - **Lake:** raw + processed; schema applied at read
 - File-based (S3, HDFS); best for flexibility and cost
 
-## DWH vs Data Lake (2/2)
+## DWH vs Data Lake
 - **Cost model:** DWH compute + storage often coupled
 - Lake: storage cheap, compute on demand
 - **Hybrid:** Lakehouse (Delta, Iceberg) combines both
@@ -288,6 +291,8 @@ Sales Fact Table:           time Dimension:
 
 ## Partitioning and Pruning
 
+![](../../diagrams/week05/week5_partition_pruning_cost.png)
+
 ## Partition Key
 - E.g. `date_key`; data stored in directories per partition
 - Query with `WHERE date_key BETWEEN 20251201 AND 20251231`
@@ -304,12 +309,12 @@ Sales Fact Table:           time Dimension:
 - Compute partitions read and bytes scanned
 - What if the date filter is missing?
 
-## In-Lecture Exercise 3: Solution (1/2)
+## In-Lecture Exercise 3: Solution
 - Partitions read: 31 (one per day in December)
 - Size per partition: 1 TB / 365 ≈ 2.7 GB
 - Bytes scanned: 31 × 2.7 GB ≈ 84 GB
 
-## In-Lecture Exercise 3: Solution (2/2)
+## In-Lecture Exercise 3: Solution
 - Without date filter: all 365 partitions scanned
 - Full 1 TB scan for every report
 - Cost and latency explode
@@ -322,6 +327,7 @@ Sales Fact Table:           time Dimension:
 ## DWH and Lake: Pipeline Overview
 - Sources (DB, logs) → ETL/ELT → DWH (star) and/or Lake (raw + processed)
 - BI and analytics query DWH or Lake via SQL engines
+
 ![](../../diagrams/week05/week5_lecture_slide13_system_overview.png)
 
 ## Bad Architecture: Why This Fails
@@ -335,6 +341,7 @@ Sales Fact Table:           time Dimension:
 ## Hot Partition Problem
 - If partitioned but only by date, "today" gets all writes and reads
 - ⇒ throttle and skew
+
 ![](../../diagrams/week05/week5_lecture_bad_architecture.png)
 
 ## Cost of Naïve Design (DWH / Lake)
@@ -359,6 +366,7 @@ Sales Fact Table:           time Dimension:
 - Star schema; fact partitioned by date_key
 - Dimensions small; BI required to filter by date_key
 - Pruned scan; predictable cost; governance
+
 ![](../../diagrams/week05/week5_lecture_evolution_v1_v2.png)
 
 ## Running Example — Data & Goal
@@ -368,12 +376,12 @@ Sales Fact Table:           time Dimension:
 - **Dimensions:** dim_customer, dim_product, dim_date
 - **Goal:** revenue by region and by category with pruning
 
-## Running Example — Step-by-Step (1/4)
+## Running Example — Step-by-Step
 - **Step 1:** Fact table partitioned by date_key (one partition per day)
 - Sample: (1, 101, 201, 20251201, 2, 19.98)
 - Dimensions: small; not partitioned
 
-## Running Example — Step-by-Step (2/4)
+## Running Example — Step-by-Step
 - **Step 2:** Query: revenue by region for December 2025
 - Join sales_fact → dim_customer on customer_key
 - Filter date_key between 20251201 and 20251231
@@ -388,18 +396,18 @@ WHERE f.date_key BETWEEN 20251201 AND 20251231
 GROUP BY c.region ORDER BY total_revenue DESC;
 ```
 
-## Running Example — Step-by-Step (3/4)
+## Running Example — Step-by-Step
 - **Step 3:** Same fact, different dimension: revenue by category
 - Join sales_fact → dim_product on product_key
 - Same date filter; same partition pruning
 - Different dimension join; same fact scan
 
-## Running Example — Step-by-Step (4/4)
+## Running Example — Step-by-Step
 - **Output:** (region, total_revenue) and (category, total_revenue)
 - **Conclusion:** star schema + partition by date = predictable joins
 - **Trade-off:** denormalization duplicates attributes; acceptable for analytics
 
-## Cost & Scaling Analysis (1/3)
+## Cost & Scaling Analysis
 - **Time model:** query time ≈ scan + join + aggregate
 - Scan time ∝ rows read; partition pruning reduces rows
 - Formula:
@@ -407,13 +415,13 @@ $$
 T \propto R_{\text{scan}} / \text{throughput}
 $$
 
-## Cost & Scaling Analysis (2/3)
+## Cost & Scaling Analysis
 - **Memory / storage:** fact table dominates; dimensions small
 - Partition fact to bound scan per query
 - DWH often columnar (compress well); Lake: Parquet/ORC
 - Peak memory: join buffers or hash tables for large joins
 
-## Cost & Scaling Analysis (3/3)
+## Cost & Scaling Analysis
 - **Network / throughput:** in distributed DWH, shuffle for joins
 - Partition pruning reduces data moved
 - Co-location by key reduces shuffle
@@ -444,6 +452,7 @@ $$
 - 1) Parse query; extract partition filter
 - 2) List partitions to read; skip others
 - 3) Scan fact partitions; join to dimensions; aggregate
+
 ![](../../diagrams/week05/week5_lecture_slide22_query_flow.png)
 
 ## Join Size and Cost Intuition
@@ -477,7 +486,7 @@ $$
 - **Fix:** compaction job; coalesce to 100 MB–1 GB per file
 - Use table formats (Delta, Iceberg) with automatic compaction
 
-## Pitfalls & Failure Modes (1/3)
+## Pitfalls & Failure Modes
 - **No partition key in query:** full table scan
 - High latency and cost; common in ad-hoc SQL
 - **Schema evolution:** new columns in Lake
@@ -509,6 +518,7 @@ $$
 ## Pitfalls: Mitigation Summary
 - Always use partition filter where possible
 - Coalesce small files in Lake; size partitions for 100MB–1GB
+
 ![](../../diagrams/week05/week5_lecture_slide38_failure_partition.png)
 
 ## Engineering Judgment
@@ -548,22 +558,23 @@ $$
 ## Failure: What We Want
 - Query with date filter → few partitions → low latency
 - Query without date filter → all partitions → high latency
+
 ![](../../diagrams/week05/week5_lecture_slide38_failure_partition.png)
 
-## Pitfalls & Failure Modes (3/3)
+## Pitfalls & Failure Modes
 - **Detection:** scan size, partition count, join spill
 - **Mitigation:** enforce partition filters; coalesce files
 - **Lake + DWH:** Lake for raw and ML; DWH for governed BI
 
 ## BI Consumers and Dashboards
 
-## What is a Dashboard? (1/2)
+## What is a Dashboard?
 - **Stephen Few (2004):** visual display of most important information
 - Needed to achieve one or more objectives
 - Consolidated on a single screen
 - Can be monitored at a glance
 
-## What is a Dashboard? (2/2)
+## What is a Dashboard?
 - **Big Book of Dashboards (2017):** visual display of data
 - Used to monitor conditions and/or facilitate understanding
 - **Key insight:** dashboards are primary DWH consumers
@@ -608,7 +619,7 @@ $$
 - **Architecture:** DWH → Stored Procedures → BI Tool → Reports
 - All tools assume clean, well-modeled data in DWH
 
-## Best Practices (1/2)
+## Best Practices
 - Model analytics with star schema; partition fact by date
 - Always include partition key in WHERE for large tables
 - Use surrogate keys in fact for dimensions (SCD Type 2)
@@ -616,7 +627,7 @@ $$
 - In Lake: store in columnar format (Parquet/ORC)
 - Coalesce small files; schema evolution with care
 
-## Best Practices (2/2)
+## Best Practices
 - Document partition key and expected query patterns
 - Monitor query cost (bytes read, partitions read)
 - Alert on full scans
@@ -641,4 +652,5 @@ $$
 
 ## Additional Diagrams
 ### Practice: Star Query Flow
+
 ![](../../diagrams/week05/week5_practice_slide18_star_query_flow.png)

@@ -1,0 +1,49 @@
+@startuml
+' Silent regression: no test -> bad data reaches consumers
+' Quality gate: fail -> block promote
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 50
+skinparam ranksep 50
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 12
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 10
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 11
+}
+
+rectangle "NO QUALITY GATE" #FFEBEE {
+    component "**No test on new column**\n<size:12>Bad value allowed</size>" as N1
+    component "**Promote anyway**\n<size:12>Consumers see wrong data</size>" as N2 #FFCDD2
+    N1 -down-> N2
+}
+
+rectangle "QUALITY GATE" #E8F5E9 {
+    component "**Tests on output**\n<size:12>Assert schema, row, freshness</size>" as G1
+    component "**Fail -> block**\n<size:12>No promote until fixed</size>" as G2
+    G1 -down-> G2
+}
+
+N1 -[hidden]right- G1
+@enduml

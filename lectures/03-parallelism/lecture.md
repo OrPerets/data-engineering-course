@@ -14,22 +14,21 @@
 - Identify data skew and hot keys as failure modes
 - Describe mitigations: local aggregation, partitioning, salting
 
-## Diagram Manifest
-- Slide 13 → week3_lecture_slide13_system_overview.puml
-- Slide 22 → week3_lecture_slide22_execution_flow.puml
-- Slide 38 → week3_lecture_slide38_failure_skew.puml
-
-## Core Concepts (1/2) — Constraints: Divide-and-Conquer
+## Core Concepts — Constraints: Divide-and-Conquer
 - Split problem into subproblems, solve independently, combine
 - **Constraint:** no shared state across chunks
 - **Divide:** partition input
 - **Conquer:** same function per chunk
 - **Combine:** group by key
 
+![](../../diagrams/week03/week3_divide_conquer.png)
+
 ## Parallelism vs Concurrency
 - **Parallelism:** simultaneous execution on multiple cores
 - **Concurrency:** overlapping (may be time-sliced)
 - **Pure functions** enable safe distribution
+
+![](../../diagrams/week03/week3_parallelism_vs_concurrency.png)
 
 ## Processes, Threads, and Virtualization
 - **Process:** isolated memory + OS resources; higher startup cost
@@ -41,7 +40,7 @@
   - **Containers:** shared host kernel; lighter isolation, faster startup
 - **Practical impact:** thread-heavy workloads need careful locking; process-heavy workloads need efficient IPC and batching
 
-## Core Concepts (2/2) — Why Systems Break: Determinism and Scalability
+## Core Concepts — Why Systems Break: Determinism and Scalability
 - **Determinism:** same input ⇒ same output
 - **Violation** (shared state, time-dependent logic) ⇒ wrong results
 - **Scalability:** more workers ⇒ more throughput
@@ -61,19 +60,21 @@ $$
 - Interpretation: Amdahl-style bound on parallel benefit
 - Engineering implication: remove sequential bottlenecks first
 
+![](../../diagrams/week03/week3_work_span.png)
+
 ## Repartitioning and Coordination
 - **Repartitioning cost:** network and disk I/O to group by key
 - **Skew:** one key ⇒ one worker overloaded ⇒ OOM
 - **Coordination:** fault tolerance, stragglers, partial failures
 - **Design for them**
 
-## Cost of Naïve Design (Parallelism): What Goes Wrong (1/2)
+## Cost of Naïve Design (Parallelism): What Goes Wrong
 - **Naïve:** "just add more workers"
 - **Repartitioning** and **skew** often dominate
 - More workers ⇒ more repartition traffic
 - **Cost explosion**
 
-## What Goes Wrong (2/2)
+## What Goes Wrong
 - **Naïve:** shared state or order-dependent logic
 - ⇒ **Non-determinism**, wrong results on rerun
 - **Naïve:** ignore key distribution
@@ -86,14 +87,14 @@ $$
 - "B07 C33 A12"
 - **Goal:** product frequency — (product_id, count)
 
-## Running Example — Step-by-Step (1/4)
+## Running Example — Step-by-Step
 - **Step 1: Local tokenize & count** — each record independently
 - Emit `(product_id, 1)` per product from each record
 - R1: (A12,1),(B07,1),(C33,1)
 - R2: (A12,1),(B07,1),(D44,1)
 - R3: (B07,1),(C33,1),(A12,1)
 
-## Running Example — Step-by-Step (2/4)
+## Running Example — Step-by-Step
 - **Step 2: Repartition** — framework sends same key to same worker
 - **Grouped:** A12→[1,1,1], B07→[1,1,1], C33→[1,1]
 - D44→[1]
@@ -110,12 +111,12 @@ $$
 - Group by key after repartitioning
 - Do not merge yet
 
-## In-Lecture Exercise 1: Solution (1/2)
+## In-Lecture Exercise 1: Solution
 - R1: (A12,1),(B07,1),(C33,1)
 - R2: (A12,1),(B07,1),(D44,1)
 - R3: (B07,1),(C33,1),(A12,1)
 
-## In-Lecture Exercise 1: Solution (2/2)
+## In-Lecture Exercise 1: Solution
 - A12→[1,1,1]
 - B07→[1,1,1]
 - C33→[1,1]
@@ -126,12 +127,12 @@ $$
 - Repartition groups define worker input size
 - Correct grouping is required for correct merge
 
-## Running Example — Step-by-Step (3/4)
+## Running Example — Step-by-Step
 - **Step 3: Merge** — each worker gets one key and values
 - Sum the values for the final count
 - **Output:** (A12,3), (B07,3), (C33,2), (D44,1)
 
-## Running Example — Step-by-Step (4/4)
+## Running Example — Step-by-Step
 - **Result:** product-count table; correct and deterministic
 - **Trade-off:** repartition moves data
 - Skew can overload one worker
@@ -146,9 +147,10 @@ $$
 - Divide: split input into chunks; assign to workers
 - Parallel workers: local compute (or local aggregate) on each chunk
 - Combine: repartition groups by key; workers aggregate
+
 ![](../../diagrams/week03/week3_lecture_slide13_system_overview.png)
 
-## Cost & Scaling Analysis (1/3): Time Model
+## Cost & Scaling Analysis: Time Model
 - **Work \(W\):** total operations over all workers
 - **Span \(S\):** critical path; longest dependency chain
 - **Speedup:**
@@ -158,14 +160,14 @@ $$
 with enough workers
 - Upper bound = number of workers
 
-## Cost & Scaling Analysis (2/3): Memory and Storage
+## Cost & Scaling Analysis: Memory and Storage
 - **Local compute:** each task holds one record + emitted (k,v)
 - Bounded per task
 - **Repartition:** all (k,v) written to disk/network
 - Peak ≈ size of local output
 - **Merge:** one key's values in memory; skew ⇒ OOM
 
-## Cost & Scaling Analysis (3/3): Network and Throughput
+## Cost & Scaling Analysis: Network and Throughput
 - **Repartition traffic:** ≈ size of local output
 - **Bottleneck:** link bandwidth and disk I/O
 - Often limits scale more than CPU
@@ -192,12 +194,12 @@ with enough workers
 - With 5 workers, estimate bytes per worker
 - If "A12" appears in 8 lines, how many pairs for that key?
 
-## In-Lecture Exercise 2: Solution (1/2)
+## In-Lecture Exercise 2: Solution
 - Total local output: 40 × 20 B = 800 B
 - Repartition size equals local output: 800 B
 - Even split: 800 / 5 ≈ 160 B per worker
 
-## In-Lecture Exercise 2: Solution (2/2)
+## In-Lecture Exercise 2: Solution
 - "A12" appears 8 times ⇒ 8 (k,v) pairs
 - All 8 pairs go to one worker for key "A12"
 - That worker receives 8 × 20 B = 160 B
@@ -223,13 +225,16 @@ with enough workers
 - Local compute reads records, emits (k,v)
 - Repartition groups by key
 - Merge aggregates per key
+
 ![](../../diagrams/week03/week3_lecture_slide22_execution_flow.png)
 
-## Pitfalls & Failure Modes (1/3): Shared State and Stragglers
+## Pitfalls & Failure Modes: Shared State and Stragglers
 - Task logic with global state is not deterministic
 - One slow worker (straggler) delays the whole job
 - Causes: skew, GC, network, disk
 - Mitigation: speculative execution, better partitioning
+
+![](../../diagrams/week03/week3_straggler.png)
 
 ## Pitfalls: Non-determinism
 - Reruns must yield same result
@@ -257,12 +262,12 @@ with enough workers
 - Each click is 100 B
 - Compute worker load and data size for key 888
 
-## In-Lecture Exercise 4: Solution (1/2)
+## In-Lecture Exercise 4: Solution
 - All 1B clicks for 888 go to one worker
 - Data size: 1B × 100 B = 100 GB
 - That worker becomes the straggler
 
-## In-Lecture Exercise 4: Solution (2/2)
+## In-Lecture Exercise 4: Solution
 - 100 GB exceeds typical worker memory
 - OOM or timeouts likely while others finish early
 - Job latency dominated by that one worker
@@ -284,6 +289,8 @@ with enough workers
 - Reduces repartition size
 - Only when merge is associative and commutative
 
+![](../../diagrams/week03/week3_local_aggregation.png)
+
 ## In-Lecture Exercise 3: Local Aggregation Impact
 - Product count with 40 local emits
 - After combining, emits drop to 15
@@ -291,11 +298,11 @@ with enough workers
 - Compute new repartition size
 - State why local aggregation is valid for product counts
 
-## In-Lecture Exercise 3: Solution (1/2)
+## In-Lecture Exercise 3: Solution
 - New repartition size: 15 × 20 B = 300 B
 - Reduction from 800 B to 300 B
 
-## In-Lecture Exercise 3: Solution (2/2)
+## In-Lecture Exercise 3: Solution
 - Product count sum is associative and commutative
 - Local sums equal global sum after repartition
 
@@ -332,9 +339,10 @@ with enough workers
 - Hash partitioning sends same key to same worker
 - Hot key ⇒ one worker gets huge input ⇒ OOM
 - Other workers finish quickly; job waits or fails
+
 ![](../../diagrams/week03/week3_lecture_slide38_failure_skew.png)
 
-## Pitfalls & Failure Modes (3/3): Detection and Mitigation
+## Pitfalls & Failure Modes: Detection and Mitigation
 - **Detection:** per-partition sizes and worker runtimes
 - **Local aggregation:** pre-aggregation before repartition
 - **Custom partitioning / salting:** spread hot key across workers
@@ -366,4 +374,5 @@ with enough workers
 
 ## Additional Diagrams
 ### Practice: Skew Mitigation
+
 ![](../../diagrams/week03/week3_practice_slide18_skew_mitigation.png)

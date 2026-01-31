@@ -8,8 +8,8 @@ skinparam linetype ortho
 skinparam shadowing false
 skinparam roundcorner 8
 skinparam handwritten false
-skinparam nodesep 24
-skinparam ranksep 28
+skinparam nodesep 60
+skinparam ranksep 40
 
 '-------------------------
 ' FONT & GLOBAL STYLE

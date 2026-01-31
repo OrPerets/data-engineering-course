@@ -13,11 +13,6 @@
 - Reason about cost: test runtime, storage, alert fatigue
 - Identify failure modes: silent regression, test gap, flaky test
 
-## Diagram Manifest
-- Slide 12 → week13_lecture_slide12_dataops_pipeline_overview.puml
-- Slide 22 → week13_lecture_slide22_test_execution_flow.puml
-- Slide 38 → week13_lecture_slide38_failure_silent_regression.puml
-
 ## The Real Problem This Lecture Solves
 
 ## Silent Regression
@@ -54,13 +49,13 @@ $$
 - Interpretation: statistical deviation in row count
 - Engineering implication: gate promotion on large \(z_t\)
 
-## Core Concepts (1/2)
+## Core Concepts
 - **DataOps:** CI/CD, automated tests, and monitoring for pipelines
 - **Data tests:** assertions on output (schema, rows, freshness, volume)
 - **Quality gate:** block promote or alert when tests fail
 - No silent bad data
 
-## Core Concepts (2/2)
+## Core Concepts
 - **Guarantees:** tests give confidence output meets criteria
 - **At scale:** test runtime grows; flaky tests and alert fatigue hurt
 - **Incident thinking:** detect, triage, fix; post-mortem to close gaps
@@ -75,11 +70,11 @@ $$
 - Define a quality gate in one sentence
 - Give one example assertion per test type
 
-## In-Lecture Exercise 1: Solution (1/2)
+## In-Lecture Exercise 1: Solution
 - Types: schema, row/uniqueness, freshness/volume
 - Quality gate blocks promote when tests fail
 
-## In-Lecture Exercise 1: Solution (2/2)
+## In-Lecture Exercise 1: Solution
 - Schema: column type exists
 - Row: event_id unique
 - Freshness: max(event_time) ≥ expected bound
@@ -93,6 +88,8 @@ $$
 - Monitor SLAs
 - **Goal:** catch schema drift, bad rows, duplicates, freshness issues
 
+![DataOps definition](../../diagrams/week13/week13_dataops_definition.png)
+
 ## CI/CD in Data Context
 - **CI:** on commit or schedule, run pipeline, then run data tests
 - **CD:** promote only if tests pass; idempotent deploy
@@ -105,44 +102,48 @@ $$
 - MERGE into events_clean after dedup
 - Update watermark only after successful write
 
-## In-Lecture Exercise 3: Solution (1/2)
+## In-Lecture Exercise 3: Solution
 - upper_bound = NOW() - 5 minutes
 - Extract where event_time > last_watermark AND ≤ upper_bound
 - Dedup by event_id before MERGE
 
-## In-Lecture Exercise 3: Solution (2/2)
+## In-Lecture Exercise 3: Solution
 - MERGE into events_clean on event_id
 - Update etl_control only after commit to avoid gaps
 
 ## In-Lecture Exercise 3: Takeaway
 - Watermark management is part of DataOps correctness
 
-## Data Testing Types (1/2)
+## Data Testing Types
 - **Schema tests:** column exists, type, nullable
 - Enforce contract
 - **Row tests:** uniqueness (PK), not-null, value in set, regex
 - **Referential:** FK present in dimension
 
+![Test types](../../diagrams/week13/week13_test_types.png)
+
 ## In-Lecture Exercise 2: Uniqueness Test
 - Write the assertion logic for event_id uniqueness
 - What should the test compare?
 
-## In-Lecture Exercise 2: Solution (1/2)
+## In-Lecture Exercise 2: Solution
 - Compare COUNT(*) to COUNT(DISTINCT event_id)
 - Pass if the two counts are equal
 
-## In-Lecture Exercise 2: Solution (2/2)
+## In-Lecture Exercise 2: Solution
 - Run per partition for faster CI
 - Fails when duplicates exist in events_clean
 
 ## In-Lecture Exercise 2: Takeaway
 - Row-level tests catch duplicates before promotion
 
-## Data Testing Types (2/2)
+## Data Testing Types
 - **Freshness:** max(timestamp) ≥ now − threshold
 - E.g. data no older than 24 h
 - **Volume / row count:** count between bounds or min expected
 - **Custom:** SQL assertion (e.g. revenue = sum(quantity × price))
+
+![Quality gate](../../diagrams/week13/week13_quality_gate.png)
 
 ## Quality Dimensions
 - **Accuracy:** values correct (no wrong cast, no duplicate keys)
@@ -168,6 +169,8 @@ $$
 - Analysts and models consume wrong data
 - Trust and SLA break
 
+![Silent regression vs quality gate](../../diagrams/week13/week13_silent_regression_vs_gate.png)
+
 ## Too Many Alerts
 - Every minor drift triggers alert; team mutes or ignores
 - Real incident missed
@@ -182,6 +185,7 @@ $$
 - Trigger → Extract (watermark) → Staging → Transform → Load → Target
 - After load: run data tests on target
 - Monitor: row counts, watermark lag, test results, DLQ size
+
 ![](../../diagrams/week13/week13_lecture_slide12_dataops_pipeline_overview.png)
 
 ## Running Example — Data & Goal
@@ -190,27 +194,27 @@ $$
 - **Target:** events_clean (event_id PK, user_id, event_type, event_time)
 - **Goal:** load with dedup and MERGE; run tests
 
-## Running Example — Step-by-Step (1/4)
+## Running Example — Step-by-Step
 - **Step 1: Extract** — read raw_events with watermark
 - Filter event_type IN ('click','view','purchase')
 - Cast event_timestamp → event_time (TIMESTAMP)
 - Invalid rows → DLQ
 - Output: staging rows; DLQ rows for audit
 
-## Running Example — Step-by-Step (2/4)
+## Running Example — Step-by-Step
 - **Step 2: Transform and dedup** — one row per event_id
 - ROW_NUMBER() OVER (PARTITION BY event_id ORDER BY event_time)
 - Keep WHERE rn = 1; drop rest
 - Ensures no duplicate keys in target
 
-## Running Example — Step-by-Step (3/4)
+## Running Example — Step-by-Step
 - **Step 3: Load (MERGE)** — MERGE INTO events_clean ON event_id
 - WHEN NOT MATCHED THEN INSERT
 - WHEN MATCHED AND source newer THEN UPDATE (optional)
 - Update watermark in control table only after commit
 - Idempotent: rerun same slice changes nothing
 
-## Running Example — Step-by-Step (4/4)
+## Running Example — Step-by-Step
 - **Step 4: Data tests** — run assertions on events_clean
 - Row count: e.g. count ≥ min_expected for partition
 - Uniqueness: count(*) = count(DISTINCT event_id)
@@ -223,19 +227,19 @@ $$
 - Sample or partition-level tests to bound time
 - **Cost:** test queries add I/O; run after load
 
-## Cost & Scaling Analysis (1/3)
+## Cost & Scaling Analysis
 - **Time model:** T_pipeline + T_tests
 - T_tests ≈ sum of assertion query times
 - Full-table uniqueness on 1B rows can be minutes
 - Partition-level tests faster
 
-## Cost & Scaling Analysis (2/3)
+## Cost & Scaling Analysis
 - **Memory / storage:** test results stored for audit
 - Assertion definitions (dbt tests, Great Expectations) versioned
 - DLQ and control table grow with failures
 - Retain policy needed
 
-## Cost & Scaling Analysis (3/3)
+## Cost & Scaling Analysis
 - **Network / throughput:** tests read from target
 - Avoid tests that scan full table every run
 - Use partition pruning or incremental checks
@@ -252,6 +256,7 @@ $$
 - After load: run data tests on target (or new partition only)
 - Pass: done (or promote)
 - Fail: block deploy, alert, do not advance watermark
+
 ![](../../diagrams/week13/week13_lecture_slide22_test_execution_flow.png)
 
 ## Control Table and Watermark
@@ -260,12 +265,12 @@ $$
 - If tests run after load: fail tests ⇒ do not consider "promote"
 - Rerun same slice is idempotent
 
-## Pitfalls & Failure Modes (1/3)
+## Pitfalls & Failure Modes
 - **Silent regression:** new column; no test on it; bad value reaches consumers
 - **Test gap:** tests only PK and count; wrong value slips through
 - **Flaky test:** timing causes intermittent failure; team disables
 
-## Pitfalls & Failure Modes (2/3)
+## Pitfalls & Failure Modes
 - **Alert fatigue:** too many alerts or low signal → real incidents missed
 - **Watermark skew:** watermark updated but data not visible
 - E.g. replication lag; next run skips rows
@@ -318,14 +323,15 @@ $$
 - Tests covered only PK and count; column X untested
 - **Fix:** add schema and row tests for X
 - Document "test for every critical column"
+
 ![](../../diagrams/week13/week13_lecture_slide38_failure_silent_regression.png)
 
-## Pitfalls & Failure Modes (3/3)
+## Pitfalls & Failure Modes
 - **Detection:** test results, row counts, watermark lag, DLQ size
 - **Mitigation:** close test gaps; idempotent writes; partition-level resume
 - **Incident:** fail fast, alert, block promote; post-mortem and add tests
 
-## Best Practices (1/2)
+## Best Practices
 - Version pipeline and tests together
 - Run tests on every run or at least before promote
 - Test schema, uniqueness, freshness, and critical business rules
@@ -333,7 +339,7 @@ $$
 - Avoid full-table scan every time
 - Update watermark only after successful load; use MERGE
 
-## Best Practices (2/2)
+## Best Practices
 - Route bad rows to DLQ; do not fail entire batch; monitor DLQ
 - Document expected schema, keys, and SLAs
 - Review tests when schema or sources change
@@ -357,4 +363,5 @@ $$
 
 ## Additional Diagrams
 ### Practice: Quality Gate Flow
+
 ![](../../diagrams/week13/week13_practice_slide20_quality_gate_flow.png)

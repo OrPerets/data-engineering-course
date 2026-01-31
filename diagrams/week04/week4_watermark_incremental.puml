@@ -1,0 +1,67 @@
+@startuml
+'=================================================
+' WATERMARK - Incremental load slice
+' last_watermark; next run reads only new data
+'=================================================
+
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam handwritten false
+skinparam nodesep 45
+skinparam ranksep 55
+
+skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
+skinparam defaultFontSize 16
+skinparam defaultFontColor #2C3E50
+
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2
+    FontSize 14
+    Padding 16
+}
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 1.5
+    FontSize 14
+    Padding 12
+}
+skinparam database {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+    BorderThickness 1.5
+    FontSize 14
+}
+skinparam arrow {
+    Color #607D8B
+    Thickness 2.5
+    FontSize 12
+}
+
+skinparam database<<Config>> {
+    BackgroundColor #FFF3E0
+    BorderColor #F57C00
+}
+skinparam component<<Tool>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+
+database "**Source**\n<size:12>raw_events</size>\n<size:12>append-only</size>" as SRC #E3F2FD
+
+database "**Control**\n<size:12>job_key</size>\n<size:12>last_watermark</size>\n<size:12>last_run_ts</size>" as CTRL <<Config>>
+
+component "**Extract**\n<size:12>WHERE ts > watermark</size>\n<size:12>AND ts <= upper_bound</size>" as EXTRACT <<Tool>>
+
+database "**Target**\n<size:12>events_clean</size>" as TGT #C8E6C9
+
+CTRL -down-> EXTRACT : <size:11>read watermark</size>
+SRC -right-> EXTRACT : <size:11>slice</size>
+EXTRACT -right-> TGT : <size:11>MERGE</size>
+TGT -up-> CTRL : <size:11>update after commit</size>
+
+@enduml
