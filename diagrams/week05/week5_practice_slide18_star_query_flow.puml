@@ -1,148 +1,23 @@
 @startuml
 '=================================================
-' CANONICAL DIAGRAM TEMPLATE - DATA ENGINEERING
+' STAR SCHEMA QUERY PATH AND PARTITION PRUNING
 '=================================================
+
+!include ../_template_styles.puml
 
 top to bottom direction
-skinparam linetype ortho
-skinparam shadowing false
-skinparam roundcorner 8
-skinparam handwritten false
-skinparam nodesep 60
-skinparam ranksep 40
 
-'-------------------------
-' FONT & GLOBAL STYLE
-'-------------------------
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam defaultFontColor #2C3E50
+component "**BI: Revenue by region**\n<size:10>SQL + date filter</size>" as BI <<Control>>
 
-'-------------------------
-' GENERIC BOX STYLE
-'-------------------------
-skinparam rectangle {
-    BackgroundColor #F8F9FA
-    BorderColor #90A4AE
-    BorderThickness 2
-    FontColor #263238
-    FontSize 14
-    FontStyle bold
-    Padding 20
-}
+component "**Planner**\n<size:10>Partition pruning (date_key)</size>" as PLAN <<Task>>
 
-skinparam component {
-    BackgroundColor #FFFFFF
-    BorderColor #78909C
-    BorderThickness 1.5
-    FontSize 14
-    Padding 12
-}
+database "**sales_fact**\n<size:10>Scan pruned partitions only</size>" as FACT <<Schema>>
 
-skinparam database {
-    BackgroundColor #ECEFF1
-    BorderColor #546E7A
-    BorderThickness 1.5
-    FontSize 14
-    FontColor #263238
-}
+database "**dim_customer**\n<size:10>Broadcast (small)</size>" as DIM <<Primary>>
 
-skinparam arrow {
-    Color #607D8B
-    Thickness 1.5
-    FontSize 11
-    FontColor #546E7A
-}
+component "**Join • Aggregate**\n<size:10>region, SUM(amount)</size>" as AGG <<Task>>
 
-'-------------------------
-' SEMANTIC STEREOTYPES
-'-------------------------
-skinparam component<<UI>> {
-    BorderColor #8E24AA
-    BackgroundColor #F3E5F5
-    FontColor #4A148C
-}
-
-skinparam component<<Agent>> {
-    BorderColor #0288D1
-    BackgroundColor #E1F5FE
-    FontColor #01579B
-}
-
-skinparam component<<Tool>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<Config>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<Bad>> {
-    BorderColor #C62828
-    BackgroundColor #FFEBEE
-    FontColor #B71C1C
-}
-
-skinparam component<<V1>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<V2>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam database<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam database<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam component<<success>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<failure>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-'=================================================
-
-' STAR SCHEMA QUERY PATH AND PARTITION PRUNING
-component "**BI: Revenue by region**\n<size:10>SQL + date filter</size>" as BI <<Tool>>
-
-component "**Planner**\n<size:10>Partition pruning (date_key)</size>" as PLAN <<Tool>>
-
-database "**sales_fact**\n<size:10>Scan pruned partitions only</size>" as FACT
-
-database "**dim_customer**\n<size:10>Broadcast (small)</size>" as DIM
-
-component "**Join • Aggregate**\n<size:10>region, SUM(amount)</size>" as AGG <<Tool>>
-
-database "**Result**\n<size:10>region, total_revenue</size>" as RESULT
+database "**Result**\n<size:10>region, total_revenue</size>" as RESULT <<success>>
 
 BI --> PLAN : "1"
 PLAN --> FACT : "2 Partitions only"

@@ -1,153 +1,28 @@
 @startuml
 '=================================================
-' CANONICAL DIAGRAM TEMPLATE - DATA ENGINEERING
+' DWH AND LAKE IN THE ANALYTICS PIPELINE
 '=================================================
+
+!include ../_template_styles.puml
 
 top to bottom direction
-skinparam linetype ortho
-skinparam shadowing false
-skinparam roundcorner 8
-skinparam handwritten false
-skinparam nodesep 60
-skinparam ranksep 40
 
-'-------------------------
-' FONT & GLOBAL STYLE
-'-------------------------
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam defaultFontColor #2C3E50
-
-'-------------------------
-' GENERIC BOX STYLE
-'-------------------------
-skinparam rectangle {
-    BackgroundColor #F8F9FA
-    BorderColor #90A4AE
-    BorderThickness 2
-    FontColor #263238
-    FontSize 14
-    FontStyle bold
-    Padding 20
+rectangle "SOURCES" <<Primary>> {
+    database "**DB / API**\n<size:10>Operational systems</size>" as SRC1 <<Primary>>
+    database "**Files / Logs**\n<size:10>Raw data</size>" as SRC2 <<Primary>>
 }
 
-skinparam component {
-    BackgroundColor #FFFFFF
-    BorderColor #78909C
-    BorderThickness 1.5
-    FontSize 14
-    Padding 12
+rectangle "ETL / ELT" <<Primary>> {
+    component "**Extract • Transform**\n<size:10>Load to DWH / Lake</size>" as ETL <<Task>>
 }
 
-skinparam database {
-    BackgroundColor #ECEFF1
-    BorderColor #546E7A
-    BorderThickness 1.5
-    FontSize 14
-    FontColor #263238
+rectangle "STORAGE" <<Primary>> {
+    database "**Data Warehouse**\n<size:10>Schema-on-write • Star schema</size>" as DWH <<Control>>
+    database "**Data Lake**\n<size:10>Schema-on-read • Raw + processed</size>" as LAKE <<Task>>
 }
 
-skinparam arrow {
-    Color #607D8B
-    Thickness 1.5
-    FontSize 11
-    FontColor #546E7A
-}
-
-'-------------------------
-' SEMANTIC STEREOTYPES
-'-------------------------
-skinparam component<<UI>> {
-    BorderColor #8E24AA
-    BackgroundColor #F3E5F5
-    FontColor #4A148C
-}
-
-skinparam component<<Agent>> {
-    BorderColor #0288D1
-    BackgroundColor #E1F5FE
-    FontColor #01579B
-}
-
-skinparam component<<Tool>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<Config>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<Bad>> {
-    BorderColor #C62828
-    BackgroundColor #FFEBEE
-    FontColor #B71C1C
-}
-
-skinparam component<<V1>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<V2>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam database<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam database<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam component<<success>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<failure>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-'=================================================
-
-' DWH AND LAKE IN THE ANALYTICS PIPELINE
-rectangle "SOURCES" #F8F9FA {
-    database "**DB / API**\n<size:10>Operational systems</size>" as SRC1
-    database "**Files / Logs**\n<size:10>Raw data</size>" as SRC2
-}
-
-rectangle "ETL / ELT" #F8F9FA {
-    component "**Extract • Transform**\n<size:10>Load to DWH / Lake</size>" as ETL <<Tool>>
-}
-
-rectangle "STORAGE" #F8F9FA {
-    database "**Data Warehouse**\n<size:10>Schema-on-write • Star schema</size>" as DWH
-    database "**Data Lake**\n<size:10>Schema-on-read • Raw + processed</size>" as LAKE
-}
-
-rectangle "CONSUMERS" #F8F9FA {
-    component "**BI / Analytics**\n<size:10>SQL • Reports</size>" as BI <<Agent>>
+rectangle "CONSUMERS" <<Primary>> {
+    component "**BI / Analytics**\n<size:10>SQL • Reports</size>" as BI <<Control>>
 }
 
 SRC1 --> ETL

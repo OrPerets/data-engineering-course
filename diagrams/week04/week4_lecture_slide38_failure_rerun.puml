@@ -1,157 +1,31 @@
 @startuml
 '=================================================
-' CANONICAL DIAGRAM TEMPLATE - DATA ENGINEERING
+' FAILURE: PARTIAL RUN AND IDEMPOTENT RERUN - Mixed layout for PPTX
 '=================================================
+
+!include ../_template_styles.puml
 
 top to bottom direction
-skinparam linetype ortho
-skinparam shadowing false
-skinparam roundcorner 8
-skinparam handwritten false
-skinparam nodesep 60
-skinparam ranksep 40
 
-'-------------------------
-' FONT & GLOBAL STYLE
-'-------------------------
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam defaultFontColor #2C3E50
-
-'-------------------------
-' GENERIC BOX STYLE
-'-------------------------
-skinparam rectangle {
-    BackgroundColor #F8F9FA
-    BorderColor #90A4AE
-    BorderThickness 2
-    FontColor #263238
-    FontSize 14
-    FontStyle bold
-    Padding 20
-}
-
-skinparam component {
-    BackgroundColor #FFFFFF
-    BorderColor #78909C
-    BorderThickness 1.5
-    FontSize 14
-    Padding 12
-}
-
-skinparam database {
-    BackgroundColor #ECEFF1
-    BorderColor #546E7A
-    BorderThickness 1.5
-    FontSize 14
-    FontColor #263238
-}
-
-skinparam arrow {
-    Color #607D8B
-    Thickness 1.5
-    FontSize 11
-    FontColor #546E7A
-}
-
-'-------------------------
-' SEMANTIC STEREOTYPES
-'-------------------------
-skinparam component<<UI>> {
-    BorderColor #8E24AA
-    BackgroundColor #F3E5F5
-    FontColor #4A148C
-}
-
-skinparam component<<Agent>> {
-    BorderColor #0288D1
-    BackgroundColor #E1F5FE
-    FontColor #01579B
-}
-
-skinparam component<<Tool>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<Config>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<Bad>> {
-    BorderColor #C62828
-    BackgroundColor #FFEBEE
-    FontColor #B71C1C
-}
-
-skinparam component<<V1>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<V2>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam database<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam database<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam component<<success>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<failure>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-'=================================================
-
-' FAILURE: PARTIAL RUN AND IDEMPOTENT RERUN - Mixed layout for PPTX
-
-rectangle "RUN 1" #F8F9FA {
-    component "**P1**\n<size:10>2025-12-01</size>" as P1 <<Tool>>
-    component "**P2**\n<size:10>2025-12-02</size>" as P2 <<Tool>>
-    component "**P3**\n<size:10>2025-12-03</size>" as P3 <<Bad>>
+rectangle "RUN 1" <<Primary>> {
+    component "**P1**\n<size:10>2025-12-01</size>" as P1 <<Task>>
+    component "**P2**\n<size:10>2025-12-02</size>" as P2 <<Task>>
+    component "**P3**\n<size:10>2025-12-03</size>" as P3 <<Failure>>
     P1 -[hidden]right- P2
     P2 -[hidden]right- P3
 }
 
-database "**Target**\n<size:10>P1, P2 written</size>" as TARGET
+database "**Target**\n<size:10>P1, P2 written</size>" as TARGET <<Primary>>
 
-rectangle "RUN 2 (Rerun)" #E8F5E9 {
-    component "**Skip P1, P2**\n<size:10>Committed</size>" as SKIP <<Agent>>
-    component "**Process P3**\n<size:10>Idempotent</size>" as P3B <<Tool>>
+rectangle "RUN 2 (Rerun)" <<Task>> {
+    component "**Skip P1, P2**\n<size:10>Committed</size>" as SKIP <<Control>>
+    component "**Process P3**\n<size:10>Idempotent</size>" as P3B <<Task>>
     SKIP -right-> P3B : "resume"
 }
 
 P1 -down-> TARGET : "OK"
 P2 -down-> TARGET : "OK"
-P3 -[#C62828]down-> TARGET : "fails"
+P3 -[#D32F2F]down-> TARGET : "fails"
 
 P3B -down-> TARGET : "write P3"
 
