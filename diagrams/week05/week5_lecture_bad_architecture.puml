@@ -1,150 +1,25 @@
 @startuml
 '=================================================
-' CANONICAL DIAGRAM TEMPLATE - DATA ENGINEERING
+' BAD ARCHITECTURE: NO PARTITION FILTER -> FULL SCAN
 '=================================================
+
+!include ../_template_styles.puml
 
 top to bottom direction
-skinparam linetype ortho
-skinparam shadowing false
-skinparam roundcorner 8
-skinparam handwritten false
-skinparam nodesep 60
-skinparam ranksep 40
 
-'-------------------------
-' FONT & GLOBAL STYLE
-'-------------------------
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam defaultFontColor #2C3E50
-
-'-------------------------
-' GENERIC BOX STYLE
-'-------------------------
-skinparam rectangle {
-    BackgroundColor #F8F9FA
-    BorderColor #90A4AE
-    BorderThickness 2
-    FontColor #263238
-    FontSize 14
-    FontStyle bold
-    Padding 20
-}
-
-skinparam component {
-    BackgroundColor #FFFFFF
-    BorderColor #78909C
-    BorderThickness 1.5
-    FontSize 14
-    Padding 12
-}
-
-skinparam database {
-    BackgroundColor #ECEFF1
-    BorderColor #546E7A
-    BorderThickness 1.5
-    FontSize 14
-    FontColor #263238
-}
-
-skinparam arrow {
-    Color #607D8B
-    Thickness 1.5
-    FontSize 11
-    FontColor #546E7A
-}
-
-'-------------------------
-' SEMANTIC STEREOTYPES
-'-------------------------
-skinparam component<<UI>> {
-    BorderColor #8E24AA
-    BackgroundColor #F3E5F5
-    FontColor #4A148C
-}
-
-skinparam component<<Agent>> {
-    BorderColor #0288D1
-    BackgroundColor #E1F5FE
-    FontColor #01579B
-}
-
-skinparam component<<Tool>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<Config>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<Bad>> {
-    BorderColor #C62828
-    BackgroundColor #FFEBEE
-    FontColor #B71C1C
-}
-
-skinparam component<<V1>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<V2>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam database<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam database<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam component<<success>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<failure>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-'=================================================
-
-' BAD ARCHITECTURE: NO PARTITION FILTER -> FULL SCAN
-rectangle "BAD (fails at scale)" #FFEBEE {
-    component "**BI Report**\n<size:10>Revenue by region</size>" as BI_BAD <<Bad>>
-    component "**Query**\n<size:10>No WHERE date_key</size>" as Q_BAD <<Bad>>
-    database "**Fact table**\n<size:10>1 TB, 365 partitions</size>" as FACT_BAD
+rectangle "BAD (fails at scale)" <<Failure>> {
+    component "**BI Report**\n<size:10>Revenue by region</size>" as BI_BAD <<Failure>>
+    component "**Query**\n<size:10>No WHERE date_key</size>" as Q_BAD <<Failure>>
+    database "**Fact table**\n<size:10>1 TB, 365 partitions</size>" as FACT_BAD <<Failure>>
 }
 BI_BAD --> Q_BAD
 Q_BAD --> FACT_BAD : "Full scan\nall partitions"
 
-rectangle "CORRECT" #F8F9FA {
-    component "**BI Report**\n<size:10>Revenue by region</size>" as BI_OK
-    component "**Query**\n<size:10>WHERE date_key IN (Dec 2025)</size>" as Q_OK <<Tool>>
-    component "**Pruning**\n<size:10>31 partitions only</size>" as PRUNE <<Tool>>
-    database "**sales_fact**\n<size:10>Partitioned by date_key</size>" as FACT_OK
+rectangle "CORRECT" <<Task>> {
+    component "**BI Report**\n<size:10>Revenue by region</size>" as BI_OK <<Control>>
+    component "**Query**\n<size:10>WHERE date_key IN (Dec 2025)</size>" as Q_OK <<Task>>
+    component "**Pruning**\n<size:10>31 partitions only</size>" as PRUNE <<Task>>
+    database "**sales_fact**\n<size:10>Partitioned by date_key</size>" as FACT_OK <<Primary>>
 }
 BI_OK --> Q_OK
 Q_OK --> PRUNE

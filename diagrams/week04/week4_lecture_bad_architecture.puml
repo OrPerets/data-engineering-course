@@ -1,153 +1,27 @@
 @startuml
 '=================================================
-' CANONICAL DIAGRAM TEMPLATE - DATA ENGINEERING
+' BAD ARCHITECTURE vs CORRECT - Mixed layout for PPTX
 '=================================================
+
+!include ../_template_styles.puml
 
 top to bottom direction
-skinparam linetype ortho
-skinparam shadowing false
-skinparam roundcorner 8
-skinparam handwritten false
-skinparam nodesep 60
-skinparam ranksep 40
 
-'-------------------------
-' FONT & GLOBAL STYLE
-'-------------------------
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam defaultFontColor #2C3E50
-
-'-------------------------
-' GENERIC BOX STYLE
-'-------------------------
-skinparam rectangle {
-    BackgroundColor #F8F9FA
-    BorderColor #90A4AE
-    BorderThickness 2
-    FontColor #263238
-    FontSize 14
-    FontStyle bold
-    Padding 20
-}
-
-skinparam component {
-    BackgroundColor #FFFFFF
-    BorderColor #78909C
-    BorderThickness 1.5
-    FontSize 14
-    Padding 12
-}
-
-skinparam database {
-    BackgroundColor #ECEFF1
-    BorderColor #546E7A
-    BorderThickness 1.5
-    FontSize 14
-    FontColor #263238
-}
-
-skinparam arrow {
-    Color #607D8B
-    Thickness 1.5
-    FontSize 11
-    FontColor #546E7A
-}
-
-'-------------------------
-' SEMANTIC STEREOTYPES
-'-------------------------
-skinparam component<<UI>> {
-    BorderColor #8E24AA
-    BackgroundColor #F3E5F5
-    FontColor #4A148C
-}
-
-skinparam component<<Agent>> {
-    BorderColor #0288D1
-    BackgroundColor #E1F5FE
-    FontColor #01579B
-}
-
-skinparam component<<Tool>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<Config>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<Bad>> {
-    BorderColor #C62828
-    BackgroundColor #FFEBEE
-    FontColor #B71C1C
-}
-
-skinparam component<<V1>> {
-    BorderColor #F57C00
-    BackgroundColor #FFF3E0
-    FontColor #E65100
-}
-
-skinparam component<<V2>> {
-    BorderColor #2E7D32
-    BackgroundColor #E8F5E9
-    FontColor #1B5E20
-}
-
-skinparam component<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam database<<up>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam database<<down>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-skinparam component<<success>> {
-    BackgroundColor #E8F5E9
-    BorderColor #2E7D32
-}
-
-skinparam component<<failure>> {
-    BackgroundColor #FFEBEE
-    BorderColor #C62828
-}
-
-'=================================================
-
-' BAD ARCHITECTURE vs CORRECT - Mixed layout for PPTX
-
-rectangle "BAD (fails in production)" #FFEBEE {
+rectangle "BAD (fails in production)" <<Failure>> {
     database "**Source**\n<size:10>raw_events</size>" as SRC_BAD
-    component "**INSERT**\n<size:10>No staging</size>" as INS_BAD <<Bad>>
-    database "**Target**\n<size:10>Duplicates</size>" as TGT_BAD <<down>>
+    component "**INSERT**\n<size:10>No staging</size>" as INS_BAD <<Failure>>
+    database "**Target**\n<size:10>Duplicates</size>" as TGT_BAD <<Failure>>
     SRC_BAD -right-> INS_BAD : "full"
     INS_BAD -right-> TGT_BAD : "2× rows"
 }
 
-rectangle "CORRECT" #E8F5E9 {
-    database "**Source**\n<size:10>raw_events</size>" as SRC_OK
-    component "**Extract**\n<size:10>Watermark</size>" as EXT <<Tool>>
-    database "**Staging**\n<size:10>Dedup</size>" as STG
-    component "**MERGE**\n<size:10>Idempotent</size>" as MERGE <<Agent>>
-    database "**Target**\n<size:10>clean</size>" as TGT_OK
-    database "**Control**\n<size:10>watermark</size>" as CTRL
+rectangle "CORRECT" <<Task>> {
+    database "**Source**\n<size:10>raw_events</size>" as SRC_OK <<Primary>>
+    component "**Extract**\n<size:10>Watermark</size>" as EXT <<Task>>
+    database "**Staging**\n<size:10>Dedup</size>" as STG <<Primary>>
+    component "**MERGE**\n<size:10>Idempotent</size>" as MERGE <<Control>>
+    database "**Target**\n<size:10>clean</size>" as TGT_OK <<success>>
+    database "**Control**\n<size:10>watermark</size>" as CTRL <<Schema>>
     SRC_OK -right-> EXT
     EXT -right-> STG
     STG -right-> MERGE

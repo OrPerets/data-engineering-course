@@ -4,35 +4,14 @@
 ' f(f(D)) = f(D)
 '=================================================
 
+!include ../_template_styles.puml
+
 top to bottom direction
-skinparam linetype ortho
-skinparam shadowing false
-skinparam roundcorner 8
-skinparam handwritten false
-skinparam nodesep 50
-skinparam ranksep 60
 
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam defaultFontColor #2C3E50
+rectangle "**Load job f**\n\n<size:14>Run once: D -> target</size>\n<size:14>Rerun same D: same target</size>\n\n<size:13>f(f(D)) = f(D)</size>\n<size:13>Retries do not change output</size>" as F <<Task>>
 
-skinparam rectangle {
-    BackgroundColor #F8F9FA
-    BorderColor #90A4AE
-    BorderThickness 2
-    FontSize 14
-    Padding 18
-}
-skinparam arrow {
-    Color #607D8B
-    Thickness 2.5
-    FontSize 12
-}
+rectangle "**Why it matters**\n\n<size:14>Failure requires rerun of same slice</size>\n<size:14>Without idempotency: duplicates</size>\n\n<size:13>MERGE or ON CONFLICT</size>\n<size:13>Update watermark only after commit</size>" as WHY <<Schema>>
 
-rectangle "**Load job f**\n\n<size:14>Run once: D -> target</size>\n<size:14>Rerun same D: same target</size>\n\n<size:13>f(f(D)) = f(D)</size>\n<size:13>Retries do not change output</size>" as F #E8F5E9
-
-rectangle "**Why it matters**\n\n<size:14>Failure requires rerun of same slice</size>\n<size:14>Without idempotency: duplicates</size>\n\n<size:13>MERGE or ON CONFLICT</size>\n<size:13>Update watermark only after commit</size>" as WHY #FFF9C4
-
-F -down[#388E3C,thickness=2]-> WHY : <size:12>safe rerun</size>
+F -down[#00897B,thickness=2]-> WHY : <size:12>safe rerun</size>
 
 @enduml

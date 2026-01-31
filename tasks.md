@@ -73,8 +73,8 @@ Work **week by week** to avoid mixing unrelated changes. Each sprint = “apply 
 | **1** | week01 | [x] Apply template styling to all `diagrams/week01/*.puml`; re-render week01 PNGs |
 | **2** | week02 | [x] Apply template styling to all `diagrams/week02/*.puml`; re-render week02 PNGs |
 | **3** | week03 | [x] Apply template styling to all `diagrams/week03/*.puml`; re-render week03 PNGs |
-| **4** | week04 | [ ] Apply template styling to all `diagrams/week04/*.puml`; re-render week04 PNGs |
-| **5** | week05 | [ ] Apply template styling to all `diagrams/week05/*.puml`; re-render week05 PNGs |
+| **4** | week04 | [x] Apply template styling to all `diagrams/week04/*.puml`; re-render week04 PNGs |
+| **5** | week05 | [x] Apply template styling to all `diagrams/week05/*.puml`; re-render week05 PNGs |
 | **6** | week06 | [ ] Apply template styling to all `diagrams/week06/*.puml`; re-render week06 PNGs |
 | **7** | week7  | [ ] Apply template styling to all `diagrams/week7/*.puml`; re-render week7 PNGs |
 | **8** | week8  | [ ] Apply template styling to all `diagrams/week8/*.puml`; re-render week8 PNGs |

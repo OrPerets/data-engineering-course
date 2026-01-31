@@ -4,61 +4,27 @@
 ' Sources -> ETL -> Storage (DWH / Lake) -> Consumers
 '=================================================
 
+!include ../_template_styles.puml
+
 top to bottom direction
-skinparam linetype ortho
-skinparam shadowing false
-skinparam roundcorner 8
-skinparam handwritten false
-skinparam nodesep 50
-skinparam ranksep 40
 
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam defaultFontColor #2C3E50
-
-skinparam rectangle {
-    BackgroundColor #F8F9FA
-    BorderColor #90A4AE
-    BorderThickness 2
-    FontSize 14
-    Padding 14
-}
-skinparam component {
-    BackgroundColor #FFFFFF
-    BorderColor #78909C
-    BorderThickness 1.5
-    FontSize 14
-    Padding 12
-}
-skinparam database {
-    BackgroundColor #ECEFF1
-    BorderColor #546E7A
-    BorderThickness 1.5
-    FontSize 14
-}
-skinparam arrow {
-    Color #607D8B
-    Thickness 2.5
-    FontSize 11
-}
-
-rectangle "SOURCES" #F8F9FA {
-    database "**DB / Ops**\n<size:10>Transactional</size>" as S1
-    database "**Files / Logs**\n<size:10>Raw</size>" as S2
+rectangle "SOURCES" <<Primary>> {
+    database "**DB / Ops**\n<size:10>Transactional</size>" as S1 <<Primary>>
+    database "**Files / Logs**\n<size:10>Raw</size>" as S2 <<Primary>>
     S1 -[hidden]right- S2
 }
 
-component "**ETL / ELT**\n<size:10>Extract, transform, load</size>" as ETL
+component "**ETL / ELT**\n<size:10>Extract, transform, load</size>" as ETL <<Task>>
 
-rectangle "STORAGE" #F8F9FA {
-    database "**Data Warehouse**\n<size:10>Schema-on-write, star schema</size>" as DWH #E3F2FD
-    database "**Data Lake**\n<size:10>Schema-on-read, Parquet</size>" as LAKE #F3E5F5
+rectangle "STORAGE" <<Primary>> {
+    database "**Data Warehouse**\n<size:10>Schema-on-write, star schema</size>" as DWH <<Control>>
+    database "**Data Lake**\n<size:10>Schema-on-read, Parquet</size>" as LAKE <<Task>>
     DWH -[hidden]right- LAKE
 }
 
-rectangle "CONSUMERS" #F8F9FA {
-    component "**BI / Reports**\n<size:10>Governed queries</size>" as BI
-    component "**ML / Ad-hoc**\n<size:10>Exploration</size>" as ML
+rectangle "CONSUMERS" <<Primary>> {
+    component "**BI / Reports**\n<size:10>Governed queries</size>" as BI <<Control>>
+    component "**ML / Ad-hoc**\n<size:10>Exploration</size>" as ML <<Task>>
     BI -[hidden]right- ML
 }
 

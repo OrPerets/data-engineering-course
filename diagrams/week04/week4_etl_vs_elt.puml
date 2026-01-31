@@ -4,55 +4,21 @@
 ' Transform before load vs after load
 '=================================================
 
+!include ../_template_styles.puml
+
 left to right direction
-skinparam linetype ortho
-skinparam shadowing false
-skinparam roundcorner 8
-skinparam handwritten false
-skinparam nodesep 45
-skinparam ranksep 55
 
-skinparam defaultFontName "Segoe UI, Helvetica, sans-serif"
-skinparam defaultFontSize 16
-skinparam defaultFontColor #2C3E50
+rectangle "**ETL**\n\n<size:13>Extract then Transform</size>\n<size:13>then Load</size>\n\n<size:12>Target sees clean data</size>\n<size:12>Smaller load volume</size>" as ETL <<Control>>
 
-skinparam rectangle {
-    BackgroundColor #F8F9FA
-    BorderColor #90A4AE
-    BorderThickness 2
-    FontSize 14
-    Padding 16
-}
-skinparam component {
-    BackgroundColor #FFFFFF
-    BorderColor #78909C
-    BorderThickness 1.5
-    FontSize 14
-    Padding 12
-}
-skinparam database {
-    BackgroundColor #ECEFF1
-    BorderColor #546E7A
-    BorderThickness 1.5
-    FontSize 14
-}
-skinparam arrow {
-    Color #607D8B
-    Thickness 2.5
-    FontSize 12
-}
+rectangle "**ELT**\n\n<size:13>Extract then Load</size>\n<size:13>then Transform (SQL)</size>\n\n<size:12>One copy of raw</size>\n<size:12>Transform in DWH</size>" as ELT <<Task>>
 
-rectangle "**ETL**\n\n<size:13>Extract then Transform</size>\n<size:13>then Load</size>\n\n<size:12>Target sees clean data</size>\n<size:12>Smaller load volume</size>" as ETL #E3F2FD
+database "**Source**\n<size:12>DB / files</size>" as SRC <<Primary>>
+database "**Target**\n<size:12>DWH / Lake</size>" as TGT <<success>>
 
-rectangle "**ELT**\n\n<size:13>Extract then Load</size>\n<size:13>then Transform (SQL)</size>\n\n<size:12>One copy of raw</size>\n<size:12>Transform in DWH</size>" as ELT #F3E5F5
-
-database "**Source**\n<size:12>DB / files</size>" as SRC #E3F2FD
-database "**Target**\n<size:12>DWH / Lake</size>" as TGT #C8E6C9
-
-SRC -right[#1976D2,thickness=2]-> ETL : <size:11>Extract</size>
-SRC -right[#1976D2,thickness=2]-> ELT : <size:11>Extract</size>
-ETL -right[#388E3C,thickness=2]-> TGT : <size:11>Load clean</size>
-ELT -right[#7B1FA2,thickness=2]-> TGT : <size:11>Load raw</size>
+SRC -right[#1565C0,thickness=2]-> ETL : <size:11>Extract</size>
+SRC -right[#1565C0,thickness=2]-> ELT : <size:11>Extract</size>
+ETL -right[#00897B,thickness=2]-> TGT : <size:11>Load clean</size>
+ELT -right[#00897B,thickness=2]-> TGT : <size:11>Load raw</size>
 TGT -[hidden]right- ELT
 
 @enduml
