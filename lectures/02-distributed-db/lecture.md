@@ -280,10 +280,9 @@ $$
 - **Engineering:** NULL handling affects query correctness
 
 ## Window Functions Overview: What are Window Functions?
-- Perform calculation on aggregate based on row set
-- Return multiple rows for each group
-- Each row retains its distinct identity
-- The "window" = group of rows for function
+- Perform calculations on an aggregate value based on a set of rows and return multiple rows for each group.
+- The **window** represents the group of rows on which the function operates.
+- Window functions calculate like aggregate functions but keep each row’s distinct identity.
 
 ## Window Function Syntax
 ```sql
@@ -293,27 +292,212 @@ OVER (
   [ORDER BY columns]
 )
 ```
-- **OVER:** specifies window clauses
-- **PARTITION BY:** divides rows into partitions
-- **ORDER BY:** specifies order within partition
+- **window_function_name:** the function being applied.
+- **ALL (optional):** count all values, including duplicates. (Window functions do not allow `DISTINCT`.)
+- **expression:** column used for the aggregated value.
+- **OVER:** specifies the window clause for the function.
+- **PARTITION BY:** divides rows into partitions; the window function runs per partition.
+- **ORDER BY:** ordering within the partition. When omitted, SQL Server uses the table-level `ORDER BY`.
 
-## Window Function Types: Aggregate Window Functions
-- Operate on multiple rows: SUM(), MAX(), MIN(), AVG(), COUNT()
-- Example: `SUM(Amount) OVER(PARTITION BY Country)`
-- Sum per country while keeping all rows
+## Window Function Types
+### Aggregate Window Functions
+- Operate on multiple rows: `SUM()`, `MAX()`, `MIN()`, `AVG()`, `COUNT()`, etc.
+
+### Ranking Window Functions
+- Rank each row within a partition.
+- `RANK()`, `DENSE_RANK()`, `ROW_NUMBER()`, `NTILE()`, etc.
+
+### Value Window Functions
+- Access values from other rows.
+- `LAG()`, `LEAD()`, `FIRST_VALUE()`, `LAST_VALUE()`, etc.
+
+## Example Dataset
+```sql
+CREATE TABLE Sales(
+  Employee VARCHAR(45) NOT NULL,
+  Year INT NOT NULL,
+  Country VARCHAR(45) NOT NULL,
+  Product VARCHAR(45) NOT NULL,
+  Amount DECIMAL(12,2) NOT NULL,
+  PRIMARY KEY(Employee, Year)
+);
+```
+
+## Aggregate Window Functions
+### Example – Sum
+```sql
+SELECT Employee, Year, Country, Product, Amount,
+  SUM(Amount) OVER(PARTITION BY Country) AS Total
+FROM Sales;
+```
+Result: aggregates data for each country and adds a `Total` column while preserving each row.
+
+| Employee | Year | Country | Product | Amount | Total |
+| --- | --- | --- | --- | --- | --- |
+| Or Peretz | 2017 | Israel | Computer | 15000 | 45000 |
+| Or Peretz | 2018 | Israel | Computer | 10000 | 45000 |
+| Or Peretz | 2019 | Israel | TV | 20000 | 45000 |
+| Omer Doron | 2018 | USA | TV | 20000 | 30000 |
+| Omer Doron | 2019 | USA | Mobile | 10000 | 30000 |
+
+### Example – Avg
+```sql
+SELECT Employee, Year, Country, Product, Amount,
+  AVG(Amount) OVER(PARTITION BY Country, YEAR(Year)) AS AvgSales
+FROM Sales;
+```
+Result: average sales for each country and year (multiple fields in the partition list).
+
+| Employee | Year | Country | Product | Amount | AvgSales |
+| --- | --- | --- | --- | --- | --- |
+| Or Peretz | 2017 | Israel | Computer | 15000 | 15000 |
+| Or Peretz | 2018 | Israel | Computer | 10000 | 15000 |
+| Or Peretz | 2019 | Israel | TV | 20000 | 15000 |
+| Omer Doron | 2018 | USA | TV | 20000 | 15000 |
+| Omer Doron | 2019 | USA | Mobile | 10000 | 15000 |
+
+### Example – Count
+`COUNT()` returns the number of rows in the table or group. Unlike standard aggregates, window `COUNT()` does not support `DISTINCT`.
+```sql
+SELECT Employee, Year, Country, Product, Amount,
+  COUNT(Product) OVER(PARTITION BY Country) AS TotalProduct
+FROM Sales;
+```
+
+### Example – Max
+Returns the maximum value in each group (or in the full table if no partition is defined).
+```sql
+SELECT Employee, Year, Country, Product, Amount,
+  MAX(Product) OVER(PARTITION BY Country) AS TotalProduct
+FROM Sales;
+```
 
 ## Ranking Window Functions
-- Rank each row within partition
-- **RANK():** same rank for ties; skips next (1,2,2,4)
-- **DENSE_RANK():** same rank for ties; no skip (1,2,2,3)
-- **ROW_NUMBER():** unique sequential number per partition
-- **NTILE(N):** distribute rows into N equal groups
+Ranking functions categorize values by rank.
+
+Supported in SQL Server: `RANK()`, `DENSE_RANK()`, `ROW_NUMBER()`, `NTILE()`.
+
+**Data for examples**
+
+| FirstName | LastName | City |
+| --- | --- | --- |
+| Luisa | Evans | Texas |
+| Paul | Ward | Alaska |
+| Peter | Bennett | California |
+| Carlos | Patterson | New York |
+| Rose | Huges | Florida |
+| Marielia | Simmons | Texas |
+| Antonio | Butler | New York |
+| Diego | Cox | California |
+
+### Example – Rank
+Generates a rank for each row. Ties share a rank and the next rank is skipped.
+```sql
+SELECT FirstName, LastName, City,
+  RANK() OVER (ORDER BY City) AS RankNo
+FROM table;
+```
+
+| FirstName | LastName | City | RankNo |
+| --- | --- | --- | --- |
+| Paul | Ward | Alaska | 1 |
+| Peter | Bennett | California | 2 |
+| Diego | Cox | California | 2 |
+| Rose | Huges | Florida | 4 |
+| Carlos | Patterson | New York | 5 |
+| Antonio | Butler | New York | 5 |
+| Luisa | Evans | Texas | 7 |
+| Marielia | Simmons | Texas | 7 |
+
+### Example – Dense Rank
+Same as `RANK()` but does not skip ranks.
+```sql
+SELECT FirstName, LastName, City,
+  DENSE_RANK() OVER (ORDER BY City) AS RankNo
+FROM table;
+```
+
+| FirstName | LastName | City | RankNo |
+| --- | --- | --- | --- |
+| Paul | Ward | Alaska | 1 |
+| Peter | Bennett | California | 2 |
+| Diego | Cox | California | 2 |
+| Rose | Huges | Florida | 3 |
+| Carlos | Patterson | New York | 4 |
+| Antonio | Butler | New York | 4 |
+| Luisa | Evans | Texas | 5 |
+| Marielia | Simmons | Texas | 5 |
+
+### Example – Ntile
+Distributes rows into a predefined number (N) of approximately equal groups.
+```sql
+SELECT FirstName, LastName, City,
+  NTILE(3) OVER (ORDER BY City) AS RankNo
+FROM table;
+```
+
+| FirstName | LastName | City | RankNo |
+| --- | --- | --- | --- |
+| Paul | Ward | Alaska | 1 |
+| Peter | Bennett | California | 1 |
+| Diego | Cox | California | 1 |
+| Rose | Huges | Florida | 2 |
+| Carlos | Patterson | New York | 2 |
+| Antonio | Butler | New York | 2 |
+| Luisa | Evans | Texas | 3 |
+| Marielia | Simmons | Texas | 3 |
 
 ## Value Window Functions
-- Access values from other rows
-- **LAG(column, N):** value from N rows before current
-- **LEAD(column, N):** value from N rows after current
-- **FIRST_VALUE/LAST_VALUE:** first/last in the window
+`LEAD()` and `LAG()` return succeeding or preceding values within a partition.
+
+### Example – Lead
+```sql
+SELECT Year, Product, Country, Amount,
+  LEAD(Amount, 1) OVER (PARTITION BY Year ORDER BY Country) AS NextAmount
+FROM Sales;
+```
+Result: returns the amount and next amount detail per employee by year, ordered by country.
+
+| Year | Product | Country | Amount | NextAmount |
+| --- | --- | --- | --- | --- |
+| 2017 | Computer | Canada | 15000 | 10000 |
+| 2017 | Laptop | Israel | 10000 | 20000 |
+| 2017 | TV | Israel | 20000 | NULL |
+| 2018 | TV | Canada | 20000 | 10000 |
+| 2018 | Mobile | USA | 10000 | NULL |
+
+### Example – Lag
+```sql
+SELECT Year, Product, Country, Amount,
+  LAG(Amount, 1) OVER (PARTITION BY Year ORDER BY Country) AS PrevAmount
+FROM Sales;
+```
+Result: returns the amount and previous amount detail per employee by year, ordered by country.
+
+| Year | Product | Country | Amount | NextAmount |
+| --- | --- | --- | --- | --- |
+| 2017 | Computer | Canada | 15000 | NULL |
+| 2017 | Laptop | Israel | 10000 | 15000 |
+| 2017 | TV | Israel | 20000 | 10000 |
+| 2018 | TV | Canada | 20000 | NULL |
+| 2018 | Mobile | USA | 10000 | 20000 |
+
+### First and Last Values
+Used to find the first and last records in the table or a partition (requires `ORDER BY`).
+```sql
+SELECT Year, Product, Country, Amount,
+  FIRST_VALUE(Amount) OVER(PARTITION BY Country ORDER BY Country) AS FirstAmount,
+  LAST_VALUE(Amount) OVER(PARTITION BY Country ORDER BY Country) AS LastAmount
+FROM Sales;
+```
+
+| Year | Product | Country | Amount | FirstAmount | LastAmount |
+| --- | --- | --- | --- | --- | --- |
+| 2017 | Computer | Canada | 15000 | 15000 | 10000 |
+| 2018 | Laptop | Canada | 10000 | 15000 | 10000 |
+| 2017 | TV | Israel | 10000 | 10000 | 20000 |
+| 2018 | TV | Israel | 15000 | 10000 | 20000 |
+| 2019 | Mobile | Israel | 20000 | 10000 | 20000 |
 
 ## Window Functions in Distributed Systems
 - **Local execution:** window on partition key executes per node
