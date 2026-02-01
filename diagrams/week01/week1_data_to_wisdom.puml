@@ -11,8 +11,9 @@ card "**INFORMATION**\n<size:15>Context</size>\n\n<size:14>Structured data</size
 
 card "**DATA**\n<size:15>Raw Facts</size>\n\n<size:14>Observations &</size>\n<size:14>measurements</size>" as D <<Schema>>
 
-D -[#00897B,thickness=2]-> I : <color:#3949AB>**Process**</color>
-I -[#00897B,thickness=2]-> K : <color:#3949AB>**Analyze**</color>
-K -[#00897B,thickness=2]-> W : <color:#3949AB>**Apply**</color>
+' Pyramid: Data (base) → Wisdom (apex); arrows show transformation direction
+D -up[#00897B,thickness=2]-> I : <color:#3949AB>**Process**</color>
+I -up[#00897B,thickness=2]-> K : <color:#3949AB>**Analyze**</color>
+K -up[#00897B,thickness=2]-> W : <color:#3949AB>**Apply**</color>
 
 @enduml

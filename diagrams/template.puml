@@ -17,7 +17,7 @@ skinparam ranksep 50
 skinparam defaultFontName "Segoe UI, Arial, sans-serif"
 skinparam defaultFontSize 18
 skinparam defaultFontColor #1A237E
-skinparam backgroundColor #FAFBFC
+skinparam backgroundColor transparent
 
 '-------------------------
 ' ENHANCED BOX STYLES - Deep Blue Theme
