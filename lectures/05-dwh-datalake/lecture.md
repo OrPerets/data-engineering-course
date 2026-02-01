@@ -1,17 +1,19 @@
-# Week 5: Data Warehousing and Data Lakes
+# Week 5: DWH + ETL (Part 2)
 
 ## Purpose
-- DWH and Data Lake are primary stores for analytics and BI
-- Schema-on-read vs schema-on-write drives cost and flexibility
-- Partitioning and pruning determine query cost at scale
+- Model analytics data for BI and OLAP at scale
+- Partitioning and pruning determine query cost
+- Lake vs DWH architectural choices shape governance
+- ETL quality and reruns must preserve fact correctness
 
 ## Learning Objectives
-- Define Data Warehouse (DWH) vs Data Lake
-- Explain schema-on-read vs schema-on-write trade-offs
 - Model analytical data with star schema (fact + dimensions)
+- Explain measures, dimensions, and dimensional hierarchies
+- Compare star, snowflake, and galaxy schemas
 - Apply partitioning and partition pruning
 - Reason about join size and query cost in OLAP
-- Connect DWH/Lake to ETL output and BI consumers
+- Decide Lake-first vs DWH-first architectures
+- Connect DWH/Lake design to ETL reliability and BI
 
 ## The Real Problem This Lecture Solves
 
@@ -37,92 +39,6 @@
 - **Domain:** e-commerce sales analytics
 - Revenue by region, by category, by time
 - **Sources:** operational DB and/or ETL output from Week 4
-
-## Partition Pruning Cost Model
-- Fact table size \(|F|\), partition selectivity \(s\) (fraction scanned)
-$$
-\text{ScanCost} = s \cdot |F|
-$$
-- Interpretation: pruning reduces I/O linearly with \(s\)
-- Engineering implication: choose partition keys aligned with filters
-- Star join with dimension sizes \(|D_i|\)
-$$
-\text{JoinWork} = O(|F| + \sum_i |D_i|)
-$$
-- Interpretation: fact table dominates join cost
-- Engineering implication: keep dimensions small; broadcast when possible
-
-## Architecture
-- **Raw:** Lake raw zone or DWH staging; schema-on-read
-- **Curated:** DWH star schema: sales_fact + dimensions
-- sales_fact partitioned by date_key
-- **Consumers:** BI tools (Tableau, Looker); analysts
-
-## Core Concepts
-- **Data Warehouse (DWH):** centralized store for analytical data
-- Schema-on-write; optimized for SQL/OLAP
-- **Data Lake:** store for raw and processed data
-- Often schema-on-read; files (Parquet, ORC)
-- **OLAP:** aggregations, joins, reporting over large datasets
-
-![](../../diagrams/week05/week5_dwh_vs_lake.png)
-
-## Core Concepts
-- **Star schema:** one fact table + dimension tables
-- Denormalized for query speed
-- **Partitioning:** data split by key (e.g. date)
-- **Partition pruning:** skips irrelevant partitions
-- **DWH:** typically ACID; **Lake:** often eventual consistency
-
-![](../../diagrams/week05/week5_star_schema.png)
-
-## Data Context: Star Schema (Sales)
-- sales_fact: 1 TB/year, partitioned by date_key
-- dim_customer: ~10K rows; region attribute
-- dim_product: ~1K rows; category attribute
-- dim_date: date_key, month, year
-
-## Data Warehouse Definition (Formal)
-
-## Bill Inmon's Definition
-- "A data warehouse is subject-oriented, integrated, time-variant, and nonvolatile"
-- Collection of data supporting decision-making
-
-## Key Characteristics
-- **Subject Oriented:** organized around major subjects
-- Customer, product, sales
-- Focusing on modeling and analysis for decision makers
-
-![](../../diagrams/week05/week5_inmon_characteristics.png)
-
-## Key Characteristics
-- **Integrated:** multiple heterogeneous data sources
-- Consistent naming conventions and encoding
-- **Time Variant:** provides historical perspective (5-10 years)
-- **Non-Volatile:** physically separate; operational updates don't occur
-
-## Why Separate Data Warehouse?
-- **Missing data:** DS requires historical data
-- Operational DBs don't typically maintain history
-- **Data consolidation:** DS requires aggregation and summarization
-- **Data quality:** different sources use inconsistent representations
-- **Performance:** analytical queries shouldn't impact operations
-
-## DWH Back-End Tools and Utilities
-
-## Data Processing Steps
-- **Data extraction:** get data from multiple external sources
-- **Data cleaning:** detect errors and rectify when possible
-- **Data transformation:** convert from legacy to warehouse format
-- **Load:** sort, summarize, consolidate, compute views
-- **Refresh:** propagate updates from sources to warehouse
-
-## DWH Process Architectures
-- **Centralized:** single centralized storage and processing
-- Huge structure (memory, processor, storage)
-- **Distributed:** information across data centers
-- Processing localized; results grouped centrally
-- **Trade-off:** centralized simpler; distributed better for scale
 
 ## Multidimensional Modeling
 
@@ -198,49 +114,6 @@ Sales Fact Table:           time Dimension:
 
 ![](../../diagrams/week05/week5_star_vs_snowflake.png)
 
-## Architectural Fork: Lake First vs DWH First
-
-## Option A — Lake First
-- Ingest raw to Lake; process in Lake (Spark)
-- Sync curated tables to DWH or query Lake with SQL engine
-- **Pros:** raw preserved; flexibility for ML; storage cheap
-- **Cons:** two places to govern; small-file issues in Lake
-
-## Option B — DWH First
-- Ingest (or ETL) directly into DWH; star schema in DWH
-- BI only on DWH
-- **Pros:** one place for BI; strong consistency
-- **Cons:** raw may be limited; less flexibility for ML
-- **Decision:** Lake for raw + ML; DWH for governed reporting
-
-## Schema-on-Read vs Schema-on-Write
-
-## Schema-on-Write (DWH Default)
-- Data validated and typed on load
-- Bad row fails load
-- **Pros:** predictable types; simple queries
-- **Cons:** one bad row fails batch; schema change = migration
-
-## Schema-on-Read (Lake Default)
-- Load raw (Parquet/JSON); apply schema when querying
-- **Pros:** flexibility; schema evolution without reload
-- **Cons:** consumers handle types; consistency is eventual
-- **Decision:** schema-on-write for curated; schema-on-read at landing
-
-## DWH vs Data Lake
-- **DWH:** structured; schema enforced on load
-- SQL engines (Snowflake, BigQuery, Redshift)
-- Best for curated reporting
-- **Lake:** raw + processed; schema applied at read
-- File-based (S3, HDFS); best for flexibility and cost
-
-## DWH vs Data Lake
-- **Cost model:** DWH compute + storage often coupled
-- Lake: storage cheap, compute on demand
-- **Hybrid:** Lakehouse (Delta, Iceberg) combines both
-- **What breaks:** DWH = large single table scans
-- Lake = small-file problem; both: skew and hot partitions
-
 ## Star Schema and OLAP (This System)
 
 ## Fact Table
@@ -253,6 +126,12 @@ Sales Fact Table:           time Dimension:
 - `dim_product(product_key, name, category)`
 - `dim_date(date_key, date, month, year)`
 - **Benefit:** simple joins; predictable query patterns
+
+## Data Context: Star Schema (Sales)
+- sales_fact: 1 TB/year, partitioned by date_key
+- dim_customer: ~10K rows; region attribute
+- dim_product: ~1K rows; category attribute
+- dim_date: date_key, month, year
 
 ## Partitioning and Pruning
 
@@ -267,6 +146,20 @@ Sales Fact Table:           time Dimension:
 - Scan size ≈ (selected partitions / total) × table size
 - Pruning reduces I/O significantly
 - Engineering: require partition filter in WHERE
+
+## Partition Pruning Cost Model
+- Fact table size \(|F|\), partition selectivity \(s\) (fraction scanned)
+$$
+\text{ScanCost} = s \cdot |F|
+$$
+- Interpretation: pruning reduces I/O linearly with \(s\)
+- Engineering implication: choose partition keys aligned with filters
+- Star join with dimension sizes \(|D_i|\)
+$$
+\text{JoinWork} = O(|F| + \sum_i |D_i|)
+$$
+- Interpretation: fact table dominates join cost
+- Engineering implication: keep dimensions small; broadcast when possible
 
 ## DWH and Lake: Pipeline Overview
 - Sources (DB, logs) → ETL/ELT → DWH (star) and/or Lake (raw + processed)
@@ -292,7 +185,7 @@ Sales Fact Table:           time Dimension:
 
 ## Naïve Choices
 - **Naïve:** one big table; no partition key
-- "We'll add filters in the query"
+- \"We'll add filters in the query\"
 - **Cost:** full scan at 1 TB ⇒ 15+ min or timeout
 
 ## Real Cost
@@ -312,6 +205,33 @@ Sales Fact Table:           time Dimension:
 - Pruned scan; predictable cost; governance
 
 ![](../../diagrams/week05/week5_lecture_evolution_v1_v2.png)
+
+## Architectural Fork: Lake First vs DWH First
+
+## Option A — Lake First
+- Ingest raw to Lake; process in Lake (Spark)
+- Sync curated tables to DWH or query Lake with SQL engine
+- **Pros:** raw preserved; flexibility for ML; storage cheap
+- **Cons:** two places to govern; small-file issues in Lake
+
+## Option B — DWH First
+- Ingest (or ETL) directly into DWH; star schema in DWH
+- BI only on DWH
+- **Pros:** one place for BI; strong consistency
+- **Cons:** raw may be limited; less flexibility for ML
+- **Decision:** Lake for raw + ML; DWH for governed reporting
+
+## DWH vs Data Lake
+- **DWH:** structured; schema enforced on load
+- SQL engines (Snowflake, BigQuery, Redshift)
+- Best for curated reporting
+- **Lake:** raw + processed; schema applied at read
+- File-based (S3, HDFS); best for flexibility and cost
+- **Cost model:** DWH compute + storage often coupled
+- Lake: storage cheap, compute on demand
+- **Hybrid:** Lakehouse (Delta, Iceberg) combines both
+- **What breaks:** DWH = large single table scans
+- Lake = small-file problem; both: skew and hot partitions
 
 ## Running Example — Data & Goal
 - **Domain:** e-commerce sales analytics
@@ -503,8 +423,6 @@ $$
 - Query with date filter → few partitions → low latency
 - Query without date filter → all partitions → high latency
 
-![](../../diagrams/week05/week5_lecture_slide38_failure_partition.png)
-
 ## Pitfalls & Failure Modes
 - **Detection:** scan size, partition count, join spill
 - **Mitigation:** enforce partition filters; coalesce files
@@ -517,8 +435,6 @@ $$
 - Needed to achieve one or more objectives
 - Consolidated on a single screen
 - Can be monitored at a glance
-
-## What is a Dashboard?
 - **Big Book of Dashboards (2017):** visual display of data
 - Used to monitor conditions and/or facilitate understanding
 - **Key insight:** dashboards are primary DWH consumers
@@ -570,8 +486,6 @@ $$
 - Keep dimensions small or partitioned
 - In Lake: store in columnar format (Parquet/ORC)
 - Coalesce small files; schema evolution with care
-
-## Best Practices
 - Document partition key and expected query patterns
 - Monitor query cost (bytes read, partitions read)
 - Alert on full scans

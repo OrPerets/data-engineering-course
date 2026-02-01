@@ -1,16 +1,19 @@
-# Week 4: Data Ingestion and ETL Pipelines
+# Week 4: DWH + ETL (Part 1)
 
 ## Purpose
+- DWH and Data Lake are primary stores for analytics and BI
 - Ingestion is the first mile of data: source → storage
 - ETL/ELT pipelines are the backbone of analytics and DWH
 - Failures and reruns must not corrupt or duplicate data
 
 ## Learning Objectives
+- Define Data Warehouse (DWH) vs Data Lake and schema-on-read vs schema-on-write
 - Define ETL vs ELT and when to use each
 - Classify ingestion: batch vs incremental; full vs delta
 - Apply idempotency and watermark for safe reruns
 - Design staging, dedup, and MERGE for incremental load
 - Handle failure: partition-based resume, DLQ, no duplicates
+- Connect ETL output to DWH/Lake and BI consumers
 - Reason about cost: I/O, network, latency vs consistency
 
 ## The Real Problem This Lecture Solves: Revenue Duplication Incident
@@ -31,12 +34,71 @@
 - **Data source:** raw_events (DB or log export)
 - Partitioned by date; ~100M rows/day
 
-## Pipeline Design
-- **Extract:** with watermark; upper_bound = NOW() - 5 min
-- **Staging:** one batch per run; schema-on-read; dedup by event_id
-- Invalid rows → DLQ
-- **Transform:** filter event_type; cast to proper types
-- **Load:** MERGE into events_clean; key = event_id
+## Core Concepts
+- **Data Warehouse (DWH):** centralized store for analytical data
+- Schema-on-write; optimized for SQL/OLAP
+- **Data Lake:** store for raw and processed data
+- Often schema-on-read; files (Parquet, ORC)
+- **OLAP:** aggregations, joins, reporting over large datasets
+
+![](../../diagrams/week05/week5_dwh_vs_lake.png)
+
+## Core Concepts
+- **Star schema:** one fact table + dimension tables
+- Denormalized for query speed
+- **Partitioning:** data split by key (e.g. date)
+- **Partition pruning:** skips irrelevant partitions
+- **DWH:** typically ACID; **Lake:** often eventual consistency
+
+![](../../diagrams/week05/week5_star_schema.png)
+
+## Architecture
+- **Raw:** Lake raw zone or DWH staging; schema-on-read
+- **Curated:** DWH fact + dimensions (star schema)
+- sales_fact partitioned by date_key
+- **Consumers:** BI tools (Tableau, Looker); analysts
+
+## Data Warehouse Definition (Formal)
+
+## Bill Inmon's Definition
+- "A data warehouse is subject-oriented, integrated, time-variant, and nonvolatile"
+- Collection of data supporting decision-making
+
+## Key Characteristics
+- **Subject Oriented:** organized around major subjects
+- Customer, product, sales
+- Focusing on modeling and analysis for decision makers
+
+![](../../diagrams/week05/week5_inmon_characteristics.png)
+
+## Key Characteristics
+- **Integrated:** multiple heterogeneous data sources
+- Consistent naming conventions and encoding
+- **Time Variant:** provides historical perspective (5-10 years)
+- **Non-Volatile:** physically separate; operational updates don't occur
+
+## Why Separate Data Warehouse?
+- **Missing data:** DS requires historical data
+- Operational DBs don't typically maintain history
+- **Data consolidation:** DS requires aggregation and summarization
+- **Data quality:** different sources use inconsistent representations
+- **Performance:** analytical queries shouldn't impact operations
+
+## DWH Back-End Tools and Utilities
+
+## Data Processing Steps
+- **Data extraction:** get data from multiple external sources
+- **Data cleaning:** detect errors and rectify when possible
+- **Data transformation:** convert from legacy to warehouse format
+- **Load:** sort, summarize, consolidate, compute views
+- **Refresh:** propagate updates from sources to warehouse
+
+## DWH Process Architectures
+- **Centralized:** single centralized storage and processing
+- Huge structure (memory, processor, storage)
+- **Distributed:** information across data centers
+- Processing localized; results grouped centrally
+- **Trade-off:** centralized simpler; distributed better for scale
 
 ## Core Concepts
 - **ETL:** Extract → Transform → Load
@@ -53,6 +115,13 @@
 - **CDC:** change data capture; apply from source log
 
 ![](../../diagrams/week04/week4_idempotency.png)
+
+## Pipeline Design
+- **Extract:** with watermark; upper_bound = NOW() - 5 min
+- **Staging:** one batch per run; schema-on-read; dedup by event_id
+- Invalid rows → DLQ
+- **Transform:** filter event_type; cast to proper types
+- **Load:** MERGE into events_clean; key = event_id
 
 ## Formal Pipeline Stages
 - Raw dataset \(D_{raw}\) becomes cleaned \(D_{clean}\), then modeled \(D_{modeled}\)
@@ -207,15 +276,17 @@ $$
 - Goal: dedup in staging, then MERGE into sales
 
 ## Architectural Fork: Schema-on-Read vs Write — Option A (Schema-on-Write)
-- Validate and type on load; bad row fails load
-- **Pros:** target is always typed; simpler queries
-- **Cons:** one bad row fails whole batch
+- Data validated and typed on load
+- Bad row fails load
+- **Pros:** predictable types; simple queries
+- **Cons:** one bad row fails batch; schema change = migration
 
 ## Option B — Schema-on-Read
 - Load raw (VARCHAR/JSON); apply schema at query
-- **Pros:** bad rows can go to DLQ; pipeline doesn't crash
-- **Cons:** consumers must handle types
+- **Pros:** flexibility; schema evolution without reload
+- **Cons:** consumers handle types; consistency is eventual
 - **Decision:** schema-on-read at staging; schema-on-write at target
+- **Defaults:** DWH is schema-on-write; Lake is schema-on-read
 
 ## Running Example — Data & Goal
 - **Source:** raw_events (event_id, user_id, event_type, event_timestamp)
@@ -382,11 +453,6 @@ $$
 - Validate in transform; valid → target; invalid → DLQ
 - Pipeline stays green; fix schema from DLQ analysis
 
-## Pitfalls & Failure Modes
-- **Non-idempotent load:** INSERT without dedup ⇒ duplicates
-- **No watermark:** full scan every run ⇒ slow and risky
-- **Overwrite instead of merge:** reprocessing overwrites good data
-
 ## Pitfalls: Partial Failure and Resume
 - Job processes P1, P2, P3; fails after P2
 - Rerun from start: without idempotent write, P1 and P2 duplicated
@@ -405,11 +471,6 @@ $$
 - Pipeline does not crash; bad rows auditable
 
 ![](../../diagrams/week04/week4_dlq_flow.png)
-
-## Pitfalls & Failure Modes
-- **Summary:** partial run, duplicate source, bad data
-- All need design for rerun and validation
-- Next: diagram of partial failure and idempotent rerun
 
 ## Pitfalls: Non-idempotent Write
 - INSERT without key check: rerun inserts same rows
@@ -477,6 +538,9 @@ $$
 - Control table: mark 12-01 and 12-02 completed
 
 ## Pitfalls & Failure Modes
+- **Non-idempotent load:** INSERT without dedup ⇒ duplicates
+- **No watermark:** full scan every run ⇒ slow and risky
+- **Overwrite instead of merge:** reprocessing overwrites good data
 - **Detection:** row counts, watermark lag, DLQ size
 - **Mitigation:** idempotent writes; watermark + buffer
 - **CDC for deletes:** use log-based CDC if deletes matter
@@ -487,8 +551,6 @@ $$
 - Watermark incremental loads; update only after commit
 - Partition target by date for pruning and safe rerun
 - Route bad rows to DLQ; do not fail entire batch
-
-## Best Practices
 - Use transactions so partial write does not leave half-state
 - Document schema, keys, and expected volumes
 - Monitor load duration, row counts, watermark lag
