@@ -44,44 +44,54 @@ $$
 
 ![](../../diagrams/week01/week1_bi_context.png)
 
-## What is Business Intelligence?- **Definition:** methodologies and technologies transforming raw data
+## What is Business Intelligence?
+- **Definition:** methodologies and technologies transforming raw data
 - Converts raw data into significant business information
 - Enables decision-making, not replaces it
 - Use technology as a tool for business purpose
 
-## What is Business Intelligence?- **Benefits:** handle large amounts of data efficiently
+## What is Business Intelligence?
+- **Benefits:** handle large amounts of data efficiently
 - Identify and evolve new opportunities
 - Provide comparable market benefit and long-term stability
 - Enable data-driven decision making
 
 ## Data to Wisdom Pyramid
-
-![](../../diagrams/week01/week1_data_to_wisdom.png)
 - **Data:** raw facts describing event characteristics
 - Example: 51, 77, 58, 82, 64, 70
 - **Information:** data converted into meaningful insights
 - Example: "Test scores; average is 67"
 
-## Data to Wisdom Pyramid- **Knowledge:** skills and experience coupled with information
+## Data to Wisdom Pyramid
+
+![](../../diagrams/week01/week1_data_to_wisdom.png)
+
+
+## Data to Wisdom Pyramid
+- **Knowledge:** skills and experience coupled with information
 - Creates intellectual resources from information
 - **Wisdom:** applied knowledge — knowing what to do
 - Example: "I better stop the car!" at red light
 - **DE builds:** pipeline from raw data to information
 
-## Data Mining in Data Engineering- **Definition:** computational process discovering patterns in data
+## Data Mining in Data Engineering
+- **Definition:** computational process discovering patterns in data
 - Uses AI, ML, statistics, and database systems
 - Operates on large data sets
 
-## Data Mining in Data Engineering- **Tasks:** classification, estimation, prediction
+## Data Mining in Data Engineering
+- **Tasks:** classification, estimation, prediction
 - **Tasks:** affinity grouping, description (finding patterns)
 - **Techniques:** market basket, clustering, PCA, decision trees
 - **Role in DE:** provides clean data that mining consumes
 
-## Knowledge Discovery in Databases- **Definition:** automatic extraction of hidden knowledge
+## Knowledge Discovery in Databases
+- **Definition:** automatic extraction of hidden knowledge
 - Extracts non-obvious patterns from large data volumes
 - **Process:** Cleaning → Integration → Selection → Mining → Evaluation
 
-## Knowledge Discovery in Databases- **Intersecting fields:** databases, statistics, machine learning
+## Knowledge Discovery in Databases
+- **Intersecting fields:** databases, statistics, machine learning
 - Databases store and provide access
 - Statistics infer information from samples
 - ML provides algorithms that improve through experience
@@ -212,12 +222,14 @@ $$
 - **Failure in one step must not leave partial state**
 - **Constraint:** design so reruns produce same result (idempotency)
 
-## ETL vs ELT- **ETL:** Extract → Transform → Load
+## ETL vs ELT
+**ETL:** Extract → Transform → Load
 - Transform before load; smaller storage, faster queries
 - **ELT:** Extract → Load → Transform
 - Load raw first; preserve raw data, flexible analytics later
 
-## ETL vs ELT- **ETL cost:** compute up front + less storage
+## ETL vs ELT
+**ETL cost:** compute up front + less storage
 - **ELT cost:** more storage + compute on demand
 - ETL: good when schema and consumers are stable
 - ELT: good when requirements change
@@ -241,16 +253,19 @@ $$
 - **Flexible**, risk of garbage-in
 - **Trade-off:** strict schema vs agility
 
-## Core Concepts- **One clear choice per pipeline:** ETL or ELT
+## Core Concepts
+- **One clear choice per pipeline:** ETL or ELT
 - Choose batch or stream; schema-on-write or -read
 - Mixing without boundaries leads to cost overruns
 - Results in unmaintainable pipelines
 
-## Cost of Naïve Design — What Goes Wrong Without Discipline- **Naïve:** "one script, one DB, run nightly"
+## Cost of Naïve Design
+- What Goes Wrong Without Discipline- **Naïve:** "one script, one DB, run nightly"
 - Works until volume doubles; then 20-hour runs
 - Timeouts, no observability
 
-## What Goes Wrong Without Discipline- **Naïve:** no raw layer — cannot reprocess on schema change
+## What Goes Wrong Without Discipline
+- **Naïve:** no raw layer — cannot reprocess on schema change
 - **Cost:** full re-ingestion or lost history
 - **Naïve:** no idempotency — rerun doubles counts
 - **Takeaway:** constraints force pipeline design
