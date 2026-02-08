@@ -1,0 +1,22 @@
+@startuml
+!include ../_template_styles.puml
+!include _week2_visual_style.puml
+
+top to bottom direction
+skinparam nodesep 75
+skinparam ranksep 70
+
+rectangle "Network\nPartition" as NET <<risk>>
+
+rectangle "Replica A\nwrite X" as A <<shardA>>
+rectangle "Replica B\nwrite Y" as B <<shardC>>
+
+rectangle "CP\nBlock one side" as CP <<decision>>
+rectangle "AP\nAccept + Merge" as AP <<process>>
+
+NET -down-> A
+NET -down-> B
+A -down-> CP
+B -down-> AP
+
+@enduml

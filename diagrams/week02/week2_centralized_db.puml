@@ -1,0 +1,27 @@
+@startuml
+!include ../_template_styles.puml
+!include _week2_visual_style.puml
+
+top to bottom direction
+skinparam nodesep 75
+skinparam ranksep 70
+
+database "Central\nDatabase" as DB <<store>>
+
+database "Web" as U1 <<shardA>>
+database "Mobile" as U2 <<shardA>>
+database "Batch" as U3 <<shardA>>
+
+rectangle "Bottleneck" as R1 <<risk>>
+rectangle "Single\nFailure" as R2 <<risk>>
+rectangle "Scale Up" as R3 <<decision>>
+
+U1 -down-> DB
+U2 -down-> DB
+U3 -down-> DB
+
+DB -down-> R1
+DB -down-> R2
+DB -down-> R3
+
+@enduml

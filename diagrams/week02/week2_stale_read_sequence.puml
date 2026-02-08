@@ -1,0 +1,27 @@
+@startuml
+!include ../_template_styles.puml
+
+autonumber
+actor User
+participant API
+database Leader
+database Replica
+
+User -> API : Update profile photo to v2
+API -> Leader : Write v2
+Leader --> API : ACK
+API --> User : 200 OK
+
+... t + 1 second ...
+
+User -> API : Read profile photo
+API -> Replica : Read latest value
+Replica --> API : returns v1 (replication lag)
+API --> User : stale response
+
+User -> API : Retry with strong consistency
+API -> Leader : Read from leader
+Leader --> API : returns v2
+API --> User : fresh response
+
+@enduml

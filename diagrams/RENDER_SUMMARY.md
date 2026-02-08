@@ -1,38 +1,45 @@
 # PlantUML Diagrams Render Summary
 
-Generated on: Sun Feb  1 19:50:18 IST 2026
+Generated on: Sun Feb  8 18:38:21 IST 2026
 
 ## Summary
-- Total diagrams processed: 13
-- Successfully rendered: 13
+- Total diagrams processed: 17
+- Successfully rendered: 17
 - Failed: 0
 
 ## Generated Files
-- diagrams/week01/week1_lecture_slide12_lifecycle.png
-- diagrams/week01/week1_lecture_slide20_ingestion.png
-- diagrams/week01/week1_lecture_slide35_failure.png
-- diagrams/week01/week1_core_concepts_2.png
-- diagrams/week01/week1_lifecycle_phases.png
-- diagrams/week01/week1_bi_context.png
-- diagrams/week01/week1_data_pipeline.png
-- diagrams/week01/week1_why_de_exists.png
-- diagrams/week01/week1_what_is_de.png
-- diagrams/week01/week1_practice_slide15_architecture.png
-- diagrams/week01/week1_de_vs_ds.png
-- diagrams/week01/week1_de_vs_analytics.png
-- diagrams/week01/week1_data_to_wisdom.png
+- diagrams/week02/week2_stale_read_sequence.png
+- diagrams/week02/week2_partitioning_key_good_bad.png
+- diagrams/week02/week2_hybrid_architecture.png
+- diagrams/week02/week2_replication_read_write.png
+- diagrams/week02/week2_distributed_db.png
+- diagrams/week02/week2_single_node_limits.png
+- diagrams/week02/week2_sql_vs_nosql.png
+- diagrams/week02/week2_partition_formula_visual.png
+- diagrams/week02/week2_acid_base_cap_comparison.png
+- diagrams/week02/week2_centralized_db.png
+- diagrams/week02/week2_failure_scenarios.png
+- diagrams/week02/week2_user_view_logical.png
+- diagrams/week02/week2_hybrid_deployment_nodes.png
+- diagrams/week02/week2_2pc_blocking.png
+- diagrams/week02/week2_partition_replication_model.png
+- diagrams/week02/week2_cap_partition.png
 
 ## Source Files
-- diagrams/week01/week1_data_pipeline.puml
-- diagrams/week01/week1_de_vs_ds.puml
-- diagrams/week01/week1_practice_slide15_architecture.puml
-- diagrams/week01/week1_data_to_wisdom.puml
-- diagrams/week01/week1_why_de_exists.puml
-- diagrams/week01/week1_lifecycle_phases.puml
-- diagrams/week01/week1_what_is_de.puml
-- diagrams/week01/week1_lecture_slide35_failure.puml
-- diagrams/week01/week1_core_concepts_2.puml
-- diagrams/week01/week1_lecture_slide20_ingestion.puml
-- diagrams/week01/week1_bi_context.puml
-- diagrams/week01/week1_lecture_slide12_lifecycle.puml
-- diagrams/week01/week1_de_vs_analytics.puml
+- diagrams/week02/week2_sql_vs_nosql.puml
+- diagrams/week02/week2_hybrid_architecture.puml
+- diagrams/week02/week2_acid_base_cap_comparison.puml
+- diagrams/week02/week2_cap_partition.puml
+- diagrams/week02/_week2_visual_style.puml
+- diagrams/week02/week2_user_view_logical.puml
+- diagrams/week02/week2_2pc_blocking.puml
+- diagrams/week02/week2_distributed_db.puml
+- diagrams/week02/week2_partitioning_key_good_bad.puml
+- diagrams/week02/week2_single_node_limits.puml
+- diagrams/week02/week2_stale_read_sequence.puml
+- diagrams/week02/week2_hybrid_deployment_nodes.puml
+- diagrams/week02/week2_partition_replication_model.puml
+- diagrams/week02/week2_centralized_db.puml
+- diagrams/week02/week2_partition_formula_visual.puml
+- diagrams/week02/week2_replication_read_write.puml
+- diagrams/week02/week2_failure_scenarios.puml

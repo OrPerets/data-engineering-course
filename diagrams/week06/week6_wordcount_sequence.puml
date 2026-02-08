@@ -1,0 +1,16 @@
+@startuml
+!include ../_template_styles.puml
+
+participant "Mapper A" as MA
+participant "Mapper B" as MB
+participant "Shuffle" as SH
+participant "Reducer" as RD
+
+MA -> SH : (a,1) (b,1) (a,1)
+MB -> SH : (a,1) (c,1)
+SH -> RD : key=a -> [1,1,1]
+SH -> RD : key=b -> [1]
+SH -> RD : key=c -> [1]
+RD --> RD : sum per key
+
+@enduml

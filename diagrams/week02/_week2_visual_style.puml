@@ -1,0 +1,107 @@
+' Week 02 visual style overrides (inspired by legacy lecture visuals)
+skinparam backgroundColor #ECECEC
+skinparam shadowing true
+skinparam roundcorner 14
+skinparam handwritten false
+skinparam linetype ortho
+skinparam nodesep 70
+skinparam ranksep 65
+skinparam defaultFontName "Segoe UI, Arial, sans-serif"
+skinparam defaultFontSize 16
+
+skinparam arrow {
+  Color #1F1F1F
+  Thickness 2.5
+  FontColor #1F1F1F
+  FontSize 13
+}
+
+skinparam package {
+  BackgroundColor transparent
+  BorderColor transparent
+  FontColor #2D2D2D
+  FontStyle bold
+}
+
+skinparam rectangle {
+  BorderColor #4C6E91
+  BorderThickness 1.8
+  BackgroundColor #FFFFFF
+  FontColor #1F1F1F
+  RoundCorner 14
+}
+
+skinparam component {
+  BorderColor #4C6E91
+  BorderThickness 1.8
+  BackgroundColor #FFFFFF
+  FontColor #1F1F1F
+  RoundCorner 14
+}
+
+skinparam database {
+  BorderColor #4C6E91
+  BorderThickness 1.8
+  BackgroundColor #FFFFFF
+  FontColor #1F1F1F
+}
+
+skinparam rectangle<<source>> {
+  BackgroundColor #3FA9C8
+  BorderColor #2B7D98
+  FontColor #FFFFFF
+}
+
+skinparam rectangle<<process>> {
+  BackgroundColor #8BC34A
+  BorderColor #5E8E2E
+  FontColor #FFFFFF
+}
+
+skinparam rectangle<<decision>> {
+  BackgroundColor #F0AD4E
+  BorderColor #C07F1A
+  FontColor #FFFFFF
+}
+
+skinparam rectangle<<risk>> {
+  BackgroundColor #E67E22
+  BorderColor #B85F14
+  FontColor #FFFFFF
+}
+
+skinparam rectangle<<good>> {
+  BackgroundColor #6DAF45
+  BorderColor #4A7A2E
+  FontColor #FFFFFF
+}
+
+skinparam database<<store>> {
+  BackgroundColor #2F6DB5
+  BorderColor #1F4D80
+  FontColor #FFFFFF
+}
+
+skinparam database<<shardA>> {
+  BackgroundColor #5AA3D6
+  BorderColor #2E6F9B
+  FontColor #FFFFFF
+}
+
+skinparam database<<shardB>> {
+  BackgroundColor #7BC96F
+  BorderColor #4B8D46
+  FontColor #FFFFFF
+}
+
+skinparam database<<shardC>> {
+  BackgroundColor #F39C34
+  BorderColor #B66D18
+  FontColor #FFFFFF
+}
+
+skinparam database<<warn>> {
+  BackgroundColor #D9534F
+  BorderColor #A6312E
+  FontColor #FFFFFF
+}

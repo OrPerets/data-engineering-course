@@ -1,0 +1,23 @@
+@startuml
+!include ../_template_styles.puml
+!include _week2_visual_style.puml
+
+top to bottom direction
+skinparam nodesep 75
+skinparam ranksep 70
+
+rectangle "App\nQuery" as APP <<source>>
+rectangle "Logical\nDB View" as LOGIC <<process>>
+
+database "Shard 1" as S1 <<shardA>>
+database "Shard 2" as S2 <<shardB>>
+database "Shard 3" as S3 <<shardC>>
+rectangle "One\nResult" as RES <<good>>
+
+APP -down-> LOGIC
+LOGIC -down-> S1
+LOGIC -down-> S2
+LOGIC -down-> S3
+LOGIC -down-> RES
+
+@enduml

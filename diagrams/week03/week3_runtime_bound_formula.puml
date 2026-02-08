@@ -1,0 +1,21 @@
+@startuml
+!include ../_template_styles.puml
+
+left to right direction
+
+card "W\n(total work)" as W
+card "S\n(span)" as S
+card "p\n(workers)" as P
+component "T_p >= max(W/p, S)" as F
+storage "Observed runtime" as O
+
+W --> F
+S --> F
+P --> F
+F --> O
+
+note bottom
+Adding workers helps until span S dominates.
+end note
+
+@enduml

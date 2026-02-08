@@ -1,0 +1,15 @@
+@startuml
+!include ../_template_styles.puml
+' Cloud layers — who manages what
+left to right direction
+
+rectangle "**You manage:**\nApp, Data" as U <<Primary>>
+rectangle "**SaaS**\nYou use the app" as S <<Control>>
+rectangle "**PaaS**\nYou build the app" as P <<Task>>
+rectangle "**IaaS**\nYou manage OS & app" as I <<Schema>>
+
+U --> S
+U --> P
+U --> I
+
+@enduml

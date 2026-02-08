@@ -1,672 +1,378 @@
 # Week 2: Distributed Databases: SQL vs NoSQL
 
 ## Purpose
-- Why this topic matters in data engineering
-- Distributed storage as foundation for scale
-- Trade-offs drive architecture choices
+- Understand why single-node databases fail at scale
+- Learn how partitioning and replication enable growth
+- Choose SQL, NoSQL, or hybrid architecture from workload needs
+
+
+---
 
 ## Learning Objectives
-- Define distributed DB concepts: partitioning, replication
-- Compare SQL vs NoSQL models and guarantees formally
-- Calculate single-node limits (storage, throughput, availability)
-- Design partitioning strategies with numeric constraints
-- Reason about replication factor and write amplification
-- Analyze CAP trade-offs in concrete scenarios
-- Identify failure modes and detection or mitigation
+- Calculate per-node data load under partitioning/replication
+- Explain ACID, BASE, and CAP in engineering terms
+- Design partition keys for dominant read/write paths
+- Identify distributed failure modes and practical mitigations
 
-## Core Concepts: Constraints, Not Definitions
-- **Constraint:** data and compute must spread across nodes
-- Single machine hits storage or throughput limits
-- **Partition:** subset of data on one or more nodes
-- **Replication:** copies for availability and durability
 
-## Partition and Replication Trade-offs
-- **Design choice** (how to split) drives scale and failure
-- **Replication cost:** write amplification, consistency trade-offs
-- **Coordinator:** routes requests, may run consensus
-- Single point of failure if not designed for it
+---
 
-## Formal Partition and Replication Model
-- Let total data size \(D\), nodes \(N\), replication factor \(r\)
+## Flow for Today
+- Why we distribute databases
+- Partitioning + replication mechanics
+- SQL vs NoSQL decision framework
+- Consistency trade-offs and failure handling
+- End-to-end design example
+
+---
+
+## Why Single-Node Databases Break
+- Storage, throughput, and availability have hard ceilings
+- Vertical scaling becomes expensive and eventually plateaus
+- Maintenance windows and failures become business risks
+- Growth requires horizontal architecture
+
+
+---
+
+## Single-Node Limits — Architecture
+
+![Single-node limits](../../diagrams/week02/week2_single_node_limits.png){width=90%}
+
+
+---
+
+## Single-Node Limits (Quick Numbers)
+- Storage headroom shrinks as data and indexes grow
+- Write throughput saturates during traffic spikes
+- 99.9% uptime still means hours of downtime per year
+- Recovery time often dominates incident impact
+
+---
+
+## From Centralized to Distributed
+- Centralized DBMS: simple operations, one main failure domain
+- Distributed DBMS: multiple nodes, higher scale and resilience
+- User goal remains the same: one logical database view
+
+
+---
+
+## GFS: Motivation for Distributed Storage
+- Google File System (GFS) pioneered scalable distributed storage for large data-intensive applications
+- Key observations: component failures are the norm; huge files (multi-GB) are common; files often mutated by appending
+- Design principles: constant monitoring, fault tolerance, co-design of applications and APIs
+- Files are broken into 64 MB chunks; each chunk replicated on multiple servers (default 3)
+
+
+---
+
+## Centralized DBMS
+
+![Centralized database architecture](../../diagrams/week02/week2_centralized_db.png){width=90%}
+
+
+---
+
+## Distributed DBMS
+
+![Distributed database architecture](../../diagrams/week02/week2_distributed_db.png){width=90%}
+
+
+
+---
+
+## Distributed Database: User View
+- Application queries a single logical database
+- Distribution details are hidden by the DB layer
+- Engineering complexity moves from app code into data platform
+
+
+---
+
+## User View — Logical vs Physical
+
+![Logical vs physical view](../../diagrams/week02/week2_user_view_logical.png){width=90%}
+
+---
+
+## Distributed Database Basics
+- Partitioning splits data across nodes for scale
+- Replication copies data for durability and availability
+- Coordination happens over an unreliable network
+- Partial failures are expected, not exceptional
+
+
+---
+
+## Partitioning + Replication Model
 $$
-S_{\text{node}} = \frac{D \cdot r}{N}
+S_{node} = \frac{D \cdot r}{N}
 $$
-- Interpretation: balanced per-node storage target
-- Engineering implication: larger \(r\) increases storage and write cost
-- Node failure probability \(p\) (independent)
 $$
-P_{\text{avail}} \approx 1 - p^r
+P_{avail} \approx 1 - p^r
 $$
-- Interpretation: more replicas improve availability but not free
-- Engineering implication: choose \(r\) to meet SLA vs cost
-
-![Partition & replication model](../../diagrams/week02/week2_partition_replication_model.png)
-
-## Data Context: E-Commerce Platform
-- Users: 50M rows ≈ 25 GB
-- Orders: 500M rows ≈ 150 GB
-- Products: 1M rows ≈ 1 GB
-- Partition key: `user_id` for users and orders
-- Target: 10 nodes, balanced load
-- Peak: 100K ops/sec
-
-## Formal Models (Access Patterns First)
-- **Relational (SQL):** tables, keys, joins, ACID
-- **Breaks when** cross-partition joins dominate
-- **Key-value:** get/put by key, no joins
-- **Scales when** access is key-based only
-- **Document / wide-column:** nested or clustering keys
-
-## SQL vs NoSQL — Engineering Choice
-- SQL: fixed schema, normalized, declarative
-- **Good for** complex queries and strong consistency
-- NoSQL: schema-flexible, key-centric
-- **Good for** key-scale and horizontal partitioning
-- **Choose from access patterns and latency/cost**
-
-## Core Concepts: Guarantees — Why Systems Break
-- **ACID:** strong consistency
-- **Cost:** cross-partition coordination, blocking, lower throughput
-
-## Guarantees — Why Systems Break
-- **BASE:** basically available, eventual consistency
-- **Cost:** stale reads, conflict resolution
-- **Wrong assumption** ⇒ wrong business outcomes
-
-## What Breaks at Scale
-- **Cross-partition joins:** data movement and latency explode
-- **Single-node mental model fails**
-- **Cross-partition transactions:** 2PC blocks on any failure
-- **Throughput can drop to near zero**
-
-## What Breaks at Scale
-- **Single partition:** hot keys and skew
-- One partition throttles; others idle
-- **Network:** latency, partitions, partial failure
-- **Design for split-brain and stale reads**
-
-## Why Single-Node Databases Break: Storage Limits
-- Single machine: max ~100 TB disk typical
-- 1B users × 1 KB ≈ 1 TB
-- Growth 10%/month ⇒ 100 GB/month
-- **Practical limit ~10 TB** with headroom
-- **"We'll add disk"** — then you hit I/O limits
-
-## Throughput Limits
-- Single machine: ~10K writes/sec order of magnitude
-- Example: 100M users, 1 write/user/day ⇒ ~1,157 writes/sec avg
-- Peak 5× ⇒ ~6K/sec
-- **Single node:** insufficient headroom; systems break on spikes
-
-## Availability Limits
-- Single machine: 99.9% ⇒ 8.76 h/year downtime
-- E-commerce $10K/h ⇒ **$87,600/year lost**
-- Distributed 99.99% ⇒ $8,760
-- **Distribution improves availability**
-- Adds network and partial-failure complexity
-
-![Single-node limits](../../diagrams/week02/week2_single_node_limits.png)
-
-## What "Distributed" Really Means: Multiple Machines
-- Data split across nodes
-- Each node: own storage, own compute
-- Coordination over network
-- Example: 3 nodes, ~33% data each
-
-## Partial Failures
-- One node fails; others continue
-- Network partition ⇒ split-brain risk
-- Replica lag ⇒ stale reads possible
-- No single point of failure; complexity increases
-
-## Network Uncertainty
-- Latency 1–100 ms between nodes
-- Bandwidth 1–10 Gbps shared
-- Packet loss 0.1–1% typical
-- Example: 3-node write ⇒ 3× network cost
-- Cannot assume instant communication
-
-## Distributed System Overview
-
-![](../../diagrams/week02/week2_lecture_slide13_system_overview.png)
-
-## SQL in a Distributed World: Joins Across Machines
-- Table A on node 1 (100M rows), B on node 2 (50M rows)
-- Join ⇒ must move data
-- Transfer: 100M × 200 B ≈ 20 GB
-- At 1 Gbps ⇒ 160 s + compute
-
-![Join across machines](../../diagrams/week02/week2_join_across_machines.png)
-
-## Transactions at Scale
-- ACID ⇒ all-or-nothing; 2PC used across nodes
-- Coordinator blocks on any failure
-- Example: 5 nodes, 1 fails ⇒ block until timeout (30 s)
-- Throughput can drop to near zero
-
-![2PC blocking at scale](../../diagrams/week02/week2_2pc_blocking.png)
-
-## Cost Explosion
-- Single node: 1 disk read per local op
-- 3 nodes: 3 disk reads + network
-- Network ~10× slower than disk
-- Example: 1M queries/day; 1 ms vs 10 ms
-
-## SQL Optimization Fundamentals: SQL DML and DDL
-- **DML:** SELECT, INSERT, UPDATE, DELETE — operate on data
-- **DDL:** CREATE, DROP, ALTER — operate on schema
-- **In distributed:** DML cost scales with data distribution
-- DDL requires schema coordination across nodes
-
-## JOIN Types and Semantics
-- **INNER JOIN:** rows where condition matches in both tables
-- Default when using just `JOIN`
-- **LEFT OUTER JOIN:** all rows from left table
-- Plus matched rows from right; unmatched are NULL
-
-## JOIN Types and Semantics
-- **RIGHT OUTER JOIN:** all rows from right table
-- Plus matched rows from left; unmatched are NULL
-- **FULL OUTER JOIN:** all rows from both tables
-- Unmatched columns are NULL on either side
-- **ON vs USING:** `ON` when names differ; `USING(column)` when same
-
-## JOIN vs Subquery — When to Use Which: Advantages of JOIN
-- Executes faster than subquery (retrieval time)
-- Maximize calculations on the database
-- Multiple types available for different scenarios
-- Native support in optimizer
-
-## Disadvantages of JOIN
-- Not as easy to read as subqueries
-- More joins means more work for server
-- Can be confusing which type yields correct result
-- Cannot be avoided when retrieving from normalized DB
-
-## Advantages of Subquery
-- Divide complex query into isolated parts
-- Easy to understand and maintain
-- Use results of another query in outer query
-- Can replace complex joins in some cases
-
-## Disadvantages of Subquery
-- Optimizer more mature for joins (especially MySQL)
-- Subquery often more efficient if rewritten as join
-- Cannot modify and select from same table
-
-## Handling NULL Values
-- **NULL is not a string:** use `IS NULL` not `= 'NULL'`
-- **NULL propagation:** NULL in arithmetic yields NULL
-- **Common sources:** OUTER JOIN, missing data, explicit NULL
-- **Detection:** `IS NULL`, `IS NOT NULL` predicates
-- **Engineering:** NULL handling affects query correctness
-
-## Window Functions Overview: What are Window Functions?
-- Perform calculations on an aggregate value based on a set of rows and return multiple rows for each group.
-- The **window** represents the group of rows on which the function operates.
-- Window functions calculate like aggregate functions but keep each row’s distinct identity.
-
-## Window Function Syntax
-```sql
-window_function_name([ALL] expression)
-OVER (
-  [PARTITION BY columns]
-  [ORDER BY columns]
-)
-```
-- **window_function_name:** the function being applied.
-- **ALL (optional):** count all values, including duplicates. (Window functions do not allow `DISTINCT`.)
-- **expression:** column used for the aggregated value.
-- **OVER:** specifies the window clause for the function.
-- **PARTITION BY:** divides rows into partitions; the window function runs per partition.
-- **ORDER BY:** ordering within the partition. When omitted, SQL Server uses the table-level `ORDER BY`.
-
-## Window Function Types
-### Aggregate Window Functions
-- Operate on multiple rows: `SUM()`, `MAX()`, `MIN()`, `AVG()`, `COUNT()`, etc.
-
-### Ranking Window Functions
-- Rank each row within a partition.
-- `RANK()`, `DENSE_RANK()`, `ROW_NUMBER()`, `NTILE()`, etc.
-
-### Value Window Functions
-- Access values from other rows.
-- `LAG()`, `LEAD()`, `FIRST_VALUE()`, `LAST_VALUE()`, etc.
-
-## Example Dataset
-```sql
-CREATE TABLE Sales(
-  Employee VARCHAR(45) NOT NULL,
-  Year INT NOT NULL,
-  Country VARCHAR(45) NOT NULL,
-  Product VARCHAR(45) NOT NULL,
-  Amount DECIMAL(12,2) NOT NULL,
-  PRIMARY KEY(Employee, Year)
-);
-```
-
-## Aggregate Window Functions
-### Example – Sum
-```sql
-SELECT Employee, Year, Country, Product, Amount,
-  SUM(Amount) OVER(PARTITION BY Country) AS Total
-FROM Sales;
-```
-Result: aggregates data for each country and adds a `Total` column while preserving each row.
-
-| Employee | Year | Country | Product | Amount | Total |
-| --- | --- | --- | --- | --- | --- |
-| Or Peretz | 2017 | Israel | Computer | 15000 | 45000 |
-| Or Peretz | 2018 | Israel | Computer | 10000 | 45000 |
-| Or Peretz | 2019 | Israel | TV | 20000 | 45000 |
-| Omer Doron | 2018 | USA | TV | 20000 | 30000 |
-| Omer Doron | 2019 | USA | Mobile | 10000 | 30000 |
-
-### Example – Avg
-```sql
-SELECT Employee, Year, Country, Product, Amount,
-  AVG(Amount) OVER(PARTITION BY Country, YEAR(Year)) AS AvgSales
-FROM Sales;
-```
-Result: average sales for each country and year (multiple fields in the partition list).
-
-| Employee | Year | Country | Product | Amount | AvgSales |
-| --- | --- | --- | --- | --- | --- |
-| Or Peretz | 2017 | Israel | Computer | 15000 | 15000 |
-| Or Peretz | 2018 | Israel | Computer | 10000 | 15000 |
-| Or Peretz | 2019 | Israel | TV | 20000 | 15000 |
-| Omer Doron | 2018 | USA | TV | 20000 | 15000 |
-| Omer Doron | 2019 | USA | Mobile | 10000 | 15000 |
-
-### Example – Count
-`COUNT()` returns the number of rows in the table or group. Unlike standard aggregates, window `COUNT()` does not support `DISTINCT`.
-```sql
-SELECT Employee, Year, Country, Product, Amount,
-  COUNT(Product) OVER(PARTITION BY Country) AS TotalProduct
-FROM Sales;
-```
-
-### Example – Max
-Returns the maximum value in each group (or in the full table if no partition is defined).
-```sql
-SELECT Employee, Year, Country, Product, Amount,
-  MAX(Product) OVER(PARTITION BY Country) AS TotalProduct
-FROM Sales;
-```
-
-## Ranking Window Functions
-Ranking functions categorize values by rank.
-
-Supported in SQL Server: `RANK()`, `DENSE_RANK()`, `ROW_NUMBER()`, `NTILE()`.
-
-**Data for examples**
-
-| FirstName | LastName | City |
-| --- | --- | --- |
-| Luisa | Evans | Texas |
-| Paul | Ward | Alaska |
-| Peter | Bennett | California |
-| Carlos | Patterson | New York |
-| Rose | Huges | Florida |
-| Marielia | Simmons | Texas |
-| Antonio | Butler | New York |
-| Diego | Cox | California |
-
-### Example – Rank
-Generates a rank for each row. Ties share a rank and the next rank is skipped.
-```sql
-SELECT FirstName, LastName, City,
-  RANK() OVER (ORDER BY City) AS RankNo
-FROM table;
-```
-
-| FirstName | LastName | City | RankNo |
-| --- | --- | --- | --- |
-| Paul | Ward | Alaska | 1 |
-| Peter | Bennett | California | 2 |
-| Diego | Cox | California | 2 |
-| Rose | Huges | Florida | 4 |
-| Carlos | Patterson | New York | 5 |
-| Antonio | Butler | New York | 5 |
-| Luisa | Evans | Texas | 7 |
-| Marielia | Simmons | Texas | 7 |
-
-### Example – Dense Rank
-Same as `RANK()` but does not skip ranks.
-```sql
-SELECT FirstName, LastName, City,
-  DENSE_RANK() OVER (ORDER BY City) AS RankNo
-FROM table;
-```
-
-| FirstName | LastName | City | RankNo |
-| --- | --- | --- | --- |
-| Paul | Ward | Alaska | 1 |
-| Peter | Bennett | California | 2 |
-| Diego | Cox | California | 2 |
-| Rose | Huges | Florida | 3 |
-| Carlos | Patterson | New York | 4 |
-| Antonio | Butler | New York | 4 |
-| Luisa | Evans | Texas | 5 |
-| Marielia | Simmons | Texas | 5 |
-
-### Example – Ntile
-Distributes rows into a predefined number (N) of approximately equal groups.
-```sql
-SELECT FirstName, LastName, City,
-  NTILE(3) OVER (ORDER BY City) AS RankNo
-FROM table;
-```
-
-| FirstName | LastName | City | RankNo |
-| --- | --- | --- | --- |
-| Paul | Ward | Alaska | 1 |
-| Peter | Bennett | California | 1 |
-| Diego | Cox | California | 1 |
-| Rose | Huges | Florida | 2 |
-| Carlos | Patterson | New York | 2 |
-| Antonio | Butler | New York | 2 |
-| Luisa | Evans | Texas | 3 |
-| Marielia | Simmons | Texas | 3 |
-
-## Value Window Functions
-`LEAD()` and `LAG()` return succeeding or preceding values within a partition.
-
-### Example – Lead
-```sql
-SELECT Year, Product, Country, Amount,
-  LEAD(Amount, 1) OVER (PARTITION BY Year ORDER BY Country) AS NextAmount
-FROM Sales;
-```
-Result: returns the amount and next amount detail per employee by year, ordered by country.
-
-| Year | Product | Country | Amount | NextAmount |
-| --- | --- | --- | --- | --- |
-| 2017 | Computer | Canada | 15000 | 10000 |
-| 2017 | Laptop | Israel | 10000 | 20000 |
-| 2017 | TV | Israel | 20000 | NULL |
-| 2018 | TV | Canada | 20000 | 10000 |
-| 2018 | Mobile | USA | 10000 | NULL |
-
-### Example – Lag
-```sql
-SELECT Year, Product, Country, Amount,
-  LAG(Amount, 1) OVER (PARTITION BY Year ORDER BY Country) AS PrevAmount
-FROM Sales;
-```
-Result: returns the amount and previous amount detail per employee by year, ordered by country.
-
-| Year | Product | Country | Amount | NextAmount |
-| --- | --- | --- | --- | --- |
-| 2017 | Computer | Canada | 15000 | NULL |
-| 2017 | Laptop | Israel | 10000 | 15000 |
-| 2017 | TV | Israel | 20000 | 10000 |
-| 2018 | TV | Canada | 20000 | NULL |
-| 2018 | Mobile | USA | 10000 | 20000 |
-
-### First and Last Values
-Used to find the first and last records in the table or a partition (requires `ORDER BY`).
-```sql
-SELECT Year, Product, Country, Amount,
-  FIRST_VALUE(Amount) OVER(PARTITION BY Country ORDER BY Country) AS FirstAmount,
-  LAST_VALUE(Amount) OVER(PARTITION BY Country ORDER BY Country) AS LastAmount
-FROM Sales;
-```
-
-| Year | Product | Country | Amount | FirstAmount | LastAmount |
-| --- | --- | --- | --- | --- | --- |
-| 2017 | Computer | Canada | 15000 | 15000 | 10000 |
-| 2018 | Laptop | Canada | 10000 | 15000 | 10000 |
-| 2017 | TV | Israel | 10000 | 10000 | 20000 |
-| 2018 | TV | Israel | 15000 | 10000 | 20000 |
-| 2019 | Mobile | Israel | 20000 | 10000 | 20000 |
-
-## Window Functions in Distributed Systems
-- **Local execution:** window on partition key executes per node
-- **Global execution:** window across partition keys requires shuffle
-- PARTITION BY partition_key keeps computation local
-- PARTITION BY non-partition-key forces data movement
-- **Design queries to align with data distribution**
-
-## Why NoSQL Exists: Relaxed Guarantees
-- No cross-partition transactions
-- Eventual consistency allowed
-- No joins; single-partition access
-- Example: key-value get/put by key
-
-## Simplified Access Patterns
-- Key-based access only; predefined paths
-- Example: user_id → profile
-- Latency 1–5 ms (local)
-- Throughput ~100K ops/sec/node
-
-## Predictable Scaling
-- Add nodes; partition by key (e.g. hash(user_id))
-- Example: 3 → 6 nodes ⇒ 2× throughput, 2× storage
-- No cross-partition coordination for key-based ops
-
-## Visual Comparison: SQL vs NoSQL
-
-| Aspect | SQL | NoSQL |
-|--------|-----|-------|
-| Consistency | Strong (ACID) | Eventual (BASE) |
-| Transactions | Cross-partition | Single-partition |
-| Joins | Supported | Not supported |
-| Schema | Fixed (schema-on-write) | Flexible (schema-on-read) |
-| Scaling | Vertical (hard) | Horizontal (easier) |
-| Latency | 10–100 ms (joins) | 1–5 ms (key lookup) |
-| Use case | Complex queries | Simple lookups |
-
-![SQL vs NoSQL comparison](../../diagrams/week02/week2_sql_vs_nosql.png)
-
-## Partitioning Intuition: Horizontal Partitioning
-- Split table by rows; each partition holds a subset
-- Example: users → partition 1 (1–333K), 2 (334K–666K), 3 (667K–1M)
-
-## Key-Based Distribution
-- Hash(key) mod N ⇒ partition id; N = number of partitions
-- Example: hash(user_id) mod 3
-- User 123 → 0, user 456 → 1, user 789 → 2
-
-![Key-based partitioning](../../diagrams/week02/week2_partitioning_key_based.png)
-
-## Replication Intuition: Replicas
-- Same partition copied to multiple nodes
-- Example: 3 replicas per partition
-- Write: update all replicas; read: any replica
-- One replica down ⇒ two remain
-
-## Read/Write Paths
-- Write: primary first, then async to secondaries
-- Read: any replica
-- Example: 3 replicas; write latency ~50 ms, read ~5 ms
-
-![Replication read/write paths](../../diagrams/week02/week2_replication_read_write.png)
-
-## CAP Intuition (Engineering View): CAP Theorem
-- Consistency: all nodes see same data
-- Availability: every request gets a response
-- Partition tolerance: system works despite network splits
-- Can only guarantee two of three in practice
-
-## Concrete Scenario: E-Commerce Cart
-- User adds item; network partition splits two datacenters
-- CP: block writes until heal ⇒ cart update fails
-- AP: accept writes both sides ⇒ cart works, eventually consistent
-
-## Trade-offs Explained
-- CP: strong consistency, possible downtime
-- AP: always available, possible stale reads
-- CA: not realistic in distributed systems
-- Bank ⇒ CP; social feed ⇒ AP
-
-![CAP trade-offs](../../diagrams/week02/week2_cap_tradeoffs.png)
-
-## Cost of Naïve Design (Distributed DB): What Goes Wrong
-- **Naïve:** "use SQL for everything"
-- Cross-partition joins and 2PC **kill** latency and throughput
-- **Cost:** timeouts, rewrites
-
-## What Goes Wrong
-- **Naïve:** "one partition key for all access patterns"
-- E.g. partition by user_id but query by item_id ⇒ **full scan**
-- **Naïve:** ignore hot keys
-- Celebrity user **throttles one partition**; rest idle
-- **Takeaway:** access patterns drive design
-
-## Running Example — Data & Goal: Scenario (Recommendation / Activity Log)
-- 10M users; 100M events/day (clicks, views, likes)
-- Events: user_id, item_id, action, timestamp
-- ~200 B/event ⇒ ~20 GB/day raw
-
-## Engineering Objective
-- Store events and support two access patterns
-- "All events for user X" and "all events for item Y"
-- Latency: p99 < 50 ms for key-based reads
-- Throughput: 100M writes/day sustained
-
-## Running Example — Step-by-Step: Scale and Access Patterns
-- 100M events/day ⇒ ~1,157 writes/sec avg; peak ~6K/sec
-- Two access patterns: by user_id, by item_id
-- Single-node: storage and throughput insufficient
-- Need partitioning and clear access design
-
-## Running Example — Step-by-Step: SQL Design and Join Cost
-- Tables: users, items, events (user_id, item_id, action, ts)
-- "Events for user X" ⇒ filter by user_id; optional join to items
-- If users and events on different partitions ⇒ cross-partition read
-- Transfer ~2 GB for 10M events ⇒ 16 s at 1 Gbps + compute
-
-## Query Execution Flow
-
-![](../../diagrams/week02/week2_lecture_slide35_query_flow.png)
-
-## Running Example — Step-by-Step: NoSQL Design and Partitioning
-- Partition by user_id: hash(user_id) mod N
-- Store events co-located with user (document or wide-column)
-- "Events for user X" ⇒ single-partition read ⇒ 1–5 ms
-- "Events for item Y" ⇒ different access path needed
-- Trade-off: denormalize or maintain two views
-
-## Running Example — Step-by-Step: Output and Engineering Interpretation
-- NoSQL key-based: ~5 ms for "events for user X"
-- SQL cross-partition: tens of seconds
-- NoSQL avoids cross-partition joins for primary access
-- Trade-off: complex analytics harder in NoSQL
-- Decision: NoSQL for serving, batch/SQL for analytics
-
-## Cost & Scaling Analysis: Time Model
-- Single-node: T ∝ data size / disk bandwidth
-- Distributed: T ∝ data size / bandwidth + network latency × stages
-- Join: add shuffle time; shuffle often dominates
-- Example: 1M queries, 1 ms vs 10 ms ⇒ 1,000 s vs 10,000 s
-
-## Numeric Example: Nodes for Social Posts
-- 100M users; 10 posts/user/day ⇒ 1B posts/day
-- ~11,574/sec avg; peak 5× ⇒ ~57,870 writes/sec
-- Single node: ~10K writes/sec ⇒ need 6 nodes for writes
-- Partition by user_id; 6 partitions ⇒ ~16.7M users each
-- With RF 3: 18 nodes total; 3× storage, 2 node failures OK
-
-## Cost & Scaling Analysis: Memory and Storage
-- Per-node memory: limit working set, sorts, joins
-- Storage: data size × replication factor
-- Example: 100 GB × RF 3 ⇒ 300 GB total
-- Growth: plan for 2× in 12–18 months
-
-## Cost & Scaling Analysis: Network, Throughput, Latency
-- Throughput: ops/sec ≈ min(disk, network, CPU) per node × nodes
-- Latency: local read ~1–5 ms; cross-partition ~10–100 ms
-- Write amplification: 1 write ⇒ RF copies over network
-- Example: 1 KB write, RF 3 ⇒ 3 KB network per write
-
-## Pitfalls & Failure Modes: Common Pitfall — Hot Partitions
-- Single key gets disproportionate load (e.g. celebrity user)
-- One partition throttled; others idle
-- Mitigation: salt keys, cache, or split heavy keys
-
-## Pitfalls & Failure Modes: Failure Scenario — Network Partition (Split-Brain)
-- Nodes A and B,C in separate partitions
-- A cannot reach B,C
-- Writes accepted in both sides ⇒ divergent state
-- Merge on heal: conflicts, last-writer-wins, or manual resolution
-
-## Failure Propagation
-
-![](../../diagrams/week02/week2_lecture_slide42_failure_partition.png)
-
-## Pitfalls & Failure Modes: Detection and Mitigation
-- Monitor: latency p99, error rates, replica lag
-- Alerts: lag > threshold, partition events, node down
-- Mitigation: quorum writes, failover, idempotent producers
-- Run chaos or partition drills in non-prod
-
-## Best Practices
-- **Design for failure:** test failover and partition scenarios
-- **Partition for hot paths:** avoid cross-partition joins
-- Choose key from access pattern
-- **Replication factor:** durability vs write amplification
-- **Single-partition ops** for latency-sensitive APIs
-
-## Best Practices
-- Use SQL/analytics store for complex ad-hoc queries
-- Use NoSQL for serving key-based traffic
-- **Monitor:** latency p99, throughput, replica lag
-- **Document trade-offs:** CAP, cost, complexity for your use case
-- Avoid "we chose X because it's popular"
-
-## Recap (Engineering Judgment)
-- Single-node hits storage, throughput, availability limits
-- Distributed adds network and partial failure complexity
-- **SQL** for joins and transactions
-- **NoSQL** for key-scale and horizontal partitioning
-- Partitioning and replication enable scale
-- **Both have cost and failure modes**
-- **CAP:** explicit trade-offs; design for requirements
-
-## Pointers to Practice
-- Compute partition sizes from data volume and key distribution
-- Reason about replication factor and write amplification
-- Compare SQL vs NoSQL for given access patterns
-- Analyze CAP trade-offs in concrete scenarios
-- Design partitioning schemes and justify choices
-- Evaluate failure modes and mitigation strategies
-
-## Additional Diagrams
-### System Overview (slide 14)
-
-![](../../diagrams/week02/week2_lecture_slide14_system_overview.png)
-### Query Flow (slide 24)
-
-![](../../diagrams/week02/week2_lecture_slide24_query_flow.png)
-### Failure Partition (slide 45)
-
-![](../../diagrams/week02/week2_lecture_slide45_failure_partition.png)
-### Practice: Architecture
-
-![](../../diagrams/week02/week2_practice_slide18_architecture.png)
-
-### Enrichment: Partition & replication model
-
-![](../../diagrams/week02/week2_partition_replication_model.png)
-### Enrichment: Single-node limits
-
-![](../../diagrams/week02/week2_single_node_limits.png)
-### Enrichment: Key-based partitioning
-
-![](../../diagrams/week02/week2_partitioning_key_based.png)
-### Enrichment: Replication read/write paths
-
-![](../../diagrams/week02/week2_replication_read_write.png)
-### Enrichment: CAP trade-offs
-
-![](../../diagrams/week02/week2_cap_tradeoffs.png)
-### Enrichment: SQL vs NoSQL
-
-![](../../diagrams/week02/week2_sql_vs_nosql.png)
-### Enrichment: Join across machines
-
-![](../../diagrams/week02/week2_join_across_machines.png)
-### Enrichment: 2PC blocking at scale
-
-![](../../diagrams/week02/week2_2pc_blocking.png)
+- `D`: total data, `N`: nodes, `r`: replication factor, `p`: node-failure probability
+- Higher `r` improves availability but increases write and storage cost
+
+![Partitioning formula visual](../../diagrams/week02/week2_partition_formula_visual.png){width=84%}
+
+---
+
+## Worked Sizing Example
+- Given: `D = 24 TB`, `N = 12`, `r = 3`
+- Per-node data: `S_node = (24 * 3) / 12 = 6 TB`
+- If node failure probability is `p = 0.02`, then
+- Availability of a replicated item: `1 - 0.02^3 = 99.9992%`
+
+
+---
+
+## Partitioning and Replication Visual
+
+![Partitioning and replication model](../../diagrams/week02/week2_partition_replication_model.png){width=90%}
+
+
+---
+
+## Time and Cost Intuition
+- Local key lookups have low, stable latency
+- Cross-partition operations add network and coordination latency
+- Replication multiplies write traffic
+- Stronger consistency usually increases p99 latency and cost
+
+---
+
+## Partitioning Strategy
+- Choose partition key from dominant access pattern
+- Keep common reads/writes single-partition when possible
+- Avoid skewed keys that create hot partitions
+- Revisit partition key as traffic shape changes
+
+
+---
+
+## Partition Key Example: Good vs Bad
+- Good for user feed service: partition by `user_id`
+- Bad for same workload: partition by `country` (few hot values)
+- Symptom of bad key: one node has high CPU/queue lag while others are idle
+- Typical mitigation: key salting or sub-sharding for hot values
+
+
+---
+
+## Key Distribution Visual
+
+![Partition key: good vs bad](../../diagrams/week02/week2_partitioning_key_good_bad.png){width=90%}
+
+---
+
+## Replication Read/Write Path
+- Writes typically flow leader -> followers
+- Reads may be leader-only or replica-enabled
+- Replica reads improve scale and often reduce latency
+- Replica lag can return stale reads
+
+
+---
+
+## Stale Read Example
+- User updates profile picture at `10:00:00`
+- Replica lags by 2 seconds
+- Read at `10:00:01` from replica returns old image
+- If this is unacceptable, route that read to leader
+
+![Stale read sequence](../../diagrams/week02/week2_stale_read_sequence.png){width=88%}
+
+---
+
+## Replication Visual
+
+![Replication read/write path](../../diagrams/week02/week2_replication_read_write.png){width=90%}
+
+---
+
+## SQL vs NoSQL: Decision Lens
+- SQL: relational model, joins, mature transactional tooling
+- NoSQL: key-centric model, simpler horizontal scaling for serving paths
+- Choose from access patterns, SLA, and consistency requirements
+- Hybrid is common when serving and analytics needs diverge
+
+
+---
+
+## SQL vs NoSQL — Architecture
+
+![SQL vs NoSQL access patterns](../../diagrams/week02/week2_sql_vs_nosql.png){width=90%}
+
+
+---
+
+## SQL in Distributed Systems: Strengths and Costs
+- Strong guarantees are useful for money and inventory workflows
+- Cross-partition joins require expensive data movement
+- Distributed transactions add coordination latency
+- Best fit for correctness-critical multi-entity operations
+
+
+
+---
+
+## NoSQL in Distributed Systems: Strengths and Costs
+- Key-based reads/writes are fast and predictable
+- Denormalization removes many runtime joins
+- Eventual consistency requires reconciliation logic
+- Best fit for high-throughput serving workloads
+
+---
+
+## ACID (Transactional Guarantees)
+- **Atomicity**: all operations commit or none do
+- **Consistency**: constraints remain valid after commit
+- **Isolation**: concurrent transactions do not leak partial state
+- **Durability**: committed writes survive crashes
+
+
+---
+
+## BASE (Scale-Oriented Guarantees)
+- **Basically available**: system responds despite some failures
+- **Soft state**: replicas may temporarily diverge
+- **Eventually consistent**: replicas converge when updates stop
+
+
+---
+
+## CAP (Under Network Partition)
+- **Consistency**: read returns latest write
+- **Availability**: every request gets a response
+- **Partition tolerance**: system continues despite network splits
+- During partition, you choose **CP** or **AP**, not both
+
+![ACID BASE CAP comparison](../../diagrams/week02/week2_acid_base_cap_comparison.png){width=88%}
+
+---
+
+## CAP Scenario: Shopping Cart Partition
+- CP option: block conflicting updates until partition heals
+- AP option: accept writes in both partitions and merge later
+- CP reduces inconsistency risk but impacts UX availability
+- AP protects UX but requires clear merge policy
+
+
+---
+
+## Distributed Transactions: 2PC Risk
+- Two-phase commit enforces atomicity across nodes
+- Coordinator failure can block participants
+- Valuable for strict consistency, expensive operationally
+
+
+---
+
+## 2PC — Blocking Risk
+
+![2PC blocking risk](../../diagrams/week02/week2_2pc_blocking.png){width=90%}
+
+
+---
+
+## CAP in Practice
+
+![CAP network partition scenario](../../diagrams/week02/week2_cap_partition.png){width=90%}
+
+---
+
+## Running Example: Activity Log Service
+- 100M events/day (~20 GB/day raw)
+- Query A: feed by `user_id`
+- Query B: analytics by `item_id`
+- SLA: p99 read latency under 50 ms for serving API
+
+
+---
+
+## SQL-Oriented Design (Example)
+- Normalized tables: `users`, `items`, `events`
+- Great for flexible analytics and relational queries
+- Feed query may require cross-partition join + sort
+- Latency degrades under heavy fan-out
+
+
+
+---
+
+## NoSQL-Oriented Design (Example)
+- Partition `events_by_user` by `user_id`
+- Feed query stays single-partition and predictable
+- `item_id` analytics needs separate materialized view
+- Better serving latency, higher modeling complexity
+
+
+
+---
+
+## Recommended Hybrid Architecture
+- NoSQL store for online serving paths
+- SQL warehouse/lakehouse for analytics
+- Stream or batch sync between serving and analytics stores
+- Clear ownership per workload and data contract
+
+![Hybrid deployment view](../../diagrams/week02/week2_hybrid_deployment_nodes.png){width=90%}
+
+---
+
+## Hybrid Architecture — Overview
+
+![Hybrid architecture](../../diagrams/week02/week2_hybrid_architecture.png){width=90%}
+
+---
+
+## Common Failure Modes
+- Hot partitions from skewed keys
+- Replica lag causing stale reads
+- Network partitions causing split-brain risk
+- Coordinator failure in multi-node workflows
+
+
+---
+
+## Failure Scenario Visual
+
+![Common failure modes](../../diagrams/week02/week2_failure_scenarios.png){width=90%}
+
+
+---
+
+## Mitigation Playbook
+- Define quorum and consistency per endpoint
+- Add salting/sharding for hot keys
+- Monitor p99 latency, replication lag, and error rate
+- Rehearse failover, partition, and recovery drills
+
+
+---
+
+## Design Checklist
+- What are your top 3 read/write paths?
+- Which operations require strong consistency?
+- What stale-read window is acceptable?
+- How will node count and cost change in 12 months?
+
+
+---
+
+## 60-Second Decision Heuristic
+- If correctness-critical cross-entity transactions dominate -> start SQL/CP
+- If ultra-low-latency key access dominates -> start NoSQL/AP-aware
+- If both are critical -> hybrid with explicit sync boundaries
+- Re-evaluate quarterly as workload shape changes
+
+
+---
+
+## Recap
+- Distributed databases trade simplicity for scale and resilience
+- Partition-key quality is your strongest performance lever
+- SQL and NoSQL solve different workload segments
+- Next: parallel processing and distributed compute patterns

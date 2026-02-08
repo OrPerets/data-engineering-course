@@ -9,7 +9,7 @@ rectangle "**Span S**\n\n<size:14>Critical path</size>\n<size:14>Longest depende
 
 rectangle "**Time bound**\n\n<size:14>T_p >= max(W/p, S)</size>\n<size:14>Speedup <= W/S</size>\n\n<size:12>Low S => near-linear scale</size>\n<size:12>Remove sequential bottlenecks first</size>" as BOUND <<Primary>>
 
-W -down[#1565C0,thickness=2]-> BOUND
-S -down[#FF6F00,thickness=2]-> BOUND
+W -down-> BOUND
+S -down-> BOUND
 
 @enduml

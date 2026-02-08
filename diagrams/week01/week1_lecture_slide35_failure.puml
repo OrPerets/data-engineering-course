@@ -17,13 +17,13 @@ component "**Step 4**\n<size:11>Load</size>\n<size:11>waiting</size>" as STEP4 <
 
 database "**Output**\n<size:12>Blocked</size>" as OUTPUT <<down>>
 
-INPUT -left[#00897B,thickness=2]-> STEP1 : <color:#3949AB><b>ingest</b></color>
-STEP1 -down[#00897B,thickness=2]-> RAW : <color:#3949AB><b>saved</b></color>
-RAW -down[#1565C0,thickness=2]-> STEP2 : <color:#3949AB>read</color>
+INPUT -left-> STEP1 : **ingest**
+STEP1 -down-> RAW : **saved**
+RAW -down-> STEP2 : read
 
-STEP2 -left[#D32F2F,thickness=2]-> PARTIAL : <color:#3949AB><b>crash</b></color>
-STEP2 -down[#D32F2F,thickness=2,dashed]-> STEP3 : <color:#3949AB>blocked</color>
-STEP3 -down[#D32F2F,thickness=2,dashed]-> STEP4 : <color:#3949AB>blocked</color>
-STEP4 -right[#D32F2F,thickness=2,dashed]-> OUTPUT : <color:#3949AB>no load</color>
+STEP2 -left-> PARTIAL : **crash**
+STEP2 -down[dashed]-> STEP3 : blocked
+STEP3 -down[dashed]-> STEP4 : blocked
+STEP4 -right[dashed]-> OUTPUT : no load
 
 @enduml

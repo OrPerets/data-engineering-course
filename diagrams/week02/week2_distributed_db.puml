@@ -1,0 +1,30 @@
+@startuml
+!include ../_template_styles.puml
+!include _week2_visual_style.puml
+
+left to right direction
+skinparam nodesep 75
+skinparam ranksep 70
+
+rectangle "Clients" as CLIENTS <<source>>
+rectangle "Router" as ROUTER <<process>>
+
+database "Shard A" as SA <<shardA>>
+database "Shard B" as SB <<shardB>>
+database "Shard C" as SC <<shardC>>
+
+rectangle "Scale-Out" as OUT1 <<good>>
+rectangle "High\nAvailability" as OUT2 <<good>>
+
+CLIENTS -right-> ROUTER
+ROUTER -right-> SA
+ROUTER -right-> SB
+ROUTER -right-> SC
+
+SA -[dashed]-> SB : repl
+SB -[dashed]-> SC : repl
+
+SA -down-> OUT1
+SC -down-> OUT2
+
+@enduml

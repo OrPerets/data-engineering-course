@@ -1,0 +1,14 @@
+@startuml
+!include ../_template_styles.puml
+' Data generated daily — scale
+top to bottom direction
+
+cloud "**Data Generated Daily**\n\n<size:18>~2.5 quintillion bytes</size>\n<size:14>Social, IoT, transactions, logs</size>" as D <<Primary>>
+
+rectangle "**Scientists**\nAnalyze & insights" as S <<Control>>
+rectangle "**Engineers**\nInfrastructure & pipelines" as E <<Task>>
+
+D --> S
+D --> E
+
+@enduml

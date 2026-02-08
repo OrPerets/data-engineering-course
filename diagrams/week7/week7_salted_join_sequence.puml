@@ -1,0 +1,16 @@
+@startuml
+!include ../_template_styles.puml
+
+participant "Heavy table mapper" as HM
+participant "Light table mapper" as LM
+participant "Shuffle" as SH
+participant "Reducer" as RD
+participant "Merge stage" as MG
+
+HM -> SH : emit (k#0..k#S, heavy_row)
+LM -> SH : replicate light rows to k#0..k#S
+SH -> RD : balanced salted partitions
+RD -> MG : partial joins by salt
+MG -> MG : unsalt + union key k
+
+@enduml

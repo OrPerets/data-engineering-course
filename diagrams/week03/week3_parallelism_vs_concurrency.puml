@@ -9,7 +9,7 @@ rectangle "**Concurrency**\n\n<size:14>Overlapping execution</size>\n<size:14>Ma
 
 rectangle "**Shared**\n\n<size:14>Both improve throughput</size>\n<size:14>Design for no shared</size>\n<size:14>mutable state</size>\n\n<size:13>Determinism: same input</size>\n<size:13>=> same output</size>" as SHARED <<Primary>>
 
-PAR -down[#1565C0,thickness=2]-> SHARED
-CON -down[#00897B,thickness=2]-> SHARED
+PAR -down-> SHARED
+CON -down-> SHARED
 
 @enduml

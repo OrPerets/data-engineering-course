@@ -1,0 +1,30 @@
+@startuml
+'=================================================
+' FAILURE: FULL SCAN WHEN PRUNING IS MISSED
+'=================================================
+
+!include ../_template_styles.puml
+
+top to bottom direction
+
+package "GOOD: With partition filter" <<Task>> {
+    component "**Query**\n<size:10>WHERE date_key IN (Dec 2025)</size>" as Q1 <<Task>>
+    component "**Pruning**\n<size:10>31 partitions only</size>" as PRUNE1 <<Task>>
+    database "**Scan**\n<size:10>Low I/O • Fast</size>" as S1 <<success>>
+}
+
+package "BAD: No partition filter" <<Failure>> {
+    component "**Query**\n<size:10>No date filter</size>" as Q2 <<Failure>>
+    component "**Full scan**\n<size:10>All 365 partitions</size>" as FULL <<Failure>>
+    database "**Scan**\n<size:10>High I/O • Timeout risk</size>" as S2 <<Failure>>
+}
+
+Q1 --> PRUNE1 : "Filter applied"
+PRUNE1 --> S1 : "Read 31"
+
+Q2 --> FULL : "No filter"
+FULL --> S2 : "Read 365"
+S1 --> Q1 : "fast result"
+S2 --> Q2 : "timeout risk"
+
+@enduml

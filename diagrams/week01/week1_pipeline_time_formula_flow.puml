@@ -1,0 +1,18 @@
+@startuml
+!include ../_template_styles.puml
+
+start
+:Ingest;
+:Transform;
+:Aggregate;
+:Load;
+stop
+
+note right
+T_total = T_ingest + T_transform
+         + T_aggregate + T_load
+
+Slowest stage dominates wall-clock time.
+end note
+
+@enduml

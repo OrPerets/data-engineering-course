@@ -1,0 +1,22 @@
+@startuml
+!include ../_template_styles.puml
+
+top to bottom direction
+
+card "Reducer loads n_i" as N
+card "Total values N" as TV
+card "Reducer count R" as RC
+component "sigma = max(n_i) / (N/R)" as F
+storage "Skew ratio" as OUT
+
+N --> F
+TV --> F
+RC --> F
+F --> OUT
+
+note right of OUT
+sigma ~ 1 balanced
+sigma >> 1 skewed
+end note
+
+@enduml

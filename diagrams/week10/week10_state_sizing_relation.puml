@@ -1,0 +1,17 @@
+@startuml
+!include ../_template_styles.puml
+
+left to right direction
+
+card "active keys" as K
+card "active windows" as W
+card "value size" as V
+component "State ~= keys x windows x value_size" as F
+storage "Checkpoint size/time" as O
+
+K --> F
+W --> F
+V --> F
+F --> O
+
+@enduml

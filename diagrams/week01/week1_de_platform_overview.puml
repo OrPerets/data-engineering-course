@@ -1,0 +1,18 @@
+@startuml
+!include ../_template_styles.puml
+' Data Engineer — platform overview
+top to bottom direction
+
+cloud "**Data Platform**\n<size:14>Infrastructure of data</size>" as P <<Primary>>
+
+database "**Databases**" as DB <<Control>>
+database "**Warehouses**" as WH <<Task>>
+rectangle "**Integration\nTools**" as I <<Schema>>
+rectangle "**Analytical\nSystems**" as A <<Control>>
+
+P --> DB
+P --> WH
+P --> I
+P --> A
+
+@enduml

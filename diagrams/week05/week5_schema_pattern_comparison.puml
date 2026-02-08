@@ -1,0 +1,27 @@
+@startuml
+!include ../_template_styles.puml
+
+left to right direction
+
+frame "Star" {
+  database "Fact" as SF
+  component "Flat dims" as SD
+  SF --> SD
+}
+
+frame "Snowflake" {
+  database "Fact" as NF
+  component "Normalized dims" as ND
+  component "More joins" as NJ
+  NF --> ND --> NJ
+}
+
+frame "Galaxy" {
+  database "Fact A" as G1
+  database "Fact B" as G2
+  component "Conformed dims" as GD
+  G1 --> GD
+  G2 --> GD
+}
+
+@enduml

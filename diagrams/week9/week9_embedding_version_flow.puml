@@ -1,0 +1,22 @@
+@startuml
+!include ../_template_styles.puml
+
+left to right direction
+
+component "Tokenizer vT" as T
+component "Vocab vV" as V
+component "Embedding model vE" as E
+storage "feature_version" as F
+component "Training / Inference" as M
+
+T --> F
+V --> F
+E --> F
+F --> M
+
+note bottom
+Inference must use compatible
+feature_version metadata.
+end note
+
+@enduml

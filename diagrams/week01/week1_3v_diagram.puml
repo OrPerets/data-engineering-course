@@ -1,0 +1,15 @@
+@startuml
+!include ../_template_styles.puml
+' 3V's of Big Data — Velocity, Variety, Volume
+left to right direction
+
+card "**Velocity**\n\n<size:14>Data grows very fast</size>\n<size:14>Doubling every ~2 years</size>" as V1 <<Primary>>
+
+card "**Variety**\n\n<size:14>Structured – predefined schema</size>\n<size:14>Unstructured – documents</size>" as V2 <<Control>>
+
+card "**Volume**\n\n<size:14>Very large (Petabytes)</size>\n<size:14>1 Peta = 1024 TB</size>" as V3 <<Task>>
+
+V1 -> V2
+V2 -> V3
+
+@enduml

@@ -7,8 +7,8 @@ skinparam linetype ortho
 skinparam shadowing true
 skinparam roundcorner 12
 skinparam handwritten false
-skinparam nodesep 60
-skinparam ranksep 50
+skinparam nodesep 140
+skinparam ranksep 100
 
 
 '-------------------------
@@ -187,14 +187,14 @@ package "LAYER 5" #FFFFFF {
 '=================================================
 ' ENHANCED FLOW
 '=================================================
-BOX1 -[#7C4DFF,thickness=2]left-> BOX2 
-BOX2 -[#5C6BC0,thickness=2]-> BOX3 : <color:#3949AB>Label</color>
-BOX2 -[#5C6BC0,thickness=2]-> BOX4 : <color:#3949AB>Label</color>
-BOX2 -[#5C6BC0,thickness=2]-> BOX5 : <color:#3949AB>Label</color>
-BOX3 -[#00897B,thickness=2]right-> BOX7 
-BOX7 -[#FF6F00,thickness=2]-> BOX6 
-BOX6 -[#1565C0,thickness=2]-> BOX8 : <color:#0D47A1>Label</color>
-BOX6 -[#1565C0,thickness=2]-> BOX9 : <color:#0D47A1>Label</color>
-BOX6 -[#5C6BC0,thickness=2,dashed]-> BOX2 : <color:#3949AB>Label</color>
+BOX1 -left-> BOX2
+BOX2 -> BOX3 : Label
+BOX2 -> BOX4 : Label
+BOX2 -> BOX5 : Label
+BOX3 -right-> BOX7
+BOX7 -> BOX6
+BOX6 -> BOX8 : Label
+BOX6 -> BOX9 : Label
+BOX6 -[dashed]-> BOX2 : Label
 
 @enduml

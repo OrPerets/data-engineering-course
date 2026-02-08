@@ -1,0 +1,22 @@
+@startuml
+!include ../_template_styles.puml
+
+left to right direction
+
+frame "Dense matrix" {
+  storage "N x |V| cells" as D1
+  component "Mostly zeros" as D2
+  card "High memory + scan cost" as D3 <<Failure>>
+  D1 --> D2 
+   D2 --> D3
+}
+
+frame "Sparse triples" {
+  storage "(doc_id, term, weight)" as S1
+  component "Store non-zero only" as S2
+  card "Efficient for retrieval" as S3
+  S1 --> S2 
+  S2 --> S3
+}
+
+@enduml

@@ -1,0 +1,17 @@
+@startuml
+!include ../_template_styles.puml
+
+top to bottom direction
+
+rectangle "Corpus" as C
+rectangle "Document" as D
+rectangle "Paragraph" as P
+rectangle "Sentence" as S
+rectangle "Token" as T
+
+C --> D
+D --> P
+P --> S
+S --> T
+
+@enduml

@@ -1,0 +1,19 @@
+@startuml
+!include ../_template_styles.puml
+!include _week2_visual_style.puml
+
+top to bottom direction
+skinparam nodesep 75
+skinparam ranksep 70
+
+rectangle "Deployment\nMap" as ROOT <<store>>
+
+rectangle "Serving\nAPI + NoSQL" as S <<source>>
+rectangle "Sync\nCDC / Streams" as M <<process>>
+rectangle "Analytics\nSQL + BI" as A <<decision>>
+
+ROOT -down-> S
+ROOT -down-> M
+ROOT -down-> A
+
+@enduml

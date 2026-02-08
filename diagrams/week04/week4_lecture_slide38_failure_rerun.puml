@@ -25,7 +25,7 @@ rectangle "RUN 2 (Rerun)" <<Task>> {
 
 P1 -down-> TARGET : "OK"
 P2 -down-> TARGET : "OK"
-P3 -[#D32F2F]down-> TARGET : "fails"
+P3 -down-> TARGET : "fails"
 
 P3B -down-> TARGET : "write P3"
 

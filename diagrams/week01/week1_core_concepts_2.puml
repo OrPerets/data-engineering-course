@@ -11,7 +11,7 @@ package "Processing Paradigms" {
 
 card "**HYBRID**\n\n<size:15><b>Best of Both:</b></size>\n\n<size:14>• Batch for history</size>\n<size:14>• Stream for recent</size>\n<size:14>• Lambda/Kappa</size>\n<size:14>• Unified serving</size>\n\n<size:13><i>Ex: 2yr batch + 24h stream</i></size>" as H <<Schema>>
 
-B -down[#1565C0,thickness=2]-> H : <color:#3949AB>History</color>
-S -down[#00897B,thickness=2]-> H : <color:#3949AB>Real-time</color>
+B -down-> H : History
+S -down-> H : Real-time
 
 @enduml

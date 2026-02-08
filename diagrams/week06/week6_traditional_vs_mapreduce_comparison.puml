@@ -1,0 +1,29 @@
+@startuml
+!include ../_template_styles.puml
+
+left to right direction
+
+frame "Traditional single machine" {
+  actor "Analyst" as U1
+  component "App logic" as A1
+  database "Single DB" as D1
+  storage "One compute node" as C1
+  U1 --> A1
+  A1 --> D1
+  D1 --> C1 : full scan
+}
+
+frame "MapReduce cluster" {
+  actor "Analyst" as U2
+  component "Job submitter" as J
+  component "Mappers" as M
+  component "Reducers" as R
+  storage "Distributed storage" as DS
+  U2 --> J
+  J --> M
+  M --> R : shuffle by key
+  DS --> M
+  R --> DS
+}
+
+@enduml

@@ -1,0 +1,23 @@
+@startuml
+!include ../_template_styles.puml
+
+left to right direction
+skinparam nodesep 120
+skinparam ranksep 90
+
+rectangle "ACID\n- Atomicity\n- Consistency\n- Isolation\n- Durability" as ACID
+rectangle "BASE\n- Basically available\n- Soft state\n- Eventually consistent" as BASE
+rectangle "CAP (during partition)\nChoose CP or AP\nCannot maximize C + A together" as CAP
+
+component "Best for\ncorrectness-critical transactions" as W1
+component "Best for\nhigh-throughput serving" as W2
+component "Best for\nexplicit failure-mode decisions" as W3
+
+ACID -down-> W1
+BASE -down-> W2
+CAP -down-> W3
+
+ACID -right-> BASE
+BASE -right-> CAP
+
+@enduml

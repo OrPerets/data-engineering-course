@@ -1,0 +1,22 @@
+@startuml
+!include ../_template_styles.puml
+
+left to right direction
+
+card "T_map" as TM
+card "T_shuffle" as TS
+card "T_reduce" as TR
+component "T_total = T_map + T_shuffle + T_reduce" as F
+storage "End-to-end latency" as OUT
+
+TM --> F
+TS --> F
+TR --> F
+F --> OUT
+
+note bottom of TS
+Usually the largest term
+at scale.
+end note
+
+@enduml

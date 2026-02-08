@@ -1,0 +1,16 @@
+@startuml
+!include ../_template_styles.puml
+' Volume scale — GB to PB
+top to bottom direction
+
+rectangle "**Volume Scale**" as H <<Primary>>
+
+rectangle "**GB**\nGigabytes" as GB <<Control>>
+rectangle "**TB**\nTerabytes (1024 GB)" as TB <<Task>>
+rectangle "**PB**\nPetabytes (1024 TB)" as PB <<Schema>>
+
+H --> GB
+GB --> TB
+TB --> PB
+
+@enduml

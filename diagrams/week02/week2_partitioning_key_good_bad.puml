@@ -1,0 +1,14 @@
+@startuml
+!include ../_template_styles.puml
+!include _week2_visual_style.puml
+
+left to right direction
+skinparam nodesep 75
+skinparam ranksep 70
+
+rectangle "Good Key: user_id\nA 33% | B 34% | C 33%" as GOOD <<good>>
+rectangle "Bad Key: country\nA 7% | B 86% | C 7%" as BAD <<risk>>
+
+GOOD -right-> BAD : same traffic, different partition key
+
+@enduml

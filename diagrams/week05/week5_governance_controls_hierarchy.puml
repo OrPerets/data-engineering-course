@@ -1,0 +1,17 @@
+@startuml
+!include ../_template_styles.puml
+
+top to bottom direction
+
+rectangle "Governance Controls" as G
+card "SQL guardrails" as A
+card "Semantic metrics" as B
+card "Data contracts" as C
+card "Cost monitoring" as D
+
+G --> A
+G --> B
+G --> C
+G --> D
+
+@enduml

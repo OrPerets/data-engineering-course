@@ -1,0 +1,17 @@
+@startuml
+!include ../_template_styles.puml
+
+top to bottom direction
+
+rectangle "Ingestion Contract" as ROOT
+card "Business key + event time" as K
+card "Accepted lateness window" as L
+card "Quality thresholds" as Q
+card "Recovery policy" as R
+
+ROOT --> K
+ROOT --> L
+ROOT --> Q
+ROOT --> R
+
+@enduml

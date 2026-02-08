@@ -9,7 +9,7 @@ component "**ETL**\n<size:14>Extract · Transform</size>\n<size:14>Load · Clean
 
 database "**Output**\n<size:14>Structured Data</size>\n<size:14>Queryable</size>" as O <<Schema>>
 
-S -[#5C6BC0,thickness=2]-> P : <color:#3949AB>**Raw**</color>
-P -[#00897B,thickness=2]-> O : <color:#3949AB>**Clean**</color>
+S -> P : **Raw**
+P -> O : **Clean**
 
 @enduml

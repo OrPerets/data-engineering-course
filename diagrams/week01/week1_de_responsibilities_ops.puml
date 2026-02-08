@@ -1,0 +1,15 @@
+@startuml
+!include ../_template_styles.puml
+' Data Engineer Responsibilities — ML, DBMS, monitoring
+left to right direction
+
+rectangle "**ML Deployment**\nProduction pipelines" as ML <<Primary>>
+
+rectangle "**Data & Metadata**\nDBMS management" as DB <<Control>>
+
+rectangle "**Monitoring**\nPipeline stability\n& performance" as M <<Task>>
+
+ML -> DB
+DB -> M
+
+@enduml

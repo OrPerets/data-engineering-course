@@ -1,0 +1,26 @@
+@startuml
+!include ../_template_styles.puml
+
+left to right direction
+skinparam nodesep 110
+skinparam ranksep 90
+
+component "Distributed DB Cluster" as CORE
+
+rectangle "Hot partition\none shard overloaded" as F1 <<Failure>>
+rectangle "Replica lag\nstale reads" as F2 <<Failure>>
+rectangle "Network split\nconflicting writes" as F3 <<Failure>>
+rectangle "Coordinator crash\nblocked transaction" as F4 <<Failure>>
+
+CORE -up-> F1
+CORE -down-> F2
+CORE -right-> F3
+CORE -left-> F4
+
+component "Mitigations\n- better partition key\n- quorum policy\n- failover drills" as M
+F1 -down-> M
+F2 -down-> M
+F3 -down-> M
+F4 -down-> M
+
+@enduml

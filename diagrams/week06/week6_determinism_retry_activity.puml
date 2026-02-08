@@ -1,0 +1,19 @@
+@startuml
+!include ../_template_styles.puml
+
+start
+:Run map + reduce job;
+if (Task failed?) then (yes)
+  :Retry same input slice;
+  if (Pure deterministic logic?) then (yes)
+    :Same output produced;
+    :Idempotent upsert sink;
+  else (no)
+    :Divergent output risk <<Failure>>;
+  endif
+else (no)
+  :Publish output;
+endif
+stop
+
+@enduml

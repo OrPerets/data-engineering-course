@@ -1,0 +1,28 @@
+@startuml
+!include ../_template_styles.puml
+
+left to right direction
+
+frame "Process model" {
+  rectangle "Process A" as P1
+  rectangle "Process B" as P2
+  P1 -[hidden]down- P2
+  note right of P1
+  Isolated memory
+  stronger fault isolation
+  end note
+}
+
+frame "Thread model" {
+  rectangle "Single Process" as PR {
+    component "Thread 1" as T1
+    component "Thread 2" as T2
+    component "Shared memory" as TM
+    T1 --> TM
+    T2 --> TM
+  }
+}
+
+P2 -[hidden]right- PR
+
+@enduml

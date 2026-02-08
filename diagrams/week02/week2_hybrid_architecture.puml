@@ -1,0 +1,27 @@
+@startuml
+!include ../_template_styles.puml
+!include _week2_visual_style.puml
+
+top to bottom direction
+skinparam nodesep 75
+skinparam ranksep 70
+
+rectangle "Hybrid\nPlatform" as ROOT <<store>>
+
+rectangle "NoSQL\nServing" as NOS <<shardB>>
+rectangle "SQL\nWarehouse" as DW <<store>>
+
+rectangle "API" as API <<good>>
+rectangle "BI / ML" as BI <<decision>>
+
+rectangle "CDC\nSync" as SYNC <<process>>
+
+ROOT -down-> NOS
+ROOT -down-> DW
+
+NOS -down-> API
+DW -down-> BI
+NOS -right-> SYNC
+SYNC -right-> DW
+
+@enduml

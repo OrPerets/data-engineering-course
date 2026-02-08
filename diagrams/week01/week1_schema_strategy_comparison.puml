@@ -1,0 +1,32 @@
+@startuml
+!include ../_template_styles.puml
+
+top to bottom direction
+
+frame "Schema-on-write" {
+  database "Ingest Gate" as W1
+  component "Validate types\nand required fields" as W2
+  storage "Curated table" as W3
+  W1 --> W2 --> W3
+}
+
+frame "Schema-on-read" {
+  cloud "Raw zone" as R1
+  component "Interpret schema\nat query time" as R2
+  storage "Flexible outputs" as R3
+  R1 --> R2 --> R3
+}
+
+W3 -[hidden]right- R1
+
+note right of W2
+Higher trust,
+slower onboarding
+end note
+
+note right of R2
+Faster onboarding,
+more governance required
+end note
+
+@enduml

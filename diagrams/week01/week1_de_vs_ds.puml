@@ -9,8 +9,8 @@ card "**DATA SCIENCE**\n\n<size:15><b>Focus:</b></size>\n<size:14>Insights from 
 
 card "**SHARED**\n\n<size:15><b>Collaboration:</b></size>\n\n<size:14>• Quality data</size>\n<size:14>• Large datasets</size>\n<size:14>• Feature stores</size>\n<size:14>• Exploration</size>\n<size:14>• Performance</size>\n<size:14>• Reproducibility</size>" as O <<Schema>>
 
-DE -down[#1565C0,thickness=2]-> O : <color:#3949AB>Provides</color>
-O -right[#5C6BC0,thickness=2]-> DS : <color:#3949AB>Enables</color>
-DS -up[#5C6BC0,thickness=2,dashed]-> DE : <color:#3949AB>Feedback</color>
+DE -down-> O : Provides
+O -right-> DS : Enables
+DS -up[dashed]-> DE : Feedback
 
 @enduml

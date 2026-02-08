@@ -1,0 +1,15 @@
+@startuml
+!include ../_template_styles.puml
+
+start
+:Map emits records;
+:Buffer in memory;
+if (Buffer full?) then (yes)
+  :Spill to local disk;
+endif
+:Sort + merge spill files;
+:Reducers fetch partitions;
+:Reducer merge and aggregate;
+stop
+
+@enduml

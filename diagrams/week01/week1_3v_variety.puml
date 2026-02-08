@@ -1,0 +1,15 @@
+@startuml
+!include ../_template_styles.puml
+' Variety — Structured vs Unstructured
+left to right direction
+
+rectangle "**Variety**" as V <<Primary>>
+
+rectangle "**Structured**\n\n<size:14>Predefined schema</size>\n<size:14>Tables, rows, columns</size>" as S <<Control>>
+
+rectangle "**Unstructured**\n\n<size:14>Documents, different properties</size>\n<size:14>Text, logs, media</size>" as U <<Task>>
+
+V --> S
+V --> U
+
+@enduml

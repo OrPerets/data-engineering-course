@@ -1,0 +1,18 @@
+@startuml
+!include ../_template_styles.puml
+
+participant "Mapper" as M
+participant "Reducer hot term" as RH
+participant "Reducer normal" as RN
+
+M -> RH : (the,1) x many docs
+M -> RN : (systems,1) x fewer docs
+RH --> RH : spill + long queue
+RN --> RN : quick aggregation
+
+note right of RH
+DF stage hotspot
+for stop words
+end note
+
+@enduml

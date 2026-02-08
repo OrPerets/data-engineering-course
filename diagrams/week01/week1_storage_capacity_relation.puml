@@ -1,0 +1,19 @@
+@startuml
+!include ../_template_styles.puml
+
+left to right direction
+
+card "Daily volume\nV_d" as V
+card "Retention\nR" as R
+card "Replication\nr" as RP
+card "Compression\nc" as C
+component "Storage model\nS = (V_d * R * r) / c" as F
+storage "Required\ncapacity S" as OUT
+
+V --> F
+R --> F
+RP --> F
+C --> F
+F --> OUT
+
+@enduml

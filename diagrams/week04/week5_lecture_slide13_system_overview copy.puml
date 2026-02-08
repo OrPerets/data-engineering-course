@@ -1,0 +1,35 @@
+@startuml
+'=================================================
+' DWH AND LAKE IN THE ANALYTICS PIPELINE
+'=================================================
+
+!include ../_template_styles.puml
+
+top to bottom direction
+
+rectangle "SOURCES" <<Primary>> {
+    database "**DB / API**\n<size:10>Operational systems</size>" as SRC1 <<Primary>>
+    database "**Files / Logs**\n<size:10>Raw data</size>" as SRC2 <<Primary>>
+}
+
+rectangle "ETL / ELT" <<Primary>> {
+    component "**Extract • Transform**\n<size:10>Load to DWH / Lake</size>" as ETL <<Task>>
+}
+
+rectangle "STORAGE" <<Primary>> {
+    database "**Data Warehouse**\n<size:10>Schema-on-write • Star schema</size>" as DWH <<Control>>
+    database "**Data Lake**\n<size:10>Schema-on-read • Raw + processed</size>" as LAKE <<Task>>
+}
+
+rectangle "CONSUMERS" <<Primary>> {
+    component "**BI / Analytics**\n<size:10>SQL • Reports</size>" as BI <<Control>>
+}
+
+SRC1 --> ETL
+SRC2 --> ETL
+ETL --> DWH
+ETL --> LAKE
+DWH --> BI : "governed BI"
+LAKE --> BI : "ad-hoc / ML"
+
+@enduml

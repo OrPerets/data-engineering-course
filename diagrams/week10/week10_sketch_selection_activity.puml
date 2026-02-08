@@ -1,0 +1,19 @@
+@startuml
+!include ../_template_styles.puml
+
+start
+if (Need distinct?) then (yes)
+  :Use HyperLogLog;
+else (no)
+  if (Need per-key frequency?) then (yes)
+    :Use Count-Min Sketch;
+  else (no)
+    :Use Morris-style counter;
+  endif
+endif
+if (Need merge across shards?) then (yes)
+  :Prefer HLL/CMS variants;
+endif
+stop
+
+@enduml

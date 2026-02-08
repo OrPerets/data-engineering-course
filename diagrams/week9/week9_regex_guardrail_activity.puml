@@ -1,0 +1,19 @@
+@startuml
+!include ../_template_styles.puml
+
+start
+:Load regex pattern;
+if (Pattern safety-tested?) then (no)
+  :Reject deployment <<Failure>>;
+  stop
+endif
+:Cap input length;
+:Apply regex with timeout;
+if (Timeout triggered?) then (yes)
+  :Route record to quarantine;
+else (no)
+  :Emit cleaned token;
+endif
+stop
+
+@enduml

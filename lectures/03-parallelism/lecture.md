@@ -1,293 +1,289 @@
 # Week 3: Parallelism and Divide-and-Conquer
 
 ## Purpose
-- Why parallelism and divide-and-conquer matter in data engineering
-- Single-node limits force distribution of work
-- Foundation for distributed batch and streaming processing
+- Understand why single-worker data jobs fail at scale
+- Learn divide-conquer-combine as a production pattern
+- Reason about runtime, bottlenecks, and failure behavior
+
+
+---
 
 ## Learning Objectives
-- Define divide-and-conquer and its three phases
-- Distinguish parallelism from concurrency
-- Express pure functions and independence for distribution
-- Trace a parallel dataflow job (partition → group → merge)
-- Compute work, span, and speedup
-- Identify data skew and hot keys as failure modes
-- Describe mitigations: local aggregation, partitioning, salting
+- Distinguish process/thread and parallelism/concurrency
+- Choose multithreading vs multiprocessing by workload type
+- Model runtime using work (`W`) and span (`S`)
+- Apply divide-and-conquer with skew-aware design
 
-## Core Concepts — Constraints: Divide-and-Conquer
-- Split problem into subproblems, solve independently, combine
-- **Constraint:** no shared state across chunks
-- **Divide:** partition input
-- **Conquer:** same function per chunk
-- **Combine:** group by key
 
-![](../../diagrams/week03/week3_divide_conquer.png)
+---
+
+## Lecture Flow
+- Parallel execution foundations
+- Process vs thread execution models
+- Divide-and-conquer deep dive
+- Performance limits and skew mitigation
+- Failure handling and design checklist
+
+---
+
+## Why Parallelism Matters
+- Data volume grows faster than single-node throughput
+- SLA targets require lower end-to-end latency
+- Reliability needs retry-safe independent tasks
+- Cost depends on balancing compute and data movement
+
+
+---
+
+## Running Context (This Week)
+- Workload: count product views from large event logs
+- Scale: billions of records, many repeated keys
+- Constraint: finish within fixed batch window
+- Goal: scalable, deterministic, and rerunnable pipeline
+
+---
+
+## Process vs Thread
+- **Process**: independent memory space and OS resources
+- **Thread**: lightweight execution unit inside one process
+- Processes isolate failures better
+- Threads share memory, so coordination is cheaper but riskier
+
+![Process vs thread architecture](../../diagrams/week03/week3_process_thread_architecture.png){width=82%}
+
+---
+
+## Process vs Thread: Practical Trade-offs
+- Process startup is heavier than thread startup
+- Inter-process communication is slower than shared-memory access
+- One crashing process usually does not kill others
+- One crashing thread can crash the whole process
+
+
+---
+
+## Multiprocessing vs Multithreading
+- **Multiprocessing**: multiple processes on multiple cores
+- **Multithreading**: multiple threads within process(es)
+- Use multiprocessing for CPU-heavy parallel tasks
+- Use multithreading for I/O overlap (network, disk, APIs)
+
+
+---
+
+## Example: Which One to Pick?
+- CPU-heavy parsing/compression/hash joins -> multiprocessing
+- API calls and file/network waits -> multithreading
+- Mixed workloads often combine both patterns
+- Rule: optimize for bottleneck, not for ideology
+
+
+---
 
 ## Parallelism vs Concurrency
-- **Parallelism:** simultaneous execution on multiple cores
-- **Concurrency:** overlapping (may be time-sliced)
-- **Pure functions** enable safe distribution
+- **Parallelism**: tasks execute simultaneously
+- **Concurrency**: tasks make progress in overlapping time
+- Parallelism improves throughput/latency for compute
+- Concurrency improves utilization during waits
 
-![](../../diagrams/week03/week3_parallelism_vs_concurrency.png)
+![Parallelism vs concurrency timeline](../../diagrams/week03/week3_parallelism_concurrency_timeline.png){width=82%}
 
-## Processes, Threads, and Virtualization
-- **Process:** isolated memory + OS resources; higher startup cost
-- **Thread:** shared memory within a process; cheaper to spawn
-- **Context switch:** OS saves/restores state to share CPU among tasks
-- **Scheduler:** decides which threads run on which cores
-- **Virtualization:** abstract hardware for isolation
-  - **VMs:** full OS per guest; strong isolation, more overhead
-  - **Containers:** shared host kernel; lighter isolation, faster startup
-- **Practical impact:** thread-heavy workloads need careful locking; process-heavy workloads need efficient IPC and batching
+---
 
-## Core Concepts — Why Systems Break: Determinism and Scalability
-- **Determinism:** same input ⇒ same output
-- **Violation** (shared state, time-dependent logic) ⇒ wrong results
-- **Scalability:** more workers ⇒ more throughput
-- **Until** repartition or skew dominates
+## Divide-and-Conquer Pattern
+- **Divide**: partition input into independent chunks
+- **Conquer**: run identical pure logic per chunk
+- **Combine**: group and aggregate partial outputs
+- Core execution shape of MapReduce and Spark jobs
 
-## Formal Work and Span
-- Let \(W\) = total work, \(S\) = span (critical path), \(p\) = workers
+![Divide and conquer overview](../../diagrams/week03/week3_divide_conquer.png){width=76%}
+
+
+---
+
+## Divide Step: Partition Design
+- Partition by keys aligned to dominant read/aggregate path
+- Keep partition sizes balanced to avoid stragglers
+- Preserve locality when possible
+- Bad partitioning creates skew and long-tail latency
+
+
+---
+
+## Conquer Step: Local Compute Rules
+- Keep transformations pure and deterministic
+- Avoid shared mutable state across workers
+- Emit compact intermediate records
+- Use local pre-aggregation to cut shuffle size
+
+
+---
+
+## Combine Step: Global Merge Rules
+- Route same key to same reducer/consumer
+- Use associative operations for stable merges
+- Make final writes idempotent
+- Keep lineage for replay and auditing
+
+
+---
+
+## Drill-Down Example: Product Frequency
+- Input record: `order_id, product_id`
+- Divide: split log files by block
+- Conquer: each worker emits `(product_id, 1)`
+- Combine: reducers sum counts per `product_id`
+
+
+---
+
+## Drill-Down Example: Before vs After Local Aggregation
+- Without local combine: 10M events -> 10M shuffled pairs
+- With local combine: 10M events -> ~200K shuffled pairs
+- Benefit: lower network traffic and reducer load
+- Constraint: operation must be associative/commutative
+
+![Local aggregation impact](../../diagrams/week03/week3_local_aggregation.png){width=76%}
+
+
+---
+
+## Divide-and-Conquer Anti-Patterns
+- Partitioning on low-cardinality hot keys
+- Non-deterministic transforms (`now()`, random seeds)
+- Large object payloads in shuffle keys/values
+- Non-idempotent output writes on retries
+
+---
+
+## Correctness First: Determinism
+- Same input must produce same output on rerun
+- Shared mutable state breaks deterministic behavior
+- Time/random-dependent logic causes divergence
+- Idempotent writes are mandatory in production
+
+
+---
+
+## Work and Span Model
 $$
 T_p \ge \max\left(\frac{W}{p}, S\right)
 $$
-- Interpretation: parallel time bounded by work and critical path
-- Engineering implication: low \(S\) is required for near-linear scale
-- Speedup is limited by the sequential fraction
 $$
 \text{Speedup} \le \frac{W}{S}
 $$
-- Interpretation: Amdahl-style bound on parallel benefit
-- Engineering implication: remove sequential bottlenecks first
+- `W`: total work, `S`: critical path, `p`: workers
+- Lower span is required for near-linear scaling
 
-![](../../diagrams/week03/week3_work_span.png)
+![Work and span bound](../../diagrams/week03/week3_runtime_bound_formula.png){width=76%}
 
-## Repartitioning and Coordination
-- **Repartitioning cost:** network and disk I/O to group by key
-- **Skew:** one key ⇒ one worker overloaded ⇒ OOM
-- **Coordination:** fault tolerance, stragglers, partial failures
-- **Design for them**
 
-## Cost of Naïve Design (Parallelism): What Goes Wrong
-- **Naïve:** "just add more workers"
-- **Repartitioning** and **skew** often dominate
-- More workers ⇒ more repartition traffic
-- **Cost explosion**
+---
 
-## What Goes Wrong
-- **Naïve:** shared state or order-dependent logic
-- ⇒ **Non-determinism**, wrong results on rerun
-- **Naïve:** ignore key distribution
-- Hot key **overloads one worker**; job latency = slowest task
-- **Takeaway:** minimize repartition, balance partitions, pure functions
+## Where Time Actually Goes
+- Local compute is usually not the main bottleneck
+- Repartition/shuffle often dominates runtime
+- Disk spill and network congestion increase tail latency
+- End-to-end duration is bounded by slowest stage/task
 
-## Running Example — Data & Goal
-- **Input:** order lines with product IDs
-- Sample: "A12 B07 C33"; "A12 B07 D44"
-- "B07 C33 A12"
-- **Goal:** product frequency — (product_id, count)
 
-## Running Example — Step-by-Step
-- **Step 1: Local tokenize & count** — each record independently
-- Emit `(product_id, 1)` per product from each record
-- R1: (A12,1),(B07,1),(C33,1)
-- R2: (A12,1),(B07,1),(D44,1)
-- R3: (B07,1),(C33,1),(A12,1)
+---
 
-## Running Example — Step-by-Step
-- **Step 2: Repartition** — framework sends same key to same worker
-- **Grouped:** A12→[1,1,1], B07→[1,1,1], C33→[1,1]
-- D44→[1]
-- Main network and I/O cost in this phase
+## Execution Flow
+![Execution flow](../../diagrams/week03/week3_lecture_slide22_execution_flow.png){width=76%}
 
-## Data Context: Order Input (Records 1–3)
-- R1: "A12 B07 C33"
-- R2: "A12 B07 D44"
-- R3: "B07 C33 A12"
-- Local emit produces (product_id, 1) per token
+---
 
-## Running Example — Step-by-Step
-- **Step 3: Merge** — each worker gets one key and values
-- Sum the values for the final count
-- **Output:** (A12,3), (B07,3), (C33,2), (D44,1)
+## Core Bottleneck: Data Skew
+- One hot key can overload one partition
+- Most workers finish quickly while one lags
+- End-to-end latency equals slowest worker
+- Real datasets are often skewed (Zipf-like)
 
-## Running Example — Step-by-Step
-- **Result:** product-count table; correct and deterministic
-- **Trade-off:** repartition moves data
-- Skew can overload one worker
-- Pattern scales to TB in distributed batch systems
 
-## From Example to Pipeline
-- Same pattern: divide → conquer → combine
-- Next: system view of parallel pipeline
-- Then cost and failure
+---
 
-## Parallel Pipeline Overview
-- Divide: split input into chunks; assign to workers
-- Parallel workers: local compute (or local aggregate) on each chunk
-- Combine: repartition groups by key; workers aggregate
+## Stragglers
+- Causes: skew, GC pauses, noisy neighbors, slow disks
+- One straggler can delay the whole job
+- Retries help only when cause is transient
+- Persistent skew requires design changes
 
-![](../../diagrams/week03/week3_lecture_slide13_system_overview.png)
+![Straggler effect](../../diagrams/week03/week3_straggler.png){width=74%}
 
-## Cost & Scaling Analysis: Time Model
-- **Work \(W\):** total operations over all workers
-- **Span \(S\):** critical path; longest dependency chain
-- **Speedup:**
-$$
-W/S
-$$
-with enough workers
-- Upper bound = number of workers
 
-## Cost & Scaling Analysis: Memory and Storage
-- **Local compute:** each task holds one record + emitted (k,v)
-- Bounded per task
-- **Repartition:** all (k,v) written to disk/network
-- Peak ≈ size of local output
-- **Merge:** one key's values in memory; skew ⇒ OOM
-
-## Cost & Scaling Analysis: Network and Throughput
-- **Repartition traffic:** ≈ size of local output
-- **Bottleneck:** link bandwidth and disk I/O
-- Often limits scale more than CPU
-- **Latency:** job time ≈ local compute + repartition + merge
-- Repartition usually dominates
-
-## Example: Work and Span
-- 1B records, 10 items each ⇒ 10B local emits
-- 1M distinct products ⇒ 1M merge tasks
-- Local compute takes 100 ns/record ⇒ 100 s work
-- With 1000 workers ⇒ ~0.1 s local phase (ideal)
-
-## Repartition Size and Network Cost
-- Repartition bytes ≈ local output size
-- Every (k,v) sent over network to responsible worker
-- Example: 10B emits × 20 B/pair ⇒ 200 GB repartition
-- At 10 Gbps ⇒ ~160 s minimum
-- Local aggregation reduces local output before repartition
-
-## Worker Memory and Skew Risk
-- Each worker holds one key's value list in memory
-- Skew ⇒ one list huge ⇒ OOM
-- Mitigation: local aggregation, salting, custom partitioning
-
-## Cost Summary
-- **Work:** total CPU
-- **Span:** critical path
-- **Repartition:** network and disk I/O
-- **Skew:** one partition dominates
-- Engineering: minimize repartition, balance partitions
-
-## Execution Flow: Partition–Group–Merge
-- Local compute reads records, emits (k,v)
-- Repartition groups by key
-- Merge aggregates per key
-
-![](../../diagrams/week03/week3_lecture_slide22_execution_flow.png)
-
-## Pitfalls & Failure Modes: Shared State and Stragglers
-- Task logic with global state is not deterministic
-- One slow worker (straggler) delays the whole job
-- Causes: skew, GC, network, disk
-- Mitigation: speculative execution, better partitioning
-
-![](../../diagrams/week03/week3_straggler.png)
-
-## Pitfalls: Non-determinism
-- Reruns must yield same result
-- Shared state breaks this
-- Design: pure task functions, deterministic key derivation
-- Idempotent writes
-
-## Stragglers: Causes and Impact
-- One task runs much longer than others
-- Job latency = slowest task
-- Causes: data skew, GC pauses, network, disk contention
-- Mitigation: speculative execution, partition balance
-
-## Skew: Hot Key and Hot Partition
-- **Hot key:** one key has majority of values
-- E.g. bot user_id, null bucket
-- **Real data is often Zipfian**
-- **Hot partition:** one worker gets most data ⇒ OOM
-- **Job latency = slowest worker**
-
-## Skew Detection
-- Per-partition size after repartition
-- Worker runtimes
-- Alert if max ≫ median
-- P99 worker time, spill count
+---
 
 ## Mitigation 1: Local Aggregation
-- Local pre-aggregation before repartition
-- For sum/count: combine (k,v1),(k,v2) → (k,v1+v2)
-- Reduces repartition size
-- Only when merge is associative and commutative
+- Pre-aggregate identical keys before shuffle
+- Reduces network bytes and reducer pressure
+- Usually highest ROI optimization
+- Works only for associative/commutative operations
 
-![](../../diagrams/week03/week3_local_aggregation.png)
 
-## Mitigation 2: Salting (Split Hot Key)
-- Append random suffix: (k,v) → (k-salt,v)
-- Spread across workers
-- Small table: replicate key to all salt buckets
-- Second pass to combine results per original key
+---
+
+## Mitigation 2: Key Salting
+- Split hot key into subkeys (`key#0`, `key#1`, ...)
+- Distributes heavy load across workers
+- Add second-stage merge to unsalt
+- Trade-off: more pipeline complexity
+
+
+---
 
 ## Mitigation 3: Custom Partitioning
-- Default: hash(key) mod R
-- Custom: route hot keys to dedicated workers or spread
-- Combine with salting for hot key splits
-- Trade-off: more workers, more merge logic
+- Route known hot keys intentionally
+- Use domain knowledge beyond `hash(key) % N`
+- Isolate heavy tenants/users/regions
+- Requires continuous monitoring and tuning
 
-## Skew Mitigation Trade-offs
-- Local aggregation: free if merge is associative
-- Salting: increases replication and merge cost
-- Custom partitioning: requires key knowledge
+![Skew mitigation activity](../../diagrams/week03/week3_skew_mitigation_activity.png){width=76%}
 
-## Failure in Production
-- **Worker OOM:** one key's value list exceeds heap
-- Fix: salting or increase memory
-- **Timeout:** single worker runs too long
-- Fix: split partition, local aggregation, salting
-- **Detection:** monitor heap, GC, task duration
+![Skew mitigation patterns](../../diagrams/week03/week3_practice_slide18_skew_mitigation.png){width=76%}
 
-## Failure Scenario: Data Skew (Hot Key)
-- Hash partitioning sends same key to same worker
-- Hot key ⇒ one worker gets huge input ⇒ OOM
-- Other workers finish quickly; job waits or fails
 
-![](../../diagrams/week03/week3_lecture_slide38_failure_skew.png)
+---
 
-## Pitfalls & Failure Modes: Detection and Mitigation
-- **Detection:** per-partition sizes and worker runtimes
-- **Local aggregation:** pre-aggregation before repartition
-- **Custom partitioning / salting:** spread hot key across workers
+## Failure Scenario: Hot Key OOM
+- Repartition sends huge key-group to one worker
+- Worker repeatedly spills, then fails/OOM
+- Job retries and fails again
+- Fix is skew mitigation, not more retries
+
+![Failure under skew](../../diagrams/week03/week3_lecture_slide38_failure_skew.png){width=76%}
+
+---
+
+## Monitoring Signals
+- Max partition size vs median partition size
+- Task p95/p99 duration and retry count
+- Spill bytes, GC time, and OOM events
+- Shuffle read/write throughput and saturation
+
+
+---
+
+## Design Checklist
+- Is task logic deterministic and side-effect-safe?
+- Are partitions balanced for real key distribution?
+- Can local aggregation reduce shuffle volume?
+- Are outputs idempotent under reruns?
+
+
+---
 
 ## Best Practices
-- Keep task logic pure (no shared mutable state)
-- Minimize repartition size: reduce key size, use local aggregation
-- Partition by key so related data lands together
-- Avoid skew via salting if needed
-- Design for idempotency and reruns
-- Monitor skew and stragglers
-- Prefer smaller, bounded merge groups
-- Document key schema and partitioning strategy
+- Start with simple keys and pure transformations
+- Optimize shuffle volume before adding workers
+- Treat skew as default, not edge case
+- Test with production-like key distributions
 
-## Recap (Engineering Judgment)
-- **Divide-and-conquer:** divide → conquer → combine
-- **Constraint:** no shared state; pure functions
-- **Repartition is the bottleneck** — network and disk I/O
-- **Skew and hot keys** cause worker OOM
-- **Design for Zipfian key distribution**
-- **Cost reasoning:** work, span, repartition size
-- **Constraints drive design**
 
-## Pointers to Practice
-- Run full manual partition-group-merge on 8–12 input records
-- Compute repartition size and worker input size
-- Solve one skew scenario and mitigation
-- Reason about cost when one key dominates
+---
 
-## Additional Diagrams
-### Practice: Skew Mitigation
-
-![](../../diagrams/week03/week3_practice_slide18_skew_mitigation.png)
+## Recap
+- Process/thread choice affects reliability and overhead
+- Divide-and-conquer scales only with good partition design
+- Shuffle and skew are primary bottlenecks
+- Next: ETL ingestion reliability and idempotent loading

@@ -12,6 +12,6 @@ rectangle "**Load job f**\n\n<size:14>Run once: D -> target</size>\n<size:14>Rer
 
 rectangle "**Why it matters**\n\n<size:14>Failure requires rerun of same slice</size>\n<size:14>Without idempotency: duplicates</size>\n\n<size:13>MERGE or ON CONFLICT</size>\n<size:13>Update watermark only after commit</size>" as WHY <<Schema>>
 
-F -down[#00897B,thickness=2]-> WHY : <size:12>safe rerun</size>
+F -down-> WHY : <size:12>safe rerun</size>
 
 @enduml

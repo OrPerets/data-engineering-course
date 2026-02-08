@@ -1,18 +1,31 @@
 @startuml
 !include ../_template_styles.puml
-' PARTITION & REPLICATION MODEL - S_node = D*r/N
+!include _week2_visual_style.puml
+
 left to right direction
+skinparam nodesep 75
+skinparam ranksep 70
 
-rectangle "**Model**\n\n<size:12>D = total data</size>\n<size:12>N = nodes</size>\n<size:12>r = replication factor</size>\n\n<size:12>S_node = D * r / N</size>" as BOX_MODEL <<Primary>>
+rectangle "P1" as P1 <<source>>
+rectangle "P2" as P2 <<process>>
+rectangle "P3" as P3 <<decision>>
 
-rectangle "**NODES**" #FFFFFF {
-    database "**Node 1**\n<size:11>P0, P3</size>\n<size:11>S_node each</size>" as N1 <<Schema>>
-    database "**Node 2**\n<size:11>P1, P4</size>\n<size:11>S_node each</size>" as N2 <<Schema>>
-    database "**Node 3**\n<size:11>P2, P5</size>\n<size:11>S_node each</size>" as N3 <<Schema>>
-}
+rectangle "Node A\nP1* P2r P3r" as NA <<good>>
+rectangle "Node B\nP2* P3r P1r" as NB <<good>>
+rectangle "Node C\nP3* P1r P2r" as NC <<good>>
 
-BOX_MODEL -[#5C6BC0,thickness=2]-> N1 : <color:#3949AB>balanced</color>
-BOX_MODEL -[#5C6BC0,thickness=2]-> N2
-BOX_MODEL -[#5C6BC0,thickness=2]-> N3
+rectangle "r = 3" as RF <<store>>
+
+P1 -right-> NA
+P2 -right-> NB
+P3 -right-> NC
+
+NA -[dashed]-> NB : repl
+NB -[dashed]-> NC : repl
+NC -[dashed]-> NA : repl
+
+NA -down-> RF
+NB -down-> RF
+NC -down-> RF
 
 @enduml

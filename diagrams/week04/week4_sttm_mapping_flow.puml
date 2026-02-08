@@ -1,0 +1,18 @@
+@startuml
+!include ../_template_styles.puml
+
+start
+:Read source schema;
+:Map fields to target columns;
+if (Type mismatch?) then (yes)
+  :Apply conversion rule;
+else (no)
+  :Pass-through field;
+endif
+if (Unknown member?) then (yes)
+  :Assign default surrogate key;
+endif
+:Write mapping spec (STTM);
+stop
+
+@enduml

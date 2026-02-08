@@ -1,0 +1,33 @@
+@startuml
+'=================================================
+' OLAP QUERY PATH AND PARTITION PRUNING
+'=================================================
+
+!include ../_template_styles.puml
+
+top to bottom direction
+
+rectangle "QUERY" <<Primary>> {
+    component "**SQL**\n<size:10>e.g. revenue by region, date filter</size>" as SQL <<Control>>
+}
+
+rectangle "PLANNER" <<Primary>> {
+    component "**Partition pruning**\n<size:10>List partitions to read</size>" as PRUNE <<Task>>
+}
+
+rectangle "SCAN" <<Primary>> {
+    component "**Scan fact**\n<size:10>Only selected partitions</size>" as SCAN1 <<Task>>
+}
+
+rectangle "JOIN / AGG" <<Primary>> {
+    component "**Join dims • Aggregate**\n<size:10>Broadcast small dims</size>" as JOIN <<Task>>
+}
+
+database "**Result**\n<size:10>Rows to BI</size>" as RESULT <<success>>
+
+SQL --> PRUNE : "1"
+PRUNE --> SCAN1 : "2 date_key filter"
+SCAN1 --> JOIN : "3 pruned scan"
+JOIN --> RESULT : "4"
+
+@enduml

@@ -1,0 +1,15 @@
+@startuml
+!include ../_template_styles.puml
+' Data Scientist vs Data Engineer — roles
+left to right direction
+
+rectangle "**Data Scientist**\n\n<size:14>• Analyze data</size>\n<size:14>• Produce insights</size>\n<size:14>• “The more information,\nthe more we can do”</size>" as DS <<Primary>>
+
+rectangle "**Data Engineer**\n\n<size:14>• Engineering role in DS teams</size>\n<size:14>• Builds & manages infrastructure</size>\n<size:14>• Data platforms</size>" as DE <<Control>>
+
+database "**Data**\n~2.5 quintillion\nbytes/day" as D <<Task>>
+
+D --> DS
+D --> DE
+
+@enduml

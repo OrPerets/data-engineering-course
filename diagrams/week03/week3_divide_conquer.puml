@@ -17,9 +17,9 @@ component "**Combine**\n\n<size:14>Group by key</size>\n<size:14>Aggregate</size
 
 database "**Output**\n\n<size:14>Result</size>" as OUT <<Schema>>
 
-INP -right[#5C6BC0,thickness=2]-> DIV : <color:#3949AB>split</color>
-DIV -right[#5C6BC0,thickness=2]-> C1 : <color:#3949AB>chunks</color>
-C1 -right[#00897B,thickness=2]-> COMB : <color:#3949AB>(k,v)</color>
-COMB -right[#00897B,thickness=2]-> OUT : <color:#3949AB>merge</color>
+INP -right-> DIV : split
+DIV -right-> C1 : chunks
+C1 -right-> COMB : (k,v)
+COMB -right-> OUT : merge
 
 @enduml

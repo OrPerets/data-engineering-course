@@ -1,283 +1,153 @@
 # Week 11: Feature Engineering for Data Systems
 
 ## Purpose
-- Features are derived inputs for models and analytics
-- Pipelines must be correct at scale
-- Leakage and train/serve skew cause silent failures
+- Build reliable features for training and real-time inference
+- Prevent leakage and train/serve mismatch
+- Scale feature computation with reproducible, idempotent pipelines
 
 ## Learning Objectives
-- Define feature, feature pipeline, and feature store
-- Apply point-in-time correctness: no future data for given timestamp
-- Distinguish offline (batch) vs online (serving) feature computation
-- Design idempotent feature jobs: key = (entity_id, as_of_ts)
-- Identify and mitigate data leakage and train/serve skew
-- Reason about cost: compute, storage, freshness, join size
+- Define feature entities, feature tables, and point-in-time joins
+- Design offline and online feature paths with shared logic
+- Implement idempotent writes using stable feature keys
+- Detect leakage, skew, freshness gaps, and schema drift
 
-## The Real Problem This Lecture Solves
+## Why This Lecture Matters
+- Feature bugs often look like model problems
+- Leakage can inflate offline metrics and fail in production
+- Train/serve mismatch causes silent quality degradation
+- Correctness must be enforced at data-pipeline level
 
-## Model Accuracy Collapse
-- Team trained model on "clicks in last 7 days" without as_of_ts
-- Each row used all events up to "today"
-- At serving time, only past data was available
-
-## Root Cause
-- Train had future data; serve sees past only
-- **Data leakage:** no point-in-time correctness
-- **Takeaway:** bad feature pipelines break production models
-
-## The System We Are Building
-
-## Domain Overview
-- **Domain:** user engagement features for recommender
-- Clicks, views feeding training and online serving
-- **Raw source:** events (event_id, user_id, event_ts, event_type)
-- Partitioned by date; ~100M rows/day
-
-## Pipeline Design
-- **Feature compute:** point-in-time aggregation
-- E.g. clicks_7d per user per as_of_ts
-- Key = (user_id, as_of_ts)
-- **Target:** user_features (user_id, as_of_ts, clicks_7d, …)
-- **Consumers:** training (batch); serving (lookup)
+## Core Feature Contract
+- Feature row must include entity key + `as_of_ts`
+- Feature values can only use events at or before `as_of_ts`
+- Writes must be idempotent for reruns and backfills
+- Definitions must be versioned and discoverable
 
 ## Point-in-Time Correctness
-- Feature for entity \(e\) at time \(t\) uses only historical data
 $$
-f(e,t) = g(\{x \mid x.\text{entity}=e,\ x.\text{ts} \le t\})
+f(e,t)=g(\{x \mid x.entity=e,\ x.ts \le t\})
 $$
-- Interpretation: no future leakage into features
-- Engineering implication: joins must use as_of_ts filters
-- Training and serving should match
+- No future data beyond feature timestamp
+- Same rule for training and serving
+- Violations are correctness bugs, not minor quality issues
 
-![Point-in-time correctness](../../diagrams/week11/week11_point_in_time.png)
+![](../../diagrams/week11/week11_point_in_time.png)
+
+## Train/Serve Consistency Rule
 $$
-f_{\text{train}}(e,t) = f_{\text{serve}}(e,t)
+f_{train}(e,t)=f_{serve}(e,t)
 $$
-- Interpretation: same definition across offline and online
-- Engineering implication: shared feature definitions prevent skew
+- Shared definitions prevent distribution mismatch
+- Different windows/sources create skew immediately
+- Keep one source of truth for feature logic
 
-## Formal Aggregation at Scale
-- Windowed count feature for entity \(e\) at time \(t\)
-$$
-\text{count}_{w}(e,t) = \sum_{x \in D} \mathbf{1}[x.e=e,\ t-w < x.\text{ts} \le t]
-$$
-- Interpretation: aggregation over a bounded time window
-- Engineering implication: window size controls cost and freshness
+## Feature Architecture
+- Raw events/logs in historical store
+- Batch jobs build offline feature table by `(entity_id, as_of_ts)`
+- Online store serves latest/nearline values by `entity_id`
+- Feature registry tracks definitions and versions
 
-## Approximate Aggregation and Error Trade-offs
-- For large \(D\), sample with rate \(p\) to estimate counts
-$$
-\widehat{\text{count}}_{w}(e,t) = \frac{1}{p} \sum_{x \in S} \mathbf{1}[x.e=e,\ t-w < x.\text{ts} \le t]
-$$
-- Interpretation: unbiased estimate; variance grows as \(1/p\)
-- Engineering implication: lower cost, higher noise; pick \(p\) by SLA
+![](../../diagrams/week11/week11_offline_vs_online.png)
 
-## Core Concepts
-- **Feature:** numeric or categorical input derived from raw data
-- Consumed by model or analytics
-- **Feature pipeline:** raw sources → transform → feature table
-- **Point-in-time (as-of):** for given as_of_ts, use only data with ts ≤ as_of_ts
+## Running Domain
+- Events: `(event_id, user_id, event_ts, event_type)`
+- Feature target: `(user_id, as_of_ts, clicks_7d, views_7d, ...)`
+- Typical volume: large append-only event stream
+- Use date partitioning for scan control
 
-## Core Concepts
-- **Offline features:** batch-computed; stored with (entity_id, as_of_ts)
-- Used for training
-- **Online features:** low-latency lookup by entity_id
-- Often latest snapshot or real-time compute
-- **Train/serve consistency:** same definition and data availability
+## Running Example: clicks_7d
+- For each `(user_id, as_of_ts)`, count clicks in `(t-7d, t]`
+- Filter with `event_ts <= as_of_ts`
+- Persist one row per feature key
+- Fill missing aggregates with defaults (e.g., 0)
 
-![Offline vs online](../../diagrams/week11/week11_offline_vs_online.png)
+## Feature Key and Write Semantics
+- Primary key: `(entity_id, as_of_ts)`
+- Use `MERGE`/upsert or partition overwrite
+- Never plain append on reruns
+- Enforce uniqueness checks in pipeline tests
 
-## Data Context: Events → User Features
-- events: (user_id, event_ts, event_type)
-- user_features key = (user_id, as_of_ts)
-- Goal: clicks_7d, views_7d per as_of_ts
+![](../../diagrams/week11/week11_key_merge.png)
 
-## What Breaks at Scale
-- **Leakage at scale:** large event tables joined without as_of_ts
-- Accidental use of future data; hard to audit
-- **Duplicate rows:** append-only writes on rerun
-- **Schema drift:** new features added; old consumers expect old schema
-
-## Cost of Naïve Design (Feature Engineering)
-
-## No as_of_ts in Joins
-- "Clicks in last 7 days" computed with all events up to today
-- Train sees future; serve sees past only
-- Model accuracy collapses in production
-- **Cost:** silent wrong predictions
-
-## Append-only on Rerun
-- Job writes (user_id, as_of_ts, clicks_7d) with INSERT
-- Rerun appends same keys ⇒ duplicate rows
-- ⇒ wrong aggregates and broken backtests
-- **Sink must MERGE or partition overwrite**
-
-## Train/Serve Skew
-- Offline definition differs from online
-- Different window or different source
-- Model sees different distribution at serve time
-
-## Engineering Rule
-- Key = (entity_id, as_of_ts)
-- Every join filtered by ts ≤ as_of_ts
-- MERGE or overwrite so rerun does not duplicate
-
-![Key and MERGE vs append](../../diagrams/week11/week11_key_merge.png)
-
-## Formal Model: Feature as Function
-- Let x = f(raw; t): feature value at time t
-- Depends only on raw data up to t
-- **No leakage:** f must not use any event with timestamp > t
-- **Idempotent write:** writing twice yields one row
-- Key = (entity_id, as_of_ts)
-
-## Leakage as Assumption Violation
-- Assumption: all feature inputs satisfy ts ≤ as_of_ts
-- Leakage occurs if any input violates this constraint
-- Interpretation: model sees future evidence during training
-- Engineering implication: treat leakage as a correctness bug
-
-![Leakage vs correct](../../diagrams/week11/week11_leakage_vs_correct.png)
-
-## Architectural Fork: Offline vs Online
-
-## Offline Features
-- Batch job computes for many (entity_id, as_of_ts)
-- Write to feature table
-- Training reads by as_of_ts range
-
-## Online Features
-- Serving requests one entity_id
-- Lookup (entity_id, latest) or compute in real time
-- Latency ms
-- **Decision rule:** use offline for training; online for real-time APIs
-
-## Architectural Fork: MERGE vs Append
-
-## MERGE/OVERWRITE
-- On (entity_id, as_of_ts): rerun overwrites same key
-- One row per key; idempotent
-
-## Append-only
-- Rerun inserts again; duplicate rows per key
-- Training and joins wrong
-- **Decision rule:** always key by (entity_id, as_of_ts); use MERGE
-
-## Running Example — Data & Goal
-- **Source:** events (event_id, user_id, event_ts, event_type)
-- **Sample:** (1, 101, '2025-12-01 10:00', 'click')
-- (2, 101, '2025-12-02 14:00', 'view')
-- (3, 102, '2025-12-01 09:00', 'click')
-- **Goal:** one row per (user_id, as_of_ts) with clicks_7d
-
-## Running Example — Step-by-Step
-- **Step 1:** For each (user_id, as_of_ts)
-- Select events where event_ts ≤ as_of_ts AND event_ts > as_of_ts - 7d
-- Filter event_type = 'click'; count per user_id
+## Pipeline Steps
+- Build as-of grid (entities x timestamps)
+- Compute windowed aggregates from events
+- Join aggregates back to as-of grid
+- Write idempotently to feature table
 
 ![](../../diagrams/week11/week11_lecture_slide08_feature_pipeline_overview.png)
 
-## Running Example — Step-by-Step
-- **Step 2:** Generate (user_id, as_of_ts) grid
-- Join to event counts; fill 0 where no clicks
-- Point-in-time count for each (user_id, as_of_ts)
-- Ensures every combination has a row
+## Main Failure Mode: Leakage
+- Feature query omits `event_ts <= as_of_ts`
+- Training uses future events unintentionally
+- Offline metrics look great; production drops
+- Often missed without explicit leakage tests
 
-## Running Example — Step-by-Step
-- **Step 3:** Write to feature table
-- (user_id, as_of_ts, clicks_7d); key = (user_id, as_of_ts)
-- MERGE INTO user_features ON (user_id, as_of_ts)
-- WHEN MATCHED THEN UPDATE
-- WHEN NOT MATCHED THEN INSERT
-- Partition by as_of_ts for efficient reads
+![](../../diagrams/week11/week11_leakage_vs_correct.png)
 
-## Running Example — Step-by-Step
-- **Output:** feature table with one row per (user_id, as_of_ts)
-- clicks_7d correct as of that time
-- **Trade-off:** full scan of events per as_of_ts window
-- Optimize with partitioned reads and incremental aggregation
-- **Conclusion:** point-in-time filter + key gives correct features
+## Main Failure Mode: Duplicate Rows
+- Rerun appends same keys again
+- Downstream joins/aggregations double-count
+- Backtests become unreliable
+- Fix with merge semantics and uniqueness constraints
 
-## Cost & Scaling Analysis
-- **Time model:** T ∝ |events| × |as_of_ts grid| for naive
-- Reduce by partition pruning on event_ts and as_of_ts
-- **Incremental:** recompute only new as_of_ts dates
-- **Example:** 100M events/day × 365 as_of_ts → naive 36.5B scans
+## Main Failure Mode: Train/Serve Skew
+- Different code paths or source timing
+- Online features lag while offline is fresh
+- Model input distribution diverges
+- Requires parity monitoring and shared definitions
 
-## Cost & Scaling Analysis
-- **Memory / storage:** feature table size ≈ N_entity × N_as_of × bytes/row
-- Partition and compress
-- **Retention:** keep as_of_ts range needed for training backtest
-- Archive old partitions
-- **Example:** 10M users × 365 days × 100 B ≈ 365 GB
+## Schema Drift Risks
+- New column added without consumer coordination
+- Old jobs continue writing incompatible schema
+- Missing/null features increase unexpectedly
+- Use versioned schemas and contract checks
 
-## Cost & Scaling Analysis
-- **Request flow:** offline = batch read by (entity_ids, as_of_ts range)
-- Online = key lookup (entity_id, latest)
+## Cost and Scaling Intuition
+- Naive recomputation scans too much history
+- Partition prune by event date and as-of date
+- Incremental as-of updates reduce daily cost
+- Storage grows with entities x as-of timestamps
 
-![](../../diagrams/week11/week11_lecture_slide12_execution_flow.png)
-- **Latency:** offline dominated by scan; online requires index/cache
+## Storage Sizing Formula
+$$
+\text{feature\_storage} \approx N_{entities} \times N_{asof} \times bytes\_per\_row
+$$
+- Retention policy controls cost
+- Keep only history needed for training windows
 
-## Pitfalls & Failure Modes
-- **Leakage:** using future data when computing feature for as_of_ts
-- Model sees "answer" in training
-- **Detection:** audit feature SQL/logic
-- No table joined without ts ≤ as_of_ts filter
+## Incremental Compute Pattern
+- Track latest completed `as_of_ts` in control table
+- Process new timestamps only
+- Update control table after successful write
+- Backfills run explicit ranges separately
 
-## Pitfalls & Failure Modes
-- **Rerun duplicates:** job writes with INSERT; rerun appends same keys
-- Training sees double rows
-- **Failure:** duplicate rows per (entity_id, as_of_ts)
-- ⇒ wrong aggregates and broken backtests
+## Monitoring Signals
+- Duplicate key violations
+- Train-vs-serve feature distribution drift
+- Freshness lag: now minus latest `as_of_ts`
+- Null-rate spikes by feature
 
-![](../../diagrams/week11/week11_lecture_slide16_failure_leakage_rerun.png)
+## Quality Guardrails
+- Unit tests for feature SQL logic
+- Leakage tests with shifted timestamps
+- Replay tests for idempotent reruns
+- Contract tests for schema/version compatibility
 
-## Pitfalls & Failure Modes
-- **Mitigation:** write with MERGE/OVERWRITE on (entity_id, as_of_ts)
-- Or partition overwrite per as_of_ts
-- **Schema drift:** new feature column; old jobs still write old schema
-- Detection: schema checks and lineage; version feature definitions
-
-## Monitoring Signals for Leakage and Drift
-- **Train/serve parity:** compare feature distributions by time
-- **Future leakage test:** shift as_of_ts forward and re-run
-- **Freshness lag:** now − latest as_of_ts in table
-- **Duplicate key rate:** violations per (entity_id, as_of_ts)
-- **Null spike:** sudden rise in missing feature values
+## Engineering Checklist
+- Is every feature keyed by entity + `as_of_ts`?
+- Does every join enforce point-in-time filter?
+- Are writes merge-safe under retries?
+- Are train and serve definitions generated from same source?
 
 ## Best Practices
-- Always key feature table by (entity_id, as_of_ts)
-- Enforce as_of_ts in every join and filter
-- Use partition overwrite or MERGE for idempotency
-- Document feature definitions and lineage
-- Test with known dates and spot-check for leakage
-- Separate offline and online paths; align definitions
+- Treat feature engineering as data product development
+- Centralize feature definitions and lineage
+- Prefer deterministic transforms with explicit windows
+- Make failure detection automatic, not manual
 
-## Best Practices
-- Retain as_of_ts range needed for backtests
-- Archive old partitions to control storage cost
-- Validate schema and nullability when adding features
-- Monitor feature freshness and job success
-- Alert on duplicate key violations
-- Prefer incremental feature compute when event volume is large
-
-## Recap — Engineering Judgment
-- **Point-in-time is non-negotiable:** no data with ts > as_of_ts
-- Leakage breaks production models
-- Audit every feature SQL for as_of_ts
-- **Key = (entity_id, as_of_ts):** MERGE or partition overwrite
-- Append-only ⇒ duplicates ⇒ wrong training
-- **Offline vs online:** same definition in both paths
-- Train/serve skew ⇒ silent drift
-- **Failure modes:** leakage, rerun duplicates, schema drift
-
-## Pointers to Practice
-- Compute features from events table with point-in-time aggregation
-- Write SQL for feature table and idempotent upsert
-- Reason about rerun and leakage
-- Cost: estimate feature table size and join/scan cost
-
-## Additional Diagrams
-### Practice: Reasoning Feature Flow
-
-![](../../diagrams/week11/week11_practice_slide20_reasoning_feature_flow.png)
+## Recap
+- Point-in-time correctness is non-negotiable
+- Feature key + idempotent writes prevent corruption
+- Train/serve parity is as important as model quality
+- Next: advanced multi-step feature DAGs and backfills

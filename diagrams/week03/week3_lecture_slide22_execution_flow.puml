@@ -6,22 +6,22 @@ left to right direction
 rectangle "MAP PHASE" #FFFFFF {
     database "**Records**\n<size:10>r1, r2, r3...</size>" as RECS <<Schema>>
     component "**Map**\n<size:10>emit (k,v)</size>" as MAP_FN <<Task>>
-    RECS -down[#5C6BC0,thickness=2]-> MAP_FN : <color:#3949AB>read</color>
+    RECS -down-> MAP_FN : read
 }
 
 rectangle "SHUFFLE PHASE" #FFFFFF {
     component "**Sort & Transfer**\n<size:10>Group by key</size>" as SORT_XFER <<Control>>
     database "**Groups**\n<size:10>k->[v1,v2,...]</size>" as GROUPS <<Schema>>
-    SORT_XFER -down[#5C6BC0,thickness=2]-> GROUPS : <color:#3949AB>partition</color>
+    SORT_XFER -down-> GROUPS : partition
 }
 
 rectangle "REDUCE PHASE" #FFFFFF {
     component "**Reduce**\n<size:10>aggregate</size>" as RED <<Task>>
     database "**Output**\n<size:10>(k, result)</size>" as OUT <<Schema>>
-    RED -down[#00897B,thickness=2]-> OUT : <color:#3949AB>write</color>
+    RED -down-> OUT : write
 }
 
-MAP_FN -right[#00897B,thickness=2]-> SORT_XFER : <color:#3949AB>(k,v) pairs</color>
-GROUPS -right[#5C6BC0,thickness=2]-> RED : <color:#3949AB>iterator</color>
+MAP_FN -right-> SORT_XFER : (k,v) pairs
+GROUPS -right-> RED : iterator
 
 @enduml

@@ -21,13 +21,13 @@ together {
 
 component "**Mitigation**\n<size:10>salting / combiner</size>" as FIX <<Control>>
 
-PART -down[#5C6BC0,thickness=2]-> R1 : <color:#3949AB>balanced</color>
-PART -down[#5C6BC0,thickness=2]-> R2 : <color:#3949AB>balanced</color>
-PART -down[#D32F2F,thickness=2]-> R3 : <color:#3949AB>hot key</color>
+PART -down-> R1 : balanced
+PART -down-> R2 : balanced
+PART -down-> R3 : hot key
 
-R1 -down[#00897B,thickness=2]-> D1
-R2 -down[#00897B,thickness=2]-> D2
-R3 -down[#D32F2F,thickness=2]-> FAIL : <color:#3949AB>crash</color>
-FAIL -down[#5C6BC0,thickness=2]-> FIX : <color:#3949AB>rebalance</color>
+R1 -down-> D1
+R2 -down-> D2
+R3 -down-> FAIL : crash
+FAIL -down-> FIX : rebalance
 
 @enduml

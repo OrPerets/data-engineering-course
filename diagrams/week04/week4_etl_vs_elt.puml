@@ -15,10 +15,10 @@ rectangle "**ELT**\n\n<size:13>Extract then Load</size>\n<size:13>then Transform
 database "**Source**\n<size:12>DB / files</size>" as SRC <<Primary>>
 database "**Target**\n<size:12>DWH / Lake</size>" as TGT <<success>>
 
-SRC -right[#1565C0,thickness=2]-> ETL : <size:11>Extract</size>
-SRC -right[#1565C0,thickness=2]-> ELT : <size:11>Extract</size>
-ETL -right[#00897B,thickness=2]-> TGT : <size:11>Load clean</size>
-ELT -right[#00897B,thickness=2]-> TGT : <size:11>Load raw</size>
+SRC -right-> ETL : <size:11>Extract</size>
+SRC -right-> ELT : <size:11>Extract</size>
+ETL -right-> TGT : <size:11>Load clean</size>
+ELT -right-> TGT : <size:11>Load raw</size>
 TGT -[hidden]right- ELT
 
 @enduml

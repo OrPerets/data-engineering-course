@@ -32,17 +32,17 @@ package "CONSUMPTION" #FFFFFF {
     }
 }
 
-SOURCE1 -down[#5C6BC0,thickness=2]-> INGEST
-SOURCE2 -down[#5C6BC0,thickness=2]-> INGEST
-SOURCE3 -down[#5C6BC0,thickness=2]-> INGEST
+SOURCE1 -down-> INGEST
+SOURCE2 -down-> INGEST
+SOURCE3 -down-> INGEST
 
-INGEST -right[#FF6F00,thickness=2]-> RAW : <color:#3949AB><b>5GB/day</b></color>
+INGEST -right-> RAW : **5GB/day**
 
-RAW -down[#5C6BC0,thickness=2]-> TRANSFORM : <color:#3949AB>Read</color>
-TRANSFORM -right[#5C6BC0,thickness=2]-> AGGREGATE : <color:#3949AB>Filter</color>
-AGGREGATE -down[#00897B,thickness=2]-> WAREHOUSE : <color:#3949AB><b>5MB</b></color>
+RAW -down-> TRANSFORM : Read
+TRANSFORM -right-> AGGREGATE : Filter
+AGGREGATE -down-> WAREHOUSE : **5MB**
 
-WAREHOUSE -right[#1565C0,thickness=2]-> DASHBOARD : <color:#3949AB>Query</color>
-WAREHOUSE -down[#00897B,thickness=2]-> ML : <color:#3949AB>Features</color>
+WAREHOUSE -right-> DASHBOARD : Query
+WAREHOUSE -down-> ML : Features
 
 @enduml

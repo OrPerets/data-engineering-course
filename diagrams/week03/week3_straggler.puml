@@ -15,12 +15,12 @@ rectangle "Workers" #FFFFFF {
 
 component "**Job output**\n<size:12>Waits for slowest</size>\n<size:12>Latency = max(task times)</size>" as OUT <<Primary>>
 
-PART -down[#5C6BC0,thickness=2]-> W1 : <color:#3949AB>balanced</color>
-PART -down[#5C6BC0,thickness=2]-> W2 : <color:#3949AB>balanced</color>
-PART -down[#D32F2F,thickness=2]-> W3 : <color:#3949AB>hot partition</color>
+PART -down-> W1 : balanced
+PART -down-> W2 : balanced
+PART -down-> W3 : hot partition
 
-W1 -down[#00897B,thickness=2]-> OUT : <color:#3949AB>ready</color>
-W2 -down[#00897B,thickness=2]-> OUT : <color:#3949AB>ready</color>
-W3 -down[#D32F2F,dashed,thickness=2]-> OUT : <color:#3949AB>delays job</color>
+W1 -down-> OUT : ready
+W2 -down-> OUT : ready
+W3 -down[dashed]-> OUT : delays job
 
 @enduml

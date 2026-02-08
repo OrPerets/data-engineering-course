@@ -1,0 +1,16 @@
+@startuml
+!include ../_template_styles.puml
+' Big Data — not a single technique or tool; ecosystem
+left to right direction
+
+cloud "**Big Data**\n<size:14>Ecosystem</size>" as BD <<Primary>>
+
+rectangle "**Storage**\n<size:14>Lakes, Warehouses</size>" as S <<Control>>
+rectangle "**Processing**\n<size:14>Batch, Stream</size>" as P <<Task>>
+rectangle "**Orchestration**\n<size:14>Scheduling, Pipelines</size>" as O <<Schema>>
+
+BD --> S
+BD --> P
+BD --> O
+
+@enduml

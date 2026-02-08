@@ -1,578 +1,403 @@
 # Week 4: DWH + ETL (Part 1)
 
 ## Purpose
-- DWH and Data Lake are primary stores for analytics and BI
-- Ingestion is the first mile of data: source → storage
-- ETL/ELT pipelines are the backbone of analytics and DWH
-- Failures and reruns must not corrupt or duplicate data
+- Build ingestion pipelines that keep analytics trustworthy
+- Connect ETL/ELT choices to DWH and lake architecture
+- Design for retries, late data, and schema drift by default
+
+
+---
 
 ## Learning Objectives
-- Define Data Warehouse (DWH) vs Data Lake and schema-on-read vs schema-on-write
-- Define ETL vs ELT and when to use each
-- Classify ingestion: batch vs incremental; full vs delta
-- Apply idempotency and watermark for safe reruns
-- Design staging, dedup, and MERGE for incremental load
-- Handle failure: partition-based resume, DLQ, no duplicates
-- Connect ETL output to DWH/Lake and BI consumers
-- Reason about cost: I/O, network, latency vs consistency
+- Choose ETL vs ELT using workload and governance constraints
+- Design incremental pipelines with watermarks and control tables
+- Implement deterministic deduplication and idempotent loads
+- Handle late data, bad data, and reruns without KPI corruption
 
-## The Real Problem This Lecture Solves: Revenue Duplication Incident
-- **Failure:** company ran nightly revenue loads with plain INSERT
-- No watermark; job failed mid-run
-- Operator re-ran the full job
-- Same day's data was inserted again
 
-## Consequences
-- Revenue dashboards showed 2× real revenue
-- Finance and execs lost trust in "the number"
-- **Root cause:** non-idempotent load; no staging or dedup
-- **Takeaway:** bad ingestion breaks trust, not just pipelines
+---
 
-## The System We Are Building: Domain Overview
-- **Domain:** event analytics (clicks, views, purchases)
-- Feeds BI and product dashboards
-- **Data source:** raw_events (DB or log export)
-- Partitioned by date; ~100M rows/day
+## Lecture Flow
+- Storage and ingestion context
+- ETL/ELT and CDC design choices
+- Incremental load mechanics in detail
+- Idempotent publish patterns and failure recovery
+- Monitoring, runbooks, and production checklist
 
-## Core Concepts
-- **Data Warehouse (DWH):** centralized store for analytical data
-- Schema-on-write; optimized for SQL/OLAP
-- **Data Lake:** store for raw and processed data
-- Often schema-on-read; files (Parquet, ORC)
-- **OLAP:** aggregations, joins, reporting over large datasets
+---
 
-![](../../diagrams/week05/week5_dwh_vs_lake.png)
+## Why This Topic Is Critical
+- Most BI outages begin in ingestion, not dashboards
+- Small ingestion bugs create silent KPI drift
+- Source systems change faster than analytics models
+- Reliability requires explicit policies, not assumptions
 
-## Core Concepts
-- **Star schema:** one fact table + dimension tables
-- Denormalized for query speed
-- **Partitioning:** data split by key (e.g. date)
-- **Partition pruning:** skips irrelevant partitions
-- **DWH:** typically ACID; **Lake:** often eventual consistency
 
-![](../../diagrams/week05/week5_star_schema.png)
+---
 
-## Architecture
-- **Raw:** Lake raw zone or DWH staging; schema-on-read
-- **Curated:** DWH fact + dimensions (star schema)
-- sales_fact partitioned by date_key
-- **Consumers:** BI tools (Tableau, Looker); analysts
+## Incident: Revenue Doubled After Rerun
+- Nightly pipeline failed at 02:10 after loading 2 of 3 partitions
+- Operator reran full job with plain `INSERT`
+- Same transactions loaded again, revenue KPI jumped ~2x
+- Root cause: no checkpoint + no idempotent target write
 
-## Data Warehouse Definition (Formal)
 
-## Bill Inmon's Definition
-- "A data warehouse is subject-oriented, integrated, time-variant, and nonvolatile"
-- Collection of data supporting decision-making
+---
 
-## Key Characteristics
-- **Subject Oriented:** organized around major subjects
-- Customer, product, sales
-- Focusing on modeling and analysis for decision makers
+## What a Reliable Ingestion Contract Includes
+- Declared business key and event-time semantics
+- Accepted lateness window (for example, 48 hours)
+- Quality thresholds (null rate, type errors, duplicates)
+- Recovery policy for rerun, backfill, and schema changes
 
-![](../../diagrams/week05/week5_inmon_characteristics.png)
+![Ingestion contract hierarchy](../../diagrams/week04/week4_ingestion_contract_hierarchy.png){width=74%}
 
-## Key Characteristics
-- **Integrated:** multiple heterogeneous data sources
-- Consistent naming conventions and encoding
-- **Time Variant:** provides historical perspective (5-10 years)
-- **Non-Volatile:** physically separate; operational updates don't occur
+---
 
-## Why Separate Data Warehouse?
-- **Missing data:** DS requires historical data
-- Operational DBs don't typically maintain history
-- **Data consolidation:** DS requires aggregation and summarization
-- **Data quality:** different sources use inconsistent representations
-- **Performance:** analytical queries shouldn't impact operations
+## Core Stores: Warehouse vs Lake
+- **Warehouse**: curated, schema-on-write, BI-first
+- **Lake**: raw + processed zones, schema flexibility
+- Warehouse optimizes consistency and discoverability
+- Lake optimizes ingestion agility and storage economics
 
-## DWH Back-End Tools and Utilities
 
-## Data Processing Steps
-- **Data extraction:** get data from multiple external sources
-- **Data cleaning:** detect errors and rectify when possible
-- **Data transformation:** convert from legacy to warehouse format
-- **Load:** sort, summarize, consolidate, compute views
-- **Refresh:** propagate updates from sources to warehouse
+---
 
-## DWH Process Architectures
-- **Centralized:** single centralized storage and processing
-- Huge structure (memory, processor, storage)
-- **Distributed:** information across data centers
-- Processing localized; results grouped centrally
-- **Trade-off:** centralized simpler; distributed better for scale
+## Data Warehouse Definition (Inmon)
+- Inmon definition: a subject-oriented, integrated, time-variant, nonvolatile data store for decision support
+- **Subject-oriented**: organized around major subjects (customer, product, sales)
+- **Integrated**: multiple heterogeneous sources, cleaned and consistent naming/encoding
+- **Time-variant**: historical perspective (past 5–10 years) vs operational current-value data
+- **Nonvolatile**: physically separate; operational updates do not occur in the warehouse
 
-## Core Concepts
-- **ETL:** Extract → Transform → Load
-- **ELT:** Extract → Load → Transform (SQL in place)
-- **Batch:** periodic bulk load (e.g. nightly)
-- **Incremental:** only new/changed rows
+![DWH vs lake](../../diagrams/week04/week5_dwh_vs_lake.png){width=76%}
 
-![](../../diagrams/week04/week4_etl_vs_elt.png)
 
-## Core Concepts
-- **Idempotency:** running job N times = running once
-- **Watermark:** last_loaded_at or max(id)
-- Next run reads only data after watermark
-- **CDC:** change data capture; apply from source log
+---
 
-![](../../diagrams/week04/week4_idempotency.png)
+## Schema-on-Write vs Schema-on-Read
+- Write-time schema validation catches issues earlier
+- Read-time schema validation supports source variability
+- Schema-on-write reduces BI surprise and metric drift
+- Schema-on-read speeds onboarding but needs stronger governance
 
-## Pipeline Design
-- **Extract:** with watermark; upper_bound = NOW() - 5 min
-- **Staging:** one batch per run; schema-on-read; dedup by event_id
-- Invalid rows → DLQ
-- **Transform:** filter event_type; cast to proper types
-- **Load:** MERGE into events_clean; key = event_id
+![Schema strategies](../../diagrams/week04/week5_schema_on_read_vs_write.png){width=76%}
 
-## Formal Pipeline Stages
-- Raw dataset \(D_{raw}\) becomes cleaned \(D_{clean}\), then modeled \(D_{modeled}\)
-$$
-D_{raw} \xrightarrow{clean} D_{clean} \xrightarrow{model} D_{modeled}
-$$
-- Interpretation: deterministic transformation chain
-- Engineering implication: version and re-run transformations reliably
-- Idempotent load function \(f\) satisfies
+
+---
+
+## Modeling Context for Ingestion
+- Facts carry measurable events (`amount`, `qty`, `views`)
+- Dimensions carry context (`customer`, `product`, `date`)
+- Ingestion must preserve keys, timestamps, and lineage
+- Ingestion quality defects propagate to all downstream marts
+
+![Star schema context](../../diagrams/week04/week5_star_schema.png){width=74%}
+
+---
+
+## ETL vs ELT
+- **ETL**: transform then load curated target
+- **ELT**: load raw first, transform in target compute engine
+- ETL gives stronger pre-load control
+- ELT gives better replay and faster iteration
+
+![ETL vs ELT](../../diagrams/week04/week4_etl_vs_elt.png){width=76%}
+
+
+---
+
+## Source-to-Target Mapping (STTM)
+- Source and target schemas rarely match when moving data between systems
+- STTM: a set of instructions defining how structure and content transfer from source to target
+- Critical when integrating multiple sources with different schemas into a central warehouse
+- STTM provides guidelines for: multiple data types, unknown members, default values, foreign keys, metadata
+
+![STTM mapping flow](../../diagrams/week04/week4_sttm_mapping_flow.png){width=76%}
+
+
+---
+
+## STTM Process Types
+- **Data Integration**: operational sources -> warehouse targets
+- **Data Migration**: one-time movement between systems
+- **Data Transformation**: convert formats, datatypes, and encodings
+
+
+---
+
+## ETL vs ELT Decision Table
+- Strict regulatory filters before persistence -> ETL
+- Fast-changing source schema -> ELT with raw bronze layer
+- Expensive source DB reads -> ELT batched extracts
+- Low tolerance for malformed curated rows -> ETL gates + quarantine
+
+
+---
+
+## CDC Options (How Changes Are Captured)
+- Full snapshot compare: simple, expensive at scale
+- Timestamp/`updated_at` filter: easy, misses hard deletes unless modeled
+- Log-based CDC: best fidelity, higher operational complexity
+- Trigger-based CDC: accurate but can burden source DB
+
+![CDC options comparison](../../diagrams/week04/week4_cdc_options_comparison.png){width=88%}
+
+
+---
+
+## CDC Example: Orders Table
+- Inserts: new orders must appear once
+- Updates: status changes from `PENDING` to `PAID`
+- Deletes: canceled rows may need tombstone semantics
+- Policy must specify how each change type maps to analytics
+
+
+---
+
+## DWH Back-End Tools
+- **Extraction**: get data from multiple, heterogeneous sources
+- **Cleaning**: detect and rectify errors
+- **Transformation**: convert from legacy/host format to warehouse format
+- **Load**: sort, summarize, consolidate, check integrity, build indices and partitions
+- **Refresh**: propagate updates from sources to warehouse
+
+---
+
+## Ingestion Modes
+- Full refresh: easiest correctness, worst cost/latency at scale
+- Incremental batch: standard for most BI pipelines
+- Micro-batch: lower latency with bounded complexity
+- Streaming: lowest latency, highest operational discipline
+
+
+---
+
+## Watermark Mechanics (Precise)
+- Store `last_successful_watermark` per job
+- Compute `upper_bound = now() - safety_buffer`
+- Read `(watermark, upper_bound]`
+- Advance watermark only after successful target commit
+
+![Watermark incremental](../../diagrams/week04/week4_watermark_incremental.png){width=76%}
+
+
+---
+
+## Why Safety Buffer Is Needed
+- Source commits may arrive late relative to extractor clock
+- Without buffer, late commits are skipped permanently
+- Typical buffer: 5-15 minutes for OLTP sources
+- Monitor late-arrival rate to tune buffer size
+
+
+---
+
+## Late Data Handling Policy
+- Define accepted lateness (example: 48 hours)
+- Late but accepted rows trigger targeted backfill
+- Too-late rows go to quarantine with reason code
+- Publish a freshness metric that includes late-adjustment delay
+
+
+---
+
+## Incremental Rerun Example
+- Run #101 processes `10:00-11:00`, fails before publish
+- Run #102 retries same interval
+- Final curated state must match exactly one successful run
+- This requires deterministic dedup + idempotent merge
+
+![Incremental rerun pattern](../../diagrams/week04/week4_practice_slide18_incremental_rerun.png){width=76%}
+
+---
+
+## Idempotency Rule
 $$
 f(f(D)) = f(D)
 $$
-- Interpretation: retries do not change output
-- Engineering implication: safe reruns and failure recovery
-
-## Correctness Conditions and Recovery
-- **Correctness condition:** each key written at most once per run
-- **Recovery condition:** rerun produces identical target state
-- If watermark not advanced, rerun replays same slice
-- If write is idempotent, replay does not duplicate
-- Engineering implication: rerun is safe by construction
-
-## Delivery Semantics and Duplicates
-- Let \(C(k)\) be count for key \(k\) in sink
-$$
-C_{\text{alo}}(k) = C_{\text{exact}}(k) + \Delta_k,\quad \Delta_k \ge 0
-$$
-- Interpretation: at-least-once can only over-count
-- Engineering implication: require idempotent writes or dedup keys
-- Exactly-once requires deterministic processing + transactional sink
-- Engineering implication: higher coordination cost, lower ambiguity
-
-## Monitoring Signals for Correctness Drift
-- **Row counts:** read vs written per partition
-- **Duplicate keys:** violations per run
-- **Watermark lag:** now − last_watermark
-- **DLQ rate:** invalid rows per batch
-- **Partition completeness:** expected vs completed
-- **Rerun rate:** repeated runs per partition
-
-## Source to Target Mapping (STTM): What is STTM?
-- **Definition:** instructions for source-to-target data transfer
-- Guidelines for ETL process
-- Handles data types, unknown members, default values
-- Addresses FK relationships and metadata
-- Source and target almost never have same schema
-
-## Why STTM is Essential
-- **Data Integration:** moving data from operational DB to DWH
-- Defines how sources relate; handles duplicates
-- **Data Migration:** one-time movement for consistency
-- **Data Transformation:** conversion of data format
-- Includes type transformation, filtering, aggregating
-
-## Steps in Source to Target Mapping
-- Define attributes: which tables to transfer; frequency
-- Map attributes: to destination system's attributes
-- Transform data: convert to DWH-suitable form
-- Test mapping: on sample data
-- Deploy mapping: schedule on live data
-- Maintain mapping: update for new sources
-
-## STTM Techniques: Manual Mapping
-- Manually code connection between source and destination
-- Use when mapping few sources with limited data
-- **Advantages:** flexible, completely customizable
-- **Disadvantages:** time-consuming, error-prone
-
-## Automated Mapping
-- Use when sources and volume increase with each round
-- **Advantages:** fast, easy to scale, eliminates human error
-- **Disadvantages:** training required; in-house solutions expensive
-
-## Architectural Fork: ETL vs ELT — Option A (ETL)
-- Transform in pipeline (Spark, Python); then load cleaned data
-- **Pros:** target sees only clean data; smaller load volume
-- **Cons:** transform logic outside DWH; more moving parts
-
-## Option B — ELT
-- Load raw into lake/DWH; transform with SQL (views, dbt)
-- **Pros:** one copy of raw; transform scales with engine
-- **Cons:** raw can be large; governance must control curated
-- **Decision rule:** choose by engine power and governance needs
-
-## ETL vs ELT Comparison
-
-| Parameter | ETL | ELT |
-|-----------|-----|-----|
-| Process | Transform before load | Transform after load |
-| Data Volume | Small to medium | Large-scale |
-| Speed | Depends on transform | Speed independent of size |
-| Maintenance | High | Low |
-| Implementation | Easier early stage | Requires expertise |
-| Cost | High for SMB | Low entry costs (SaaS) |
-| Unstructured Data | Relational only | Supports unstructured |
-
-## ETL Pipelining Concept
-- ETL uses pipelining: extract while transforming
-- During transformation, new data can be obtained
-- When loading, already extracted data can transform
-- **Benefit:** overlapping phases reduce total time
-
-## Building Batch ETL Pipeline: Step 1 — Reference Data
-- Create set of data defining permissible values
-- Example: allowed country codes
-- Acts as validation and standardization reference
-
-## Step 2: Extract from Data Sources
-- Combine data from multiple source systems
-- Relational DB, non-relational DB, XML, JSON, CSV
-- After extraction, convert to single format
-- Choose method: date/time stamps, log tables, hybrid
-
-## Step 3: Data Validation
-- Automated process confirms expected values
-- Example: transaction dates within past 12 months
-- Rejected data analyzed regularly
-- Correct source or modify extraction for next batches
-
-## Step 4: Transform Data
-- Remove extraneous or erroneous data
-- Apply business rules
-- Check data integrity (ensure not corrupted by ETL)
-- Example: summarize invoices into daily totals
-
-## Step 5: Stage
-- Enter data into staging database first
-- Makes it easier to roll back if something goes wrong
-- Provides checkpoint for recovery
-
-## Step 6: Publish to Data Warehouse
-- Load data to target tables
-- Some DWH overwrites; others append
-- ETL loads new batch based on schedule
-
-## Architectural Fork: MERGE vs Overwrite — Option A (MERGE/Upsert)
-- ON key match update/insert; rerun safe
-- **Pros:** idempotent; handles duplicates and late updates
-- **Cons:** cost = join source vs target; needs index
-
-## Option B — Partition Overwrite
-- Replace whole partition (e.g. by date)
-- **Pros:** simple; no join; good for full day reload
-- **Cons:** only idempotent at partition level
-- **Decision:** MERGE for row-level upsert; overwrite for full partitions
-
-![](../../diagrams/week04/week4_merge_vs_overwrite.png)
-
-## Data Context: daily_sales → sales
-- daily_sales: 5M rows/day; duplicates by sale_id
-- sales: PRIMARY KEY sale_id; upsert needed
-- Goal: dedup in staging, then MERGE into sales
-
-## Architectural Fork: Schema-on-Read vs Write — Option A (Schema-on-Write)
-- Data validated and typed on load
-- Bad row fails load
-- **Pros:** predictable types; simple queries
-- **Cons:** one bad row fails batch; schema change = migration
-
-## Option B — Schema-on-Read
-- Load raw (VARCHAR/JSON); apply schema at query
-- **Pros:** flexibility; schema evolution without reload
-- **Cons:** consumers handle types; consistency is eventual
-- **Decision:** schema-on-read at staging; schema-on-write at target
-- **Defaults:** DWH is schema-on-write; Lake is schema-on-read
-
-## Running Example — Data & Goal
-- **Source:** raw_events (event_id, user_id, event_type, event_timestamp)
-- **Sample:** (1,101,'click','2025/12/01 08:00:00','{...}')
-- Duplicate event_id 1 in source
-- **Target:** events_clean; event_time TIMESTAMP; no duplicates
-- **Goal:** load raw → clean; dedup by event_id; idempotent rerun
-
-## Running Example — Step-by-Step
-- **Step 1: Extract** — read raw_events with watermark
-- Filter event_type IN ('click','view','purchase')
-- Cast event_timestamp → TIMESTAMP; validate format
-- Output: rows with event_time; invalid rows → DLQ
-
-## Data Context: Incremental Events Load
-- raw_events: append-only; duplicates possible
-- events_clean: PRIMARY KEY event_id
-- etl_control: job_key, last_watermark, last_run_ts
-- Upper bound: NOW() - 5 minutes
-
-## Running Example — Step-by-Step
-- **Step 2: Dedup (in-batch)** — one row per event_id
-- ROW_NUMBER() OVER (PARTITION BY event_id ORDER BY event_time)
-- Keep WHERE rn = 1; drop rest
-- Ensures staging does not insert duplicate keys
-
-## Running Example — Step-by-Step
-- **Step 3: Load (MERGE)** — MERGE INTO events_clean
-- ON target.event_id = source.event_id
-- WHEN NOT MATCHED THEN INSERT
-- WHEN MATCHED AND newer THEN UPDATE (optional)
-- Rerun with same source: no new rows inserted (idempotent)
-
-## Running Example — Step-by-Step
-- **Result:** events_clean has one row per event_id
-- Correct types; no duplicates
-- **Trade-off:** MERGE cost = join; index on event_id critical
-- **Conclusion:** staging + dedup + MERGE = safe ingestion
-
-## From Example to Pipeline
-- Same pattern: extract → dedup → merge
-- Scales to many sources
-- Next: system view; then cost and failure
-
-## ETL Pipeline Overview
-- Sources (DB, files, API) → Extract → Staging → Transform → Load
-- Staging allows schema-on-read and validation
-
-![](../../diagrams/week04/week4_lecture_slide13_pipeline_overview.png)
-
-## Bad Architecture: Why This Fails — Anti-Pattern
-- Source → direct INSERT into target
-- No staging; no watermark; no MERGE
-- Rerun inserts same rows again ⇒ 2× counts
-- Dashboard shows duplicated data
-
-## Partial Failure
-- Job fails after writing half the partitions
-- Rerun re-inserts those partitions ⇒ duplicates
-- **No dedup:** upstream retry sends same batch twice
-
-![](../../diagrams/week04/week4_lecture_bad_architecture.png)
-
-## Cost of Naïve Design (Ingestion): Naïve Choices and Costs
-- **Naïve:** plain INSERT; no staging; no watermark
-- **Cost:** rerun duplicates rows
-- Finance sees 2× revenue; trust collapses
-- Root-cause takes days (which run inserted what?)
-
-## Engineering Rule
-- Idempotency and watermark are not optional
-- Design for rerun from day one
-- Wrong data drives wrong decisions
-
-## Evolution: v1 to v2 — v1 Full Refresh
-- Full table read every run; INSERT into target
-- No watermark; fails at scale
-- Full scan each run; rerun duplicates everything
-
-## v2: Incremental + Idempotent
-- Watermark; read only new slice
-- Staging + dedup; MERGE
-- Update watermark only after success
-- Safe rerun; partition-level resume
-
-![](../../diagrams/week04/week4_lecture_evolution_v1_v2.png)
-
-## Cost & Scaling Analysis
-- **Time model:** T ≈ read + transform + write
-- Read: I/O and network from source
-- Write: target load (indexes, constraints)
-- Batch size vs latency: larger = fewer runs, higher per-run time
-
-## Cost & Scaling Analysis
-- **Memory / storage:** staging holds one batch
-- Target grows monotonically
-- Peak disk = max(staging size, target write buffer)
-- Partition target by date for pruning
-
-## Cost & Scaling Analysis
-- **Network / throughput:** extract and load move bytes
-- Compression (Parquet, gzip) reduces transfer
-- Trade CPU for bandwidth
-- Incremental load reduces data vs full refresh
-
-## Cost Intuition: What Changes at 10× Scale
-- **10M → 100M rows/day:** staging 1 GB → 10 GB
-- Memory and network 10×; MERGE scales with target size
-- Index on key is mandatory
-- **Daily vs hourly:** 24× more runs
-- Watermark and partition pruning essential
-- **Full scan vs partitioned:** hours vs minutes
-
-## Cost Summary
-- Read: source I/O and network
-- Write: target load and indexes
-- Transform: CPU and memory
-- Incremental + partition pruning cut volume per run
-
-## Storage and Partitioning
-- Staging: one batch at a time; truncate per run
-- Target: partition by date for pruning and safe rerun
-- Control table: small; stores watermark and job state
-
-## Incremental Load: Watermark
-- Store last_loaded_at in control table
-- Next run: SELECT WHERE modified_at > last_loaded_at
-- Update watermark only after successful load
-- Rerun skips already-loaded data
-
-![](../../diagrams/week04/week4_watermark_incremental.png)
-
-## Watermark and Late-Arriving Data
-- Safety buffer: upper_bound = NOW() - 5 min
-- Ensures committed transactions are included
-- Trade latency (5 min old) for consistency (no loss)
-
-## Execution Flow: Steps
-- Trigger → read source with watermark → transform → write
-- After successful write: update watermark in control table
-- On failure: do not update; next run re-reads (idempotent)
-
-![](../../diagrams/week04/week4_lecture_slide22_execution_flow.png)
-
-## Failure Story 1: Rerun Duplicates Revenue — Incident
-- Nightly job failed after loading 2 of 3 partitions
-- Operator re-ran full job
-- Revenue showed ~2× for two partitions
-
-## Root Cause and Fix
-- INSERT without MERGE; no partition tracking
-- **Fix:** MERGE on sale_id; track completed partitions
-- On rerun skip completed; process only remaining
-- Update watermark only after successful commit
-
-## Failure Story 2: One Bad Row Kills Batch — Incident
-- Source sent integer instead of string for one partner
-- One row failed cast; whole nightly load failed
-- Next morning: dashboards had no new data
-
-## Root Cause and Fix
-- Schema-on-write only; no staging; no DLQ
-- **Fix:** ingest to staging with schema-on-read
-- Validate in transform; valid → target; invalid → DLQ
-- Pipeline stays green; fix schema from DLQ analysis
-
-## Pitfalls: Partial Failure and Resume
-- Job processes P1, P2, P3; fails after P2
-- Rerun from start: without idempotent write, P1 and P2 duplicated
-- **Fix:** partition-level writes + MERGE or ON CONFLICT
-
-## Pitfalls: Duplicate Source Data
-- Upstream retries send same batch twice
-- Or file re-delivered
-- Dedup in staging then MERGE into target
-- Processing same batch again changes nothing
-
-## Pitfalls: Bad Data and DLQ
-- One bad row can fail whole batch in schema-on-write
-- Schema-on-read: load raw to staging
-- Valid rows → target, invalid → DLQ
-- Pipeline does not crash; bad rows auditable
-
-![](../../diagrams/week04/week4_dlq_flow.png)
-
-## Pitfalls: Non-idempotent Write
-- INSERT without key check: rerun inserts same rows
-- **Fix:** MERGE or INSERT ON CONFLICT DO NOTHING
-- Key by business key (event_id)
-- Watermark alone insufficient if source resends batch
-
-## Pitfalls: Partition-level Resume
-- Track which partitions (dates) are completed
-- On failure: skip completed; process only remaining
-- Write per partition or MERGE so rerun does not duplicate
-
-## Pitfalls: Duplicate Source and Dedup
-- Upstream retries: same event_id appears twice in batch
-- In-staging dedup: ROW_NUMBER() PARTITION BY event_id
-- Keep rn=1; MERGE into target
-- No duplicate keys in target
-
-## Pitfalls: DLQ and Observability
-- Invalid rows → Dead Letter Queue table
-- DLQ columns: raw row, error_reason, ingest_ts
-- Analyze patterns (e.g. one broken device)
-- Do not drop bad rows silently
-
-## Pitfalls: Detection
-- Monitor: rows read vs written; watermark lag; DLQ count
-- Alert: duration spike; zero rows (possible bug); DLQ growth
-- Metrics: per-partition counts; control table last_updated
-
-## Pitfalls: Mitigation Summary
-- Idempotent write (MERGE/ON CONFLICT)
-- Partition-level watermark and commit
-- Staging + dedup + DLQ
-- Update watermark only after success
-
-## Engineering Judgment
-- **Never plain INSERT into keyed target**
-- Unless 100% sure source is append-only
-- **Never update watermark before write commits**
-- **Use safety buffer for late data**
-- **Default to staging for bad or duplicate rows**
-
-## CDC and Deletes
-- Watermark on table scan detects inserts/updates
-- Deletes leave no row
-- To capture deletes: log-based CDC (WAL, binlog)
-- Or soft-delete column
-- Trade-off: complexity vs accepting no delete sync
-
-## Control Table Design
-- Columns: job_key, last_watermark, last_run_ts, status
-- Read before run; update only after successful commit
-- Partition-level: store completed partition list
-
-## Rerun Scenario: What We Want
-- Job processes P1, P2, P3; fails after P2
-- Rerun processes only P3
-- Target must not contain duplicate rows for P1, P2
-
-![](../../diagrams/week04/week4_lecture_slide38_failure_rerun.png)
-
-## Failure Scenario: Summary
-- Job runs for 12-01, 12-02, 12-03; fails after 12-02
-- Rerun: only process 12-03; no re-insert of 12-01, 12-02
-- Control table: mark 12-01 and 12-02 completed
-
-## Pitfalls & Failure Modes
-- **Non-idempotent load:** INSERT without dedup ⇒ duplicates
-- **No watermark:** full scan every run ⇒ slow and risky
-- **Overwrite instead of merge:** reprocessing overwrites good data
-- **Detection:** row counts, watermark lag, DLQ size
-- **Mitigation:** idempotent writes; watermark + buffer
-- **CDC for deletes:** use log-based CDC if deletes matter
-
-## Best Practices
-- Use staging for raw load; validate and dedup before target
-- Design for idempotency: MERGE or INSERT ON CONFLICT
-- Watermark incremental loads; update only after commit
-- Partition target by date for pruning and safe rerun
-- Route bad rows to DLQ; do not fail entire batch
-- Use transactions so partial write does not leave half-state
-- Document schema, keys, and expected volumes
-- Monitor load duration, row counts, watermark lag
-- **Never advance watermark before commit**
-- **Never INSERT into keyed target without MERGE**
-
-## Recap (Engineering Judgment)
-- **ETL vs ELT:** Choose ETL for clean target and staging
-- Choose ELT when DWH/lake is the transform layer
-- **Idempotency is non-negotiable**
-- Partial failure and duplicate source are the norm
-- **Cost:** I/O and network dominate
-- Incremental + partition pruning cut scope
-- **One bad row must not kill the batch**
-
-## Pointers to Practice
-- Write SQL: raw → clean with dedup and MERGE
-- Incremental slice by watermark
-- Reason about rerun: job fails after 2/3 partitions
-- Design: staging schema, DLQ, and control table
-
-## Additional Diagrams
-### Practice: Incremental Rerun
-
-![](../../diagrams/week04/week4_practice_slide18_incremental_rerun.png)
+- Reprocessing same input cannot change final target state
+- Requires stable keys and deterministic transformation rules
+- Implement with conflict-safe `MERGE`/upsert patterns
+
+![Idempotency](../../diagrams/week04/week4_idempotency.png){width=74%}
+
+
+---
+
+## Deterministic Dedup Rule (Example)
+- Business key: `event_id`
+- Tie-breaker: latest `ingest_ts`, then highest `source_seq`
+- Exactly one survivor per key per run
+- Persist dedup reason for auditability
+
+
+---
+
+## SQL Pattern: Dedup in Staging
+```sql
+WITH ranked AS (
+  SELECT *,
+         ROW_NUMBER() OVER (
+           PARTITION BY event_id
+           ORDER BY ingest_ts DESC, source_seq DESC
+         ) AS rn
+  FROM stg_events
+)
+SELECT *
+FROM ranked
+WHERE rn = 1;
+```
+
+
+---
+
+## SQL Pattern: Idempotent MERGE
+```sql
+MERGE INTO events_clean t
+USING stg_events_dedup s
+ON t.event_id = s.event_id
+WHEN MATCHED AND t.hash_diff <> s.hash_diff THEN
+  UPDATE SET event_type = s.event_type, event_time = s.event_time
+WHEN NOT MATCHED THEN
+  INSERT (event_id, user_id, event_type, event_time)
+  VALUES (s.event_id, s.user_id, s.event_type, s.event_time);
+```
+
+
+---
+
+## MERGE vs Partition Overwrite
+- `MERGE`: row-level precision, higher CPU and index pressure
+- Overwrite partition: simple full-slice rebuild
+- Use `MERGE` for mixed insert/update streams
+- Use overwrite for controlled historical backfills
+
+![MERGE vs overwrite](../../diagrams/week04/week4_merge_vs_overwrite.png){width=76%}
+
+---
+
+## Reference Pipeline Architecture
+- Source -> Extract -> Stage -> Validate -> Transform -> Load -> Publish
+- Staging isolates raw variability from curated contracts
+- Invalid records routed to DLQ, not analytics tables
+- Control table captures run state and window boundaries
+
+![Pipeline overview](../../diagrams/week04/week4_lecture_slide13_pipeline_overview.png){width=78%}
+
+
+---
+
+## Pipeline Execution (Step-by-Step)
+- Extract window by watermark and buffer
+- Stage data with run metadata
+- Validate schema, types, and business rules
+- Dedup and transform into curated shape
+- Merge/publish and then checkpoint watermark
+
+![Execution flow](../../diagrams/week04/week4_lecture_slide22_execution_flow.png){width=76%}
+
+
+---
+
+## Running Example: `raw_events` -> `events_clean`
+- Volume: 120M rows/day
+- Expected duplicate rate: ~0.7%
+- SLA: publish by `HH:30` every hour
+- Late events accepted up to 24 hours
+
+
+---
+
+## Quality Checks for the Example
+- Required fields: `event_id`, `user_id`, `event_type`, `event_time`
+- Valid enum: `event_type` in approved set
+- Time sanity: `event_time <= ingest_ts + 5m`
+- Uniqueness: post-dedup `event_id` distinct count
+
+---
+
+## Failure Mode: Bad Architecture
+- Source writes directly into curated target
+- No stage, no quality gates, no replay boundary
+- Mid-run failures leave partial visible state
+- Reruns duplicate rows and break KPI trust
+
+![Bad architecture](../../diagrams/week04/week4_lecture_bad_architecture.png){width=76%}
+
+
+---
+
+## Failure Mode: Partial Rerun Duplication
+- P1/P2 loaded, P3 failed
+- Full rerun reloads P1/P2
+- KPI inflation may be silent
+- Fix: partition-level checkpoint + idempotent load
+
+![Failure rerun](../../diagrams/week04/week4_lecture_slide38_failure_rerun.png){width=76%}
+
+
+---
+
+## Failure Mode: Bad Row Kills Batch
+- One malformed timestamp causes cast failure
+- Entire batch misses freshness SLA
+- Fix: staging validation and DLQ routing
+- Alert on DLQ spikes by reason and source
+
+![DLQ flow](../../diagrams/week04/week4_dlq_flow.png){width=74%}
+
+
+---
+
+## Schema Drift Failure Mode
+- Source adds or renames columns unexpectedly
+- Parser silently drops or mis-maps fields
+- Downstream dimensions lose attributes
+- Fix: schema registry or contract checks + explicit evolution policy
+
+---
+
+## Control Table Design (Minimum)
+- `job_key`, `run_id`, `watermark`, `upper_bound`
+- `status`, `rows_read`, `rows_loaded`, `rows_dlq`
+- `started_at`, `finished_at`, `error_code`
+- Optional: per-partition completion markers
+
+
+---
+
+## Control Table State Machine
+- `STARTED` -> `VALIDATED` -> `LOADED` -> `PUBLISHED`
+- Any failure transitions to `FAILED`
+- Restart reads last `PUBLISHED` watermark only
+- Avoid advancing watermark on partial success
+
+![Control table state machine](../../diagrams/week04/week4_control_table_state_machine.png){width=74%}
+
+
+---
+
+## Monitoring and SLOs
+- Freshness lag (`now - published_watermark`)
+- Data quality pass rate and DLQ percentage
+- Duplicate-key conflict rate
+- Runtime p50/p95 and failure-retry counts
+
+
+---
+
+## Production Runbook Checklist
+- Is late-data window documented and monitored?
+- Is rerun path tested on same input window?
+- Can you recover one failed partition without full reload?
+- Are quality failures observable by reason code?
+
+
+---
+
+## Recap
+- Reliable ingestion is contract-driven engineering
+- Watermark + deterministic dedup + idempotent load are core controls
+- DLQ and checkpointing make failure recoverable, not catastrophic
+- Next: dimensional modeling and query-cost engineering

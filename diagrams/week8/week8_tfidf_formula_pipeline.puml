@@ -1,0 +1,19 @@
+@startuml
+!include ../_template_styles.puml
+
+left to right direction
+
+card "count f_t,d" as C
+card "doc length |d|" as L
+component "tf = f_t,d / |d|" as TF
+card "df(t), N" as DF
+component "idf = log((N+1)/(df+1))" as IDF
+component "tfidf = tf * idf" as O
+
+C --> TF
+L --> TF
+DF --> IDF
+TF --> O
+IDF --> O
+
+@enduml

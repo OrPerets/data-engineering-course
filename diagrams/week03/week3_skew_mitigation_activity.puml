@@ -1,0 +1,19 @@
+@startuml
+!include ../_template_styles.puml
+
+start
+:Measure partition-size distribution;
+if (Hot key detected?) then (yes)
+  :Apply key salting;
+  :Run second-stage merge;
+else (no)
+  :Keep hash partitioning;
+endif
+if (Shuffle still high?) then (yes)
+  :Add local aggregation;
+else (no)
+  :Ship pipeline;
+endif
+stop
+
+@enduml

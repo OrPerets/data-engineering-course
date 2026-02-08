@@ -1,0 +1,22 @@
+@startuml
+!include ../_template_styles.puml
+
+left to right direction
+
+frame "HyperLogLog" {
+  card "Distinct count" as H1
+  card "Relative error\n~ 1.04/sqrt(m)" as H2
+  card "Mergeable registers" as H3
+  H1 --> H2 
+  H2 --> H3
+}
+
+frame "Count-Min Sketch" {
+  card "Per-key frequency" as C1
+  card "Additive error\nbounded by width" as C2
+  card "Overestimates on collisions" as C3
+  C1 --> C2
+   C2 --> C3
+}
+
+@enduml

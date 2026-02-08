@@ -14,7 +14,7 @@ rectangle "**Partition Overwrite**\n\n<size:14>Replace whole partition (e.g. by 
 
 rectangle "**Choose**\n\n<size:14>MERGE: row-level upsert</size>\n<size:14>Overwrite: full day reload</size>" as CHOICE <<Control>>
 
-MERGE -down[#00897B,thickness=2]-> CHOICE
-OVER -down[#FF6F00,thickness=2]-> CHOICE
+MERGE -down-> CHOICE
+OVER -down-> CHOICE
 
 @enduml

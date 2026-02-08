@@ -1,0 +1,22 @@
+@startuml
+!include ../_template_styles.puml
+
+start
+:Measure max/median reducer load;
+if (Combiner-safe aggregate?) then (yes)
+  :Enable combiner;
+endif
+if (Hot keys above threshold?) then (yes)
+  :Apply salting;
+  :Add second merge stage;
+else (no)
+  :Keep partitioner;
+endif
+if (Small join side fits memory?) then (yes)
+  :Use broadcast join;
+else (no)
+  :Use reduce-side or salted join;
+endif
+stop
+
+@enduml

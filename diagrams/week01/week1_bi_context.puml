@@ -13,9 +13,9 @@ component "**BI & Reports**\n\n<size:14>• Dashboards</size>\n<size:14>• KPIs
 
 cloud "**Decisions**\n\n<size:14>• Strategy</size>\n<size:14>• Operations</size>\n<size:14>• Optimize</size>" as X <<Primary>>
 
-R -[#5C6BC0,thickness=2]-> E : <color:#3949AB>**Extract**</color>
-E -[#5C6BC0,thickness=2]-> D : <color:#3949AB>**Load**</color>
-D -[#5C6BC0,thickness=2]-> B : <color:#3949AB>**Query**</color>
-B -[#00897B,thickness=2]-> X : <color:#3949AB>**Inform**</color>
+R -> E : **Extract**
+E -> D : **Load**
+D -> B : **Query**
+B -> X : **Inform**
 
 @enduml

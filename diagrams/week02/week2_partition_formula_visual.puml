@@ -1,0 +1,29 @@
+@startuml
+!include ../_template_styles.puml
+!include _week2_visual_style.puml
+
+top to bottom direction
+skinparam nodesep 70
+skinparam ranksep 65
+
+rectangle "D" as D <<source>>
+rectangle "N" as N <<source>>
+rectangle "r" as R <<source>>
+rectangle "p" as P <<source>>
+
+rectangle "S_node\nD*r/N" as F1 <<process>>
+rectangle "P_avail\n1-p^r" as F2 <<process>>
+
+database "Load\nNode" as O1 <<store>>
+database "Data\nUp" as O2 <<store>>
+
+D -down-> F1
+N -down-> F1
+R -down-> F1
+P -down-> F2
+R -down-> F2
+
+F1 -down-> O1
+F2 -down-> O2
+
+@enduml

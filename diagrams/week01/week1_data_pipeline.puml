@@ -9,7 +9,7 @@ component "**TRANSFORM**\n\n<size:14>Processing:</size>\n<size:14>• Clean</siz
 
 database "**OUTPUT**\n\n<size:14>Ready:</size>\n<size:14>• Validated</size>\n<size:14>• Consistent</size>\n<size:14>• Quality</size>\n<size:14>• Partitioned</size>" as O <<Schema>>
 
-I -[#5C6BC0,thickness=2]-> T : <color:#3949AB>**Ingest**</color>
-T -[#00897B,thickness=2]-> O : <color:#3949AB>**Write**</color>
+I -> T : **Ingest**
+T -> O : **Write**
 
 @enduml

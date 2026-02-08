@@ -25,16 +25,16 @@ rectangle "REDUCE PHASE" #FFFFFF {
 
 database "**Result**\n<size:10>Output</size>" as OUT <<Schema>>
 
-INP -right[#5C6BC0,thickness=2]-> SPLIT
-SPLIT -right[#5C6BC0,thickness=2]-> W1 : <color:#3949AB>c1</color>
-SPLIT -right[#5C6BC0,thickness=2]-> W2 : <color:#3949AB>c2</color>
-SPLIT -right[#5C6BC0,thickness=2]-> W3 : <color:#3949AB>c3</color>
-W1 -right[#00897B,thickness=2]-> SORT_XFER
-W2 -right[#00897B,thickness=2]-> SORT_XFER
-W3 -right[#00897B,thickness=2]-> SORT_XFER
-SORT_XFER -right[#5C6BC0,thickness=2]-> R1 : <color:#3949AB>keys A</color>
-SORT_XFER -right[#5C6BC0,thickness=2]-> R2 : <color:#3949AB>keys B</color>
-R1 -right[#00897B,thickness=2]-> OUT
-R2 -right[#00897B,thickness=2]-> OUT
+INP -right-> SPLIT
+SPLIT -right-> W1 : c1
+SPLIT -right-> W2 : c2
+SPLIT -right-> W3 : c3
+W1 -right-> SORT_XFER
+W2 -right-> SORT_XFER
+W3 -right-> SORT_XFER
+SORT_XFER -right-> R1 : keys A
+SORT_XFER -right-> R2 : keys B
+R1 -right-> OUT
+R2 -right-> OUT
 
 @enduml

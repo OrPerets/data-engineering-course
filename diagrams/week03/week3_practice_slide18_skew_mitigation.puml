@@ -7,26 +7,26 @@ rectangle "BEFORE (Skew)" #FFFFFF {
     component "**Large table**\n<size:10>key 888 -> 1B rows</size>" as LARGE1 <<Schema>>
     component "**Shuffle**\n<size:10>one reducer</size>" as SHUFFLE1 <<Control>>
     component "**Reducer**\n<size:10>OOM</size>" as REDUCE1 <<Failure>>
-    LARGE1 -right[#5C6BC0,thickness=2]-> SHUFFLE1
-    SHUFFLE1 -right[#D32F2F,thickness=2]-> REDUCE1
+    LARGE1 -right-> SHUFFLE1
+    SHUFFLE1 -right-> REDUCE1
 }
 
 rectangle "SALTING SOLUTION" #FFFFFF {
     component "**Large table**\n<size:10>key 888 -> 1B rows</size>" as LARGE2 <<Schema>>
     component "**Map: salt**\n<size:10>key-1..key-N</size>" as SALT <<Task>>
     component "**Small table**\n<size:10>replicate</size>" as REPL <<Schema>>
-    LARGE2 -right[#5C6BC0,thickness=2]-> SALT
+    LARGE2 -right-> SALT
 }
 
 rectangle "AFTER (Balanced)" #FFFFFF {
     component "**Shuffle**\n<size:10>key-salt</size>" as SHUFFLE2 <<Control>>
     component "**N Reducers**\n<size:10>~1B/N each</size>" as REDUCE2 <<success>>
     component "**Merge**\n<size:10>by key</size>" as MERGE <<Task>>
-    SHUFFLE2 -right[#00897B,thickness=2]-> REDUCE2
-    REDUCE2 -right[#00897B,thickness=2]-> MERGE
+    SHUFFLE2 -right-> REDUCE2
+    REDUCE2 -right-> MERGE
 }
 
-SALT -down[#5C6BC0,thickness=2]-> SHUFFLE2
-REPL -down[#5C6BC0,thickness=2]-> SHUFFLE2
+SALT -down-> SHUFFLE2
+REPL -down-> SHUFFLE2
 
 @enduml

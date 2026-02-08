@@ -17,7 +17,7 @@ database "**Target**\n<size:12>events_clean</size>" as TGT <<success>>
 database "**DLQ**\n<size:12>raw row, error_reason</size>\n<size:12>ingest_ts</size>" as DLQ <<Failure>>
 
 STG -right-> VALID : <size:11>read</size>
-VALID -right[#00897B,thickness=2]-> TGT : <size:11>valid</size>
-VALID -down[#D32F2F,thickness=3]-> DLQ : <size:11>invalid</size>
+VALID -right-> TGT : <size:11>valid</size>
+VALID -down-> DLQ : <size:11>invalid</size>
 
 @enduml

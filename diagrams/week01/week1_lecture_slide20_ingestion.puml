@@ -15,10 +15,10 @@ component "**4. Write**\n<size:11>Compress</size>" as WRITE <<Task>>
 
 database "**Raw Storage**\n<size:12>10M events</size>\n<size:12>5GB Parquet</size>" as RAW <<Schema>>
 
-S3 -right[#1565C0,thickness=2]-> READ : <color:#3949AB><b>5GB</b></color>
-READ -down[#1565C0,thickness=2]-> PARSE : <color:#3949AB>JSON</color>
-PARSE -right[#00897B,thickness=2]-> VALIDATE : <color:#3949AB>events</color>
-VALIDATE -down[#00897B,thickness=2]-> WRITE : <color:#3949AB>OK</color>
-WRITE -right[#5C6BC0,thickness=2]-> RAW : <color:#3949AB><b>Parquet</b></color>
+S3 -right-> READ : **5GB**
+READ -down-> PARSE : JSON
+PARSE -right-> VALIDATE : events
+VALIDATE -down-> WRITE : OK
+WRITE -right-> RAW : **Parquet**
 
 @enduml

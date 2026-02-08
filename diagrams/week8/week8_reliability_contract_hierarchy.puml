@@ -1,0 +1,17 @@
+@startuml
+!include ../_template_styles.puml
+
+top to bottom direction
+
+rectangle "TF-IDF Reliability Contract" as ROOT
+card "Deterministic tokenizer" as A
+card "Versioned stop-word list" as B
+card "Idempotent sink key (doc,term)" as C
+card "Lineage and run metadata" as D
+
+ROOT --> A
+ROOT --> B
+ROOT --> C
+ROOT --> D
+
+@enduml

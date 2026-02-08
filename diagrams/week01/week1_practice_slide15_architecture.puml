@@ -39,19 +39,19 @@ package "CONSUMPTION" as P_CONS #FFFFFF {
     DASHBOARD -[hidden]- APP
 }
 
-SOURCES -down[#1565C0,thickness=2]-> INGEST_ART : <color:#3949AB><b>batch</b></color>
-CLICKS -down[#FF6F00,thickness=2]-> INGEST_CLICK : <color:#3949AB><b>stream</b></color>
+SOURCES -down-> INGEST_ART : **batch**
+CLICKS -down-> INGEST_CLICK : **stream**
 
-INGEST_ART -right[#1565C0,thickness=2]-> RAW_ART : <color:#3949AB>Parquet</color>
-INGEST_CLICK -right[#FF6F00,thickness=2]-> RAW_CLICK : <color:#3949AB>Avro</color>
+INGEST_ART -right-> RAW_ART : Parquet
+INGEST_CLICK -right-> RAW_CLICK : Avro
 
-RAW_ART -down[#5C6BC0,thickness=2]-> BATCH : <color:#3949AB><b>daily</b></color>
-RAW_CLICK -down[#00897B,thickness=2]-> STREAM : <color:#3949AB><b>RT</b></color>
+RAW_ART -down-> BATCH : **daily**
+RAW_CLICK -down-> STREAM : **RT**
 
-BATCH -right[#5C6BC0,thickness=2]-> WAREHOUSE : <color:#3949AB>SQL</color>
-STREAM -right[#00897B,thickness=2]-> TRENDING : <color:#3949AB>top-N</color>
+BATCH -right-> WAREHOUSE : SQL
+STREAM -right-> TRENDING : top-N
 
-WAREHOUSE -down[#1565C0,thickness=2]-> DASHBOARD : <color:#3949AB><b>BI</b></color>
-TRENDING -down[#00897B,thickness=2]-> APP : <color:#3949AB><b>REST</b></color>
+WAREHOUSE -down-> DASHBOARD : **BI**
+TRENDING -down-> APP : **REST**
 
 @enduml

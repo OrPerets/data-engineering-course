@@ -9,9 +9,9 @@ card "**CONNECTION**\n\n<size:15><b>Symbiotic:</b></size>\n\n<size:14>• Consum
 
 card "**ANALYTICS**\n\n<size:15><b>Consumer</b></size>\n\n<size:14><b>Role:</b></size>\n<size:14>• Reports</size>\n<size:14>• Dashboards</size>\n<size:14>• KPIs</size>\n<size:14>• Decisions</size>\n\n<size:13><i>\"Turn data to decisions\"</i></size>" as A <<Task>>
 
-DE -down[#1565C0,thickness=2]-> R : <color:#3949AB>**Provides**</color>
-R -right[#5C6BC0,thickness=2]-> A : <color:#3949AB>**Enables**</color>
-A -up[#FF6F00,thickness=2,dashed]-> R : <color:#3949AB>Feedback</color>
-R -up[#FF6F00,thickness=2,dashed]-> DE : <color:#3949AB>Needs</color>
+DE -down-> R : **Provides**
+R -right-> A : **Enables**
+A -up[dashed]-> R : Feedback
+R -up[dashed]-> DE : Needs
 
 @enduml

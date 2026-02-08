@@ -1,0 +1,15 @@
+@startuml
+!include ../_template_styles.puml
+' Data Engineer Responsibilities — architecture & development
+left to right direction
+
+rectangle "**Architecture**\nData platform design" as A <<Primary>>
+
+rectangle "**Development**\n\n<size:14>• Integration tools</size>\n<size:14>• Databases</size>\n<size:14>• Warehouses</size>\n<size:14>• Analytical systems</size>" as D <<Control>>
+
+rectangle "**Pipeline**\nMaintenance & testing" as P <<Task>>
+
+A -> D
+D -> P
+
+@enduml

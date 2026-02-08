@@ -11,8 +11,8 @@ card "**VELOCITY**\n<size:14>Speed</size>\n\n<size:13>• Streaming</size>\n<siz
 
 card "**RELIABILITY**\n<size:14>Resilience</size>\n\n<size:13>• Handle fails</size>\n<size:13>• Late data</size>\n<size:13>• Quality</size>" as R <<Schema>>
 
-S -down[#5C6BC0,thickness=2]-> V
-V -right[#FF6F00,thickness=2]-> Ve
-Ve -down[#1565C0,thickness=2]-> R
+S -down-> V
+V -right-> Ve
+Ve -down-> R
 
 @enduml

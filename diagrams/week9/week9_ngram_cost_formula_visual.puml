@@ -1,0 +1,17 @@
+@startuml
+!include ../_template_styles.puml
+
+left to right direction
+
+card "Tokens per doc L" as L
+card "N-gram size n" as N
+component "Emissions ~ L - n + 1" as E
+component "Shuffle bytes ~ emissions x pair_size" as S
+storage "Pipeline cost" as O
+
+L --> E
+N --> E
+E --> S 
+S --> O
+
+@enduml
