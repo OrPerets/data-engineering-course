@@ -1,27 +1,30 @@
 @startuml
 !include ../_template_styles.puml
-' MAP-SHUFFLE-REDUCE EXECUTION FLOW - Mixed layout for PPTX
+!include _week3_visual_style.puml
+
 left to right direction
+skinparam nodesep 70
+skinparam ranksep 60
 
-rectangle "MAP PHASE" #FFFFFF {
-    database "**Records**\n<size:10>r1, r2, r3...</size>" as RECS <<Schema>>
-    component "**Map**\n<size:10>emit (k,v)</size>" as MAP_FN <<Task>>
-    RECS -down-> MAP_FN : read
+rectangle "Map" as MAP_PHASE {
+  database "Records" as RECS <<store>>
+  component "Map" as MAP_FN <<process>>
+  RECS -down-> MAP_FN
 }
 
-rectangle "SHUFFLE PHASE" #FFFFFF {
-    component "**Sort & Transfer**\n<size:10>Group by key</size>" as SORT_XFER <<Control>>
-    database "**Groups**\n<size:10>k->[v1,v2,...]</size>" as GROUPS <<Schema>>
-    SORT_XFER -down-> GROUPS : partition
+rectangle "Shuffle" as SHUFFLE_PHASE {
+  component "Sort &\nTransfer" as SORT_XFER <<process>>
+  database "Groups" as GROUPS <<store>>
+  SORT_XFER -down-> GROUPS
 }
 
-rectangle "REDUCE PHASE" #FFFFFF {
-    component "**Reduce**\n<size:10>aggregate</size>" as RED <<Task>>
-    database "**Output**\n<size:10>(k, result)</size>" as OUT <<Schema>>
-    RED -down-> OUT : write
+rectangle "Reduce" as REDUCE_PHASE {
+  component "Reduce" as RED <<process>>
+  database "Output" as OUT <<store>>
+  RED -down-> OUT
 }
 
-MAP_FN -right-> SORT_XFER : (k,v) pairs
-GROUPS -right-> RED : iterator
+MAP_FN -right-> SORT_XFER
+GROUPS -right-> RED
 
 @enduml

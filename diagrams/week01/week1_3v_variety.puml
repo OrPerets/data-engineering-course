@@ -1,15 +1,17 @@
 @startuml
 !include ../_template_styles.puml
-' Variety — Structured vs Unstructured
-left to right direction
+!include _week1_visual_style.puml
 
-rectangle "**Variety**" as V <<Primary>>
+top to bottom direction
+skinparam nodesep 100
+skinparam ranksep 70
 
-rectangle "**Structured**\n\n<size:14>Predefined schema</size>\n<size:14>Tables, rows, columns</size>" as S <<Control>>
+rectangle "Variety" as V <<process>>
 
-rectangle "**Unstructured**\n\n<size:14>Documents, different properties</size>\n<size:14>Text, logs, media</size>" as U <<Task>>
+rectangle "Structured" as S <<good>>
+rectangle "Unstructured" as U <<good>>
 
-V --> S
-V --> U
+V -down-> S
+V -down-> U
 
 @enduml

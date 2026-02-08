@@ -3,7 +3,7 @@
 !include _week2_visual_style.puml
 
 top to bottom direction
-skinparam nodesep 75
+skinparam nodesep 120
 skinparam ranksep 70
 
 rectangle "Deployment\nMap" as ROOT <<store>>

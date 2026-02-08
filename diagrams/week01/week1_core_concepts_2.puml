@@ -1,15 +1,14 @@
 @startuml
 !include ../_template_styles.puml
-' Core Concepts (2/3) — Batch vs Streaming vs Hybrid
+!include _week1_visual_style.puml
+
 top to bottom direction
+skinparam nodesep 100
+skinparam ranksep 70
 
-package "Processing Paradigms" {
-    card "**BATCH**\n\n<size:14><b>Characteristics:</b></size>\n<size:14>• Process chunks</size>\n<size:14>• Hourly/Daily</size>\n<size:14>• High throughput</size>\n<size:14>• Lower cost</size>\n\n<size:14><b>Use:</b> ETL</size>" as B <<Control>>
-
-    card "**STREAM**\n\n<size:14><b>Characteristics:</b></size>\n<size:14>• Continuous</size>\n<size:14>• Real-time</size>\n<size:14>• Low latency</size>\n<size:14>• Event-driven</size>\n\n<size:14><b>Use:</b> Alerts</size>" as S <<Task>>
-}
-
-card "**HYBRID**\n\n<size:15><b>Best of Both:</b></size>\n\n<size:14>• Batch for history</size>\n<size:14>• Stream for recent</size>\n<size:14>• Lambda/Kappa</size>\n<size:14>• Unified serving</size>\n\n<size:13><i>Ex: 2yr batch + 24h stream</i></size>" as H <<Schema>>
+rectangle "Batch" as B <<process>>
+rectangle "Stream" as S <<process>>
+rectangle "Hybrid" as H <<good>>
 
 B -down-> H : History
 S -down-> H : Real-time

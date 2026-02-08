@@ -1,15 +1,15 @@
 @startuml
 !include ../_template_styles.puml
-' Why Data Engineering Exists — four problems (4 V's)
+!include _week1_visual_style.puml
+
 top to bottom direction
+skinparam nodesep 90
+skinparam ranksep 70
 
-card "**SCALE**\n<size:14>Volume</size>\n\n<size:13>• TB to PB</size>\n<size:13>• More events</size>\n<size:13>• Cost</size>" as S <<Primary>>
-
-card "**VARIETY**\n<size:14>Sources</size>\n\n<size:13>• Multiple formats</size>\n<size:13>• SQL & NoSQL</size>\n<size:13>• Structured</size>" as V <<Control>>
-
-card "**VELOCITY**\n<size:14>Speed</size>\n\n<size:13>• Streaming</size>\n<size:13>• Batch</size>\n<size:13>• Low latency</size>" as Ve <<Task>>
-
-card "**RELIABILITY**\n<size:14>Resilience</size>\n\n<size:13>• Handle fails</size>\n<size:13>• Late data</size>\n<size:13>• Quality</size>" as R <<Schema>>
+rectangle "Scale" as S <<risk>>
+rectangle "Variety" as V <<risk>>
+rectangle "Velocity" as Ve <<risk>>
+rectangle "Reliability" as R <<good>>
 
 S -down-> V
 V -right-> Ve

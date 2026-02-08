@@ -1,48 +1,44 @@
 @startuml
 !include ../_template_styles.puml
-' DATA ENGINEERING LIFECYCLE - mixed layout
+!include _week1_visual_style.puml
+
 top to bottom direction
+skinparam nodesep 70
+skinparam ranksep 55
 
-package "SOURCES" #FFFFFF {
-    storage "**Logs**\n<size:12>10M/day JSON</size>" as SOURCE1 <<Primary>>
-    database "**Users**\n<size:12>100M PG</size>" as SOURCE2 <<Primary>>
-    database "**Products**\n<size:12>1M Mongo</size>" as SOURCE3 <<Control>>
+package "SOURCES" {
+  storage "Logs" as SOURCE1 <<source>>
+  database "Users" as SOURCE2 <<source>>
+  database "Products" as SOURCE3 <<source>>
 }
 
-package "INGESTION" #FFFFFF {
-    component "**Extract**\n<size:11>Read & validate</size>" as INGEST <<Control>>
+package "INGESTION" {
+  component "Extract" as INGEST <<process>>
 }
 
-package "STORAGE" #FFFFFF {
-    database "**Raw**\n<size:12>Lake Parquet</size>\n<size:12>5 GB/day</size>" as RAW <<Schema>>
+package "STORAGE" {
+  database "Raw" as RAW <<store>>
 }
 
-package "PROCESSING" #FFFFFF {
-    together {
-        component "**Transform**\n<size:11>Clean & enrich</size>" as TRANSFORM <<Task>>
-        component "**Aggregate**\n<size:11>Rollup metrics</size>" as AGGREGATE <<Task>>
-    }
+package "PROCESSING" {
+  component "Transform" as TRANSFORM <<process>>
+  component "Aggregate" as AGGREGATE <<process>>
 }
 
-package "CONSUMPTION" #FFFFFF {
-    database "**Warehouse**\n<size:12>Star schema</size>" as WAREHOUSE <<Schema>>
-    together {
-        component "**Analytics**\n<size:11>BI tools</size>" as DASHBOARD <<Primary>>
-        component "**ML**\n<size:11>Features</size>" as ML <<Task>>
-    }
+package "CONSUMPTION" {
+  database "Warehouse" as WAREHOUSE <<store>>
+  component "Analytics" as DASHBOARD <<good>>
+  component "ML" as ML <<good>>
 }
 
 SOURCE1 -down-> INGEST
 SOURCE2 -down-> INGEST
 SOURCE3 -down-> INGEST
-
-INGEST -right-> RAW : **5GB/day**
-
-RAW -down-> TRANSFORM : Read
-TRANSFORM -right-> AGGREGATE : Filter
-AGGREGATE -down-> WAREHOUSE : **5MB**
-
-WAREHOUSE -right-> DASHBOARD : Query
-WAREHOUSE -down-> ML : Features
+INGEST -down-> RAW
+RAW -down-> TRANSFORM
+TRANSFORM -right-> AGGREGATE
+AGGREGATE -down-> WAREHOUSE
+WAREHOUSE -right-> DASHBOARD
+WAREHOUSE -down-> ML
 
 @enduml

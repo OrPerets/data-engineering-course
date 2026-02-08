@@ -1,29 +1,32 @@
 @startuml
 !include ../_template_styles.puml
-' SKEW MITIGATION: SALTING FLOW (Reasoning) - Mixed layout for PPTX
+!include _week3_visual_style.puml
+
 left to right direction
+skinparam nodesep 70
+skinparam ranksep 55
 
-rectangle "BEFORE (Skew)" #FFFFFF {
-    component "**Large table**\n<size:10>key 888 -> 1B rows</size>" as LARGE1 <<Schema>>
-    component "**Shuffle**\n<size:10>one reducer</size>" as SHUFFLE1 <<Control>>
-    component "**Reducer**\n<size:10>OOM</size>" as REDUCE1 <<Failure>>
-    LARGE1 -right-> SHUFFLE1
-    SHUFFLE1 -right-> REDUCE1
+rectangle "Before" as BEF {
+  component "Large table" as LARGE1 <<store>>
+  component "Shuffle" as SHUFFLE1 <<process>>
+  component "Reducer" as REDUCE1 <<failure>>
+  LARGE1 -right-> SHUFFLE1
+  SHUFFLE1 -right-> REDUCE1
 }
 
-rectangle "SALTING SOLUTION" #FFFFFF {
-    component "**Large table**\n<size:10>key 888 -> 1B rows</size>" as LARGE2 <<Schema>>
-    component "**Map: salt**\n<size:10>key-1..key-N</size>" as SALT <<Task>>
-    component "**Small table**\n<size:10>replicate</size>" as REPL <<Schema>>
-    LARGE2 -right-> SALT
+rectangle "Salting" as MID {
+  component "Large table" as LARGE2 <<store>>
+  component "Map: salt" as SALT <<process>>
+  component "Small table" as REPL <<store>>
+  LARGE2 -right-> SALT
 }
 
-rectangle "AFTER (Balanced)" #FFFFFF {
-    component "**Shuffle**\n<size:10>key-salt</size>" as SHUFFLE2 <<Control>>
-    component "**N Reducers**\n<size:10>~1B/N each</size>" as REDUCE2 <<success>>
-    component "**Merge**\n<size:10>by key</size>" as MERGE <<Task>>
-    SHUFFLE2 -right-> REDUCE2
-    REDUCE2 -right-> MERGE
+rectangle "After" as AFT {
+  component "Shuffle" as SHUFFLE2 <<process>>
+  component "N Reducers" as REDUCE2 <<good>>
+  component "Merge" as MERGE <<process>>
+  SHUFFLE2 -right-> REDUCE2
+  REDUCE2 -right-> MERGE
 }
 
 SALT -down-> SHUFFLE2

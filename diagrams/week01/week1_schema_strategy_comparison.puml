@@ -1,32 +1,29 @@
 @startuml
 !include ../_template_styles.puml
+!include _week1_visual_style.puml
 
-top to bottom direction
+left to right direction
+skinparam nodesep 80
+skinparam ranksep 60
 
-frame "Schema-on-write" {
-  database "Ingest Gate" as W1
-  component "Validate types\nand required fields" as W2
-  storage "Curated table" as W3
-  W1 --> W2 --> W3
-}
+rectangle "Schema-on-write" as W <<process>>
+database "Gate" as W1 <<store>>
+component "Validate" as W2 <<process>>
+storage "Curated" as W3 <<store>>
 
-frame "Schema-on-read" {
-  cloud "Raw zone" as R1
-  component "Interpret schema\nat query time" as R2
-  storage "Flexible outputs" as R3
-  R1 --> R2 --> R3
-}
+rectangle "Schema-on-read" as R <<decision>>
+cloud "Raw" as R1 <<source>>
+component "Interpret" as R2 <<process>>
+storage "Flexible" as R3 <<store>>
 
-W3 -[hidden]right- R1
+W -right-> W1
+W1 -right-> W2
+W2 -right-> W3
 
-note right of W2
-Higher trust,
-slower onboarding
-end note
+R -right-> R1
+R1 -right-> R2
+R2 -right-> R3
 
-note right of R2
-Faster onboarding,
-more governance required
-end note
+W3 -[hidden]down- R1
 
 @enduml

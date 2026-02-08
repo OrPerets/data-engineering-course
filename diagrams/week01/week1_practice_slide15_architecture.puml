@@ -1,57 +1,50 @@
 @startuml
 !include ../_template_styles.puml
-' NEWS PLATFORM - mixed layout
+!include _week1_visual_style.puml
+
 top to bottom direction
+skinparam nodesep 60
+skinparam ranksep 50
 
-package "SOURCES" as P_SRC #FFFFFF {
-    database "**News**\n<size:12>1K sites RSS</size>" as SOURCES <<Primary>>
-    storage "**Clicks**\n<size:12>500K/day</size>" as CLICKS <<Primary>>
-    SOURCES -[hidden]- CLICKS
+package "SOURCES" {
+  database "News" as NEWS <<source>>
+  storage "Clicks" as CLICKS <<source>>
 }
 
-package "INGESTION" as P_ING #FFFFFF {
-    component "**Articles**\n<size:11>10K/day Pull</size>" as INGEST_ART <<Control>>
-    component "**Clicks**\n<size:11>RT Stream</size>" as INGEST_CLICK <<Control>>
-    INGEST_ART -[hidden]- INGEST_CLICK
+package "INGESTION" {
+  component "Articles" as INGEST_ART <<process>>
+  component "Clicks" as INGEST_CLICK <<process>>
 }
 
-package "STORAGE" as P_STO #FFFFFF {
-    database "**Articles**\n<size:12>50M 515GB</size>" as RAW_ART <<Schema>>
-    database "**Clicks**\n<size:12>200M 8.8GB</size>" as RAW_CLICK <<Schema>>
-    RAW_ART -[hidden]- RAW_CLICK
+package "STORAGE" {
+  database "Articles" as RAW_ART <<store>>
+  database "Clicks" as RAW_CLICK <<store>>
 }
 
-package "PROCESSING" as P_PROC #FFFFFF {
-    component "**Batch**\n<size:11>Daily Spark</size>" as BATCH <<Task>>
-    component "**Stream**\n<size:11>5m windows</size>" as STREAM <<Task>>
-    BATCH -[hidden]- STREAM
+package "PROCESSING" {
+  component "Batch" as BATCH <<process>>
+  component "Stream" as STREAM <<process>>
 }
 
-package "ANALYTICS" as P_ANAL #FFFFFF {
-    database "**Warehouse**\n<size:12>Star schema</size>" as WAREHOUSE <<Schema>>
-    cloud "**Trending**\n<size:12>RT API</size>" as TRENDING <<Control>>
-    WAREHOUSE -[hidden]- TRENDING
+package "ANALYTICS" {
+  database "Warehouse" as WAREHOUSE <<store>>
+  cloud "Trending" as TRENDING <<store>>
 }
 
-package "CONSUMPTION" as P_CONS #FFFFFF {
-    component "**Analytics**\n<size:11>BI tools</size>" as DASHBOARD <<Primary>>
-    component "**App**\n<size:11>Mobile/Web</size>" as APP <<Task>>
-    DASHBOARD -[hidden]- APP
+package "CONSUMPTION" {
+  component "Analytics" as DASHBOARD <<good>>
+  component "App" as APP <<good>>
 }
 
-SOURCES -down-> INGEST_ART : **batch**
-CLICKS -down-> INGEST_CLICK : **stream**
-
-INGEST_ART -right-> RAW_ART : Parquet
-INGEST_CLICK -right-> RAW_CLICK : Avro
-
-RAW_ART -down-> BATCH : **daily**
-RAW_CLICK -down-> STREAM : **RT**
-
-BATCH -right-> WAREHOUSE : SQL
-STREAM -right-> TRENDING : top-N
-
-WAREHOUSE -down-> DASHBOARD : **BI**
-TRENDING -down-> APP : **REST**
+NEWS -down-> INGEST_ART
+CLICKS -down-> INGEST_CLICK
+INGEST_ART -down-> RAW_ART
+INGEST_CLICK -down-> RAW_CLICK
+RAW_ART -down-> BATCH
+RAW_CLICK -down-> STREAM
+BATCH -down-> WAREHOUSE
+STREAM -down-> TRENDING
+WAREHOUSE -down-> DASHBOARD
+TRENDING -down-> APP
 
 @enduml

@@ -1,15 +1,16 @@
 @startuml
 !include ../_template_styles.puml
-' Big Data benefits — social networks, preferences, product perception
-top to bottom direction
+!include _week1_visual_style.puml
 
-card "**Social Networks**\n\n<size:14>Facebook, Twitter</size>\n<size:14>User engagement</size>" as SN <<Primary>>
+left to right direction
+skinparam nodesep 120
+skinparam ranksep 70
 
-card "**Social Media Data**\n\n<size:14>Preferences</size>\n<size:14>Product perception</size>" as SM <<Control>>
+rectangle "Social\nNetworks" as SN <<source>>
+rectangle "Engagement\nData" as SM <<process>>
+rectangle "Insights\nValue" as I <<good>>
 
-card "**Insights & Value**\n\n<size:14>Marketing</size>\n<size:14>Recommendations</size>" as I <<Task>>
-
-SN -> SM
-SM -> I
+SN -right-> SM
+SM -right-> I
 
 @enduml

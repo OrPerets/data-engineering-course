@@ -1,15 +1,16 @@
 @startuml
 !include ../_template_styles.puml
-' Data Pipeline — Input → Transform → Output
+!include _week1_visual_style.puml
+
 left to right direction
+skinparam nodesep 120
+skinparam ranksep 70
 
-storage "**INPUT**\n\n<size:14>Sources:</size>\n<size:14>• CSV</size>\n<size:14>• JSON APIs</size>\n<size:14>• DB dumps</size>\n<size:14>• Streams</size>" as I <<Primary>>
+storage "Input" as I <<source>>
+component "Transform" as T <<process>>
+database "Output" as O <<store>>
 
-component "**TRANSFORM**\n\n<size:14>Processing:</size>\n<size:14>• Clean</size>\n<size:14>• Deduplicate</size>\n<size:14>• Enrich</size>\n<size:14>• Normalize</size>" as T <<Task>>
-
-database "**OUTPUT**\n\n<size:14>Ready:</size>\n<size:14>• Validated</size>\n<size:14>• Consistent</size>\n<size:14>• Quality</size>\n<size:14>• Partitioned</size>" as O <<Schema>>
-
-I -> T : **Ingest**
-T -> O : **Write**
+I -right-> T : Ingest
+T -right-> O : Write
 
 @enduml

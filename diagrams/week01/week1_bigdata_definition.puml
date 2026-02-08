@@ -1,12 +1,19 @@
 @startuml
 !include ../_template_styles.puml
-' What Is Big Data — definition: large datasets, not traditional computing
+!include _week1_visual_style.puml
+
 left to right direction
+skinparam nodesep 120
+skinparam ranksep 70
 
-rectangle "**Traditional\nComputing**\n\n<size:14>Single node</size>\n<size:14>Limited size</size>\n<size:14>Structured only</size>" as T <<Control>>
+rectangle "Traditional\nComputing" as T <<source>>
+rectangle "Big Data" as B <<process>>
 
-rectangle "**Big Data**\n\n<size:14>Large datasets</size>\n<size:14>Cannot process with\ntraditional techniques</size>\n<size:14>Distributed</size>" as B <<Primary>>
+rectangle "Single node\nLimited size" as T1 <<risk>>
+rectangle "Large datasets\nDistributed" as B1 <<good>>
 
-T -> B : **Beyond**
+T -down-> T1
+B -down-> B1
+T -right-> B : Beyond
 
 @enduml

@@ -1,16 +1,17 @@
 @startuml
 !include ../_template_styles.puml
-' Data Engineering vs Data Science
-top to bottom direction
+!include _week1_visual_style.puml
 
-card "**DATA ENGINEERING**\n\n<size:15><b>Focus:</b></size>\n<size:14>Infrastructure & pipelines</size>\n\n<size:15><b>Activities:</b></size>\n<size:14>• ETL/ELT</size>\n<size:14>• Architecture</size>\n<size:14>• Scalability</size>\n<size:14>• Integration</size>\n\n<size:15><b>Output:</b></size>\n<size:14>Datasets, APIs</size>" as DE <<Primary>>
+left to right direction
+skinparam nodesep 100
+skinparam ranksep 70
 
-card "**DATA SCIENCE**\n\n<size:15><b>Focus:</b></size>\n<size:14>Insights from models</size>\n\n<size:15><b>Activities:</b></size>\n<size:14>• Statistics</size>\n<size:14>• ML</size>\n<size:14>• Features</size>\n<size:14>• Evaluation</size>\n\n<size:15><b>Output:</b></size>\n<size:14>Insights, Models</size>" as DS <<Task>>
+rectangle "Data\nEngineering" as DE <<process>>
+rectangle "Shared" as O <<store>>
+rectangle "Data\nScience" as DS <<good>>
 
-card "**SHARED**\n\n<size:15><b>Collaboration:</b></size>\n\n<size:14>• Quality data</size>\n<size:14>• Large datasets</size>\n<size:14>• Feature stores</size>\n<size:14>• Exploration</size>\n<size:14>• Performance</size>\n<size:14>• Reproducibility</size>" as O <<Schema>>
-
-DE -down-> O : Provides
+DE -right-> O : Provides
 O -right-> DS : Enables
-DS -up[dashed]-> DE : Feedback
+DS -[dashed]left-> DE : Feedback
 
 @enduml

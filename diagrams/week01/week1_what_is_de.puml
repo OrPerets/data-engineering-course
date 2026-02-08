@@ -1,15 +1,16 @@
 @startuml
 !include ../_template_styles.puml
-' What is Data Engineering? — sources, pipeline, output
+!include _week1_visual_style.puml
+
 left to right direction
+skinparam nodesep 120
+skinparam ranksep 70
 
-storage "**Sources**\n<size:14>DBs · APIs</size>\n<size:14>Streaming · Batch</size>" as S <<Primary>>
+storage "Sources" as S <<source>>
+component "ETL" as P <<process>>
+database "Output" as O <<store>>
 
-component "**ETL**\n<size:14>Extract · Transform</size>\n<size:14>Load · Clean</size>" as P <<Task>>
-
-database "**Output**\n<size:14>Structured Data</size>\n<size:14>Queryable</size>" as O <<Schema>>
-
-S -> P : **Raw**
-P -> O : **Clean**
+S -right-> P : Raw
+P -right-> O : Clean
 
 @enduml

@@ -1,31 +1,22 @@
 @startuml
 !include ../_template_styles.puml
+!include _week1_visual_style.puml
 
 left to right direction
+skinparam nodesep 100
+skinparam ranksep 70
 
-rectangle "Batch" as B {
-  component "Scheduled\nprocessing" as B1
-  storage "Large\nwindow" as B2
-  card "Latency:\nminutes-hours" as B3
-}
+rectangle "Batch" as B <<process>>
+rectangle "Streaming" as S <<process>>
 
-rectangle "Streaming" as S {
-  component "Continuous\nprocessing" as S1
-  queue "Event-by-event\nflow" as S2
-  card "Latency:\nseconds" as S3
-}
+rectangle "Scheduled\nLarge window" as B1 <<store>>
+rectangle "Continuous\nEvent-by-event" as S1 <<source>>
+rectangle "Latency:\nmin–hours" as B2 <<decision>>
+rectangle "Latency:\nseconds" as S2 <<good>>
 
-actor "Business SLA" as A
-A --> B1 : relaxed freshness
-A --> S1 : near real-time
-
-B2 --> B3
-S2 --> S3
-B3 -[hidden]down- S3
-
-note bottom
-Choose by SLA and operational complexity,
-not by trend.
-end note
+B -down-> B1
+B1 -down-> B2
+S -down-> S1
+S1 -down-> S2
 
 @enduml

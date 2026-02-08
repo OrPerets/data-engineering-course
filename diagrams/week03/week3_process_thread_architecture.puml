@@ -1,25 +1,24 @@
 @startuml
 !include ../_template_styles.puml
+!include _week3_visual_style.puml
 
 left to right direction
+skinparam nodesep 90
+skinparam ranksep 70
 
-frame "Process model" {
-  rectangle "Process A" as P1
-  rectangle "Process B" as P2
+rectangle "Process model" as PROC {
+  rectangle "Process A" as P1 <<source>>
+  rectangle "Process B" as P2 <<source>>
   P1 -[hidden]down- P2
-  note right of P1
-  Isolated memory
-  stronger fault isolation
-  end note
 }
 
-frame "Thread model" {
-  rectangle "Single Process" as PR {
-    component "Thread 1" as T1
-    component "Thread 2" as T2
-    component "Shared memory" as TM
-    T1 --> TM
-    T2 --> TM
+rectangle "Thread model" as THR {
+  rectangle "Process" as PR {
+    component "Thread 1" as T1 <<process>>
+    component "Thread 2" as T2 <<process>>
+    storage "Shared memory" as TM <<store>>
+    T1 -down-> TM
+    T2 -down-> TM
   }
 }
 

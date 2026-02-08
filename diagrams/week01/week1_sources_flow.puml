@@ -1,18 +1,21 @@
 @startuml
 !include ../_template_styles.puml
-' Sources feeding Big Data pipeline
-left to right direction
+!include _week1_visual_style.puml
 
-database "**Social\nNetworks**" as SN <<Primary>>
-database "**E-commerce**" as EC <<Control>>
-database "**IoT / Weather**" as IO <<Task>>
-database "**Telecom**" as TC <<Schema>>
+top to bottom direction
+skinparam nodesep 90
+skinparam ranksep 70
 
-cloud "**Big Data\nPlatform**\n\n<size:14>Ingest → Process → Serve</size>" as BD <<Primary>>
+database "Social" as SN <<source>>
+database "E-commerce" as EC <<source>>
+database "IoT" as IO <<source>>
+database "Telecom" as TC <<source>>
 
-SN --> BD
-EC --> BD
-IO --> BD
-TC --> BD
+cloud "Big Data\nPlatform" as BD <<store>>
+
+SN -down-> BD
+EC -down-> BD
+IO -down-> BD
+TC -down-> BD
 
 @enduml

@@ -1,19 +1,23 @@
 @startuml
 !include ../_template_styles.puml
+!include _week1_visual_style.puml
 
 left to right direction
+skinparam nodesep 80
+skinparam ranksep 60
 
-card "Daily volume\nV_d" as V
-card "Retention\nR" as R
-card "Replication\nr" as RP
-card "Compression\nc" as C
-component "Storage model\nS = (V_d * R * r) / c" as F
-storage "Required\ncapacity S" as OUT
+rectangle "Volume V_d" as V <<source>>
+rectangle "Retention R" as R <<source>>
+rectangle "Replication r" as RP <<source>>
+rectangle "Compression c" as C <<source>>
 
-V --> F
-R --> F
-RP --> F
-C --> F
-F --> OUT
+component "S = (V_d·R·r)/c" as F <<process>>
+database "Capacity S" as OUT <<store>>
+
+V -down-> F
+R -down-> F
+RP -down-> F
+C -down-> F
+F -right-> OUT
 
 @enduml

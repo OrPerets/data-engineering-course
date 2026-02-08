@@ -1,24 +1,22 @@
 @startuml
 !include ../_template_styles.puml
-' INGESTION PIPELINE - mixed layout
+!include _week1_visual_style.puml
+
 left to right direction
+skinparam nodesep 70
+skinparam ranksep 60
 
-storage "**S3 Logs**\n<size:12>JSON 5GB</size>" as S3 <<Primary>>
+storage "S3 Logs" as S3 <<source>>
+component "Read" as READ <<process>>
+component "Parse" as PARSE <<process>>
+component "Validate" as VALIDATE <<process>>
+component "Write" as WRITE <<process>>
+database "Raw" as RAW <<store>>
 
-component "**1. Read**\n<size:11>Download</size>" as READ <<Control>>
-
-component "**2. Parse**\n<size:11>Extract events</size>" as PARSE <<Task>>
-
-component "**3. Validate**\n<size:11>Check schema</size>" as VALIDATE <<Task>>
-
-component "**4. Write**\n<size:11>Compress</size>" as WRITE <<Task>>
-
-database "**Raw Storage**\n<size:12>10M events</size>\n<size:12>5GB Parquet</size>" as RAW <<Schema>>
-
-S3 -right-> READ : **5GB**
-READ -down-> PARSE : JSON
-PARSE -right-> VALIDATE : events
-VALIDATE -down-> WRITE : OK
-WRITE -right-> RAW : **Parquet**
+S3 -right-> READ
+READ -right-> PARSE
+PARSE -right-> VALIDATE
+VALIDATE -right-> WRITE
+WRITE -right-> RAW
 
 @enduml

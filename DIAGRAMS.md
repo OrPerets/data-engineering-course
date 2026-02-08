@@ -197,7 +197,7 @@ Do not leave duplicate “copy” files.
 ' !include _weekXX_visual_style.puml
 
 top to bottom direction
-skinparam nodesep 75
+skinparam nodesep 120
 skinparam ranksep 70
 
 rectangle "Input" as A

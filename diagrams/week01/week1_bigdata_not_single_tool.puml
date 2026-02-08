@@ -1,16 +1,19 @@
 @startuml
 !include ../_template_styles.puml
-' Big Data — not a single technique or tool; ecosystem
-left to right direction
+!include _week1_visual_style.puml
 
-cloud "**Big Data**\n<size:14>Ecosystem</size>" as BD <<Primary>>
+top to bottom direction
+skinparam nodesep 100
+skinparam ranksep 70
 
-rectangle "**Storage**\n<size:14>Lakes, Warehouses</size>" as S <<Control>>
-rectangle "**Processing**\n<size:14>Batch, Stream</size>" as P <<Task>>
-rectangle "**Orchestration**\n<size:14>Scheduling, Pipelines</size>" as O <<Schema>>
+cloud "Big Data\nEcosystem" as BD <<store>>
 
-BD --> S
-BD --> P
-BD --> O
+rectangle "Storage" as S <<source>>
+rectangle "Processing" as P <<process>>
+rectangle "Orchestration" as O <<process>>
+
+BD -down-> S
+BD -down-> P
+BD -down-> O
 
 @enduml

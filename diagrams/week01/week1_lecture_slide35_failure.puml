@@ -1,29 +1,26 @@
 @startuml
 !include ../_template_styles.puml
-' FAILURE PROPAGATION — mixed layout
+!include _week1_visual_style.puml
+
 top to bottom direction
+skinparam nodesep 80
+skinparam ranksep 60
 
-storage "**Input**\n<size:12>Raw events</size>" as INPUT
+storage "Input" as INPUT <<source>>
+component "Step 1\nIngest" as STEP1 <<process>>
+database "Raw" as RAW <<store>>
+component "Step 2\nOOM" as STEP2 <<failure>>
+database "Partial" as PARTIAL <<failure>>
+component "Step 3" as STEP3 <<risk>>
+component "Step 4" as STEP4 <<risk>>
+database "Output" as OUTPUT <<risk>>
 
-component "**Step 1**\n<size:11>Ingestion</size>" as STEP1 <<success>>
-database "**Raw**\n<size:12>5 GB OK</size>" as RAW <<up>>
-
-component "**Step 2**\n<size:11>Transform</size>\n<size:11><b>OOM error</b></size>" as STEP2 <<failure>>
-database "**Partial**\n<size:12>2.5 GB</size>\n<size:12>incomplete</size>" as PARTIAL <<down>>
-
-component "**Step 3**\n<size:11>Aggregate</size>\n<size:11>waiting</size>" as STEP3 <<down>>
-
-component "**Step 4**\n<size:11>Load</size>\n<size:11>waiting</size>" as STEP4 <<down>>
-
-database "**Output**\n<size:12>Blocked</size>" as OUTPUT <<down>>
-
-INPUT -left-> STEP1 : **ingest**
-STEP1 -down-> RAW : **saved**
-RAW -down-> STEP2 : read
-
-STEP2 -left-> PARTIAL : **crash**
-STEP2 -down[dashed]-> STEP3 : blocked
-STEP3 -down[dashed]-> STEP4 : blocked
-STEP4 -right[dashed]-> OUTPUT : no load
+INPUT -down-> STEP1
+STEP1 -down-> RAW
+RAW -down-> STEP2
+STEP2 -down-> PARTIAL
+STEP2 -[dashed]down-> STEP3
+STEP3 -[dashed]down-> STEP4
+STEP4 -[dashed]down-> OUTPUT
 
 @enduml

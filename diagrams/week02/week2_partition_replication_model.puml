@@ -3,7 +3,7 @@
 !include _week2_visual_style.puml
 
 left to right direction
-skinparam nodesep 75
+skinparam nodesep 120
 skinparam ranksep 70
 
 rectangle "P1" as P1 <<source>>

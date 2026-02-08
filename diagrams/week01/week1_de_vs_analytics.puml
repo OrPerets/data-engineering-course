@@ -1,17 +1,18 @@
 @startuml
 !include ../_template_styles.puml
-' Data Engineering vs Analytics
-top to bottom direction
+!include _week1_visual_style.puml
 
-card "**DATA ENGINEERING**\n\n<size:15><b>Producer</b></size>\n\n<size:14><b>Role:</b></size>\n<size:14>• Infrastructure</size>\n<size:14>• Pipelines</size>\n<size:14>• Quality</size>\n<size:14>• Reliability</size>\n\n<size:13><i>\"Make data available\"</i></size>" as DE <<Primary>>
+left to right direction
+skinparam nodesep 100
+skinparam ranksep 70
 
-card "**CONNECTION**\n\n<size:15><b>Symbiotic:</b></size>\n\n<size:14>• Consumes DE output</size>\n<size:14>• Provides requirements</size>\n<size:14>• Collaboration</size>\n<size:14>• Data contracts</size>\n<size:14>• Common metrics</size>" as R <<Control>>
+rectangle "Data\nEngineering" as DE <<process>>
+rectangle "Connection" as R <<store>>
+rectangle "Analytics" as A <<good>>
 
-card "**ANALYTICS**\n\n<size:15><b>Consumer</b></size>\n\n<size:14><b>Role:</b></size>\n<size:14>• Reports</size>\n<size:14>• Dashboards</size>\n<size:14>• KPIs</size>\n<size:14>• Decisions</size>\n\n<size:13><i>\"Turn data to decisions\"</i></size>" as A <<Task>>
-
-DE -down-> R : **Provides**
-R -right-> A : **Enables**
-A -up[dashed]-> R : Feedback
-R -up[dashed]-> DE : Needs
+DE -right-> R : Provides
+R -right-> A : Enables
+A -[dashed]left-> R : Feedback
+R -[dashed]left-> DE : Needs
 
 @enduml

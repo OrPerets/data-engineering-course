@@ -1,25 +1,24 @@
 @startuml
 !include ../_template_styles.puml
-' DIVIDE-AND-CONQUER: Three phases — Constraint: no shared state across chunks
+!include _week3_visual_style.puml
+
 left to right direction
+skinparam nodesep 90
+skinparam ranksep 70
 
-database "**Input**\n\n<size:14>Records / chunks</size>" as INP <<Schema>>
-
-component "**Divide**\n\n<size:14>Partition input</size>\n<size:14>Split by key or range</size>" as DIV <<Control>>
-
-rectangle "CONQUER" #FFFFFF {
-    component "**Same function**\n<size:12>per chunk</size>" as C1 <<Task>>
-    component "**No shared state**\n<size:12>constraint</size>" as C2 <<Task>>
-    C1 -[hidden]down- C2
+database "Input" as INP <<store>>
+component "Divide" as DIV <<process>>
+rectangle "Conquer" as CONQ {
+  component "Same function\nper chunk" as C1 <<process>>
+  component "No shared\nstate" as C2 <<risk>>
+  C1 -[hidden]down- C2
 }
+component "Combine" as COMB <<process>>
+database "Output" as OUT <<store>>
 
-component "**Combine**\n\n<size:14>Group by key</size>\n<size:14>Aggregate</size>" as COMB <<Control>>
-
-database "**Output**\n\n<size:14>Result</size>" as OUT <<Schema>>
-
-INP -right-> DIV : split
-DIV -right-> C1 : chunks
-C1 -right-> COMB : (k,v)
-COMB -right-> OUT : merge
+INP -right-> DIV
+DIV -right-> C1
+C1 -right-> COMB
+COMB -right-> OUT
 
 @enduml

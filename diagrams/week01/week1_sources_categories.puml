@@ -1,23 +1,25 @@
 @startuml
 !include ../_template_styles.puml
-' Sources of Big Data — categories feeding centralized platform
+!include _week1_visual_style.puml
+
 top to bottom direction
+skinparam nodesep 80
+skinparam ranksep 60
 
-rectangle "**Social**\nFacebook, Google, LinkedIn" as So <<Control>>
-rectangle "**E-commerce**\nAmazon, Flipkart, Alibaba" as Ec <<Task>>
-rectangle "**Weather**\nStations, Satellites" as W <<Schema>>
-rectangle "**Telecom**\nAirtel, Vodafone" as T <<Control>>
-rectangle "**Markets**\nStock exchanges worldwide" as M <<Task>>
+rectangle "Social" as So <<source>>
+rectangle "E-commerce" as Ec <<source>>
+rectangle "Weather" as W <<source>>
+rectangle "Telecom" as T <<source>>
+rectangle "Markets" as M <<source>>
 
-component "**Extract / Ingest**" as E <<Schema>>
+component "Extract\nIngest" as E <<process>>
+cloud "Central\nPlatform" as BD <<store>>
 
-cloud "**Centralized**\n**Big Data Platform**" as BD <<Primary>>
-
-So --> E
-Ec --> E
-W --> E
-T --> E
-M --> E
-E --> BD
+So -down-> E
+Ec -down-> E
+W -down-> E
+T -down-> E
+M -down-> E
+E -down-> BD
 
 @enduml

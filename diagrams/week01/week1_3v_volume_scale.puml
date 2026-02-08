@@ -1,16 +1,19 @@
 @startuml
 !include ../_template_styles.puml
-' Volume scale — GB to PB
+!include _week1_visual_style.puml
+
 top to bottom direction
+skinparam nodesep 80
+skinparam ranksep 60
 
-rectangle "**Volume Scale**" as H <<Primary>>
+rectangle "Volume Scale" as H <<process>>
 
-rectangle "**GB**\nGigabytes" as GB <<Control>>
-rectangle "**TB**\nTerabytes (1024 GB)" as TB <<Task>>
-rectangle "**PB**\nPetabytes (1024 TB)" as PB <<Schema>>
+rectangle "GB" as GB <<source>>
+rectangle "TB\n(1024 GB)" as TB <<store>>
+rectangle "PB\n(1024 TB)" as PB <<store>>
 
-H --> GB
-GB --> TB
-TB --> PB
+H -down-> GB
+GB -down-> TB
+TB -down-> PB
 
 @enduml

@@ -1,21 +1,20 @@
 @startuml
 !include ../_template_styles.puml
-' BI Context - From Raw Data to Business Decisions
+!include _week1_visual_style.puml
+
 left to right direction
+skinparam nodesep 90
+skinparam ranksep 70
 
-storage "**Raw Data**\n\n<size:14>• Logs</size>\n<size:14>• DBs</size>\n<size:14>• Events</size>" as R <<Primary>>
+storage "Raw Data" as R <<source>>
+component "ETL" as E <<process>>
+database "DWH\nLake" as D <<store>>
+component "BI\nReports" as B <<process>>
+rectangle "Decisions" as X <<good>>
 
-component "**ETL Pipeline**\n\n<size:14>• Integration</size>\n<size:14>• Quality checks</size>\n<size:14>• Mapping</size>" as E <<Control>>
-
-database "**DWH / Lake**\n\n<size:14>• Star schema</size>\n<size:14>• Historical</size>\n<size:14>• Optimized</size>" as D <<Schema>>
-
-component "**BI & Reports**\n\n<size:14>• Dashboards</size>\n<size:14>• KPIs</size>\n<size:14>• Viz</size>" as B <<Task>>
-
-cloud "**Decisions**\n\n<size:14>• Strategy</size>\n<size:14>• Operations</size>\n<size:14>• Optimize</size>" as X <<Primary>>
-
-R -> E : **Extract**
-E -> D : **Load**
-D -> B : **Query**
-B -> X : **Inform**
+R -right-> E : Extract
+E -right-> D : Load
+D -right-> B : Query
+B -right-> X : Inform
 
 @enduml

@@ -1,40 +1,38 @@
 @startuml
 !include ../_template_styles.puml
-' PARALLEL PIPELINE OVERVIEW (MAPREDUCE) - Mixed layout for PPTX
+!include _week3_visual_style.puml
+
 top to bottom direction
+skinparam nodesep 70
+skinparam ranksep 55
 
-database "**Input**\n<size:10>Chunks</size>" as INP <<Schema>>
-
-component "**Split**\n<size:10>Partition</size>" as SPLIT <<Control>>
-
-rectangle "MAP PHASE" #FFFFFF {
-    component "**W1**\n<size:10>Map</size>" as W1 <<Task>>
-    component "**W2**\n<size:10>Map</size>" as W2 <<Task>>
-    component "**W3**\n<size:10>Map</size>" as W3 <<Task>>
-    W1 -[hidden]down- W2
-    W2 -[hidden]down- W3
+database "Input" as INP <<store>>
+component "Split" as SPLIT <<process>>
+rectangle "Map" as MAP_PHASE {
+  component "W1" as W1 <<process>>
+  component "W2" as W2 <<process>>
+  component "W3" as W3 <<process>>
+  W1 -[hidden]down- W2
+  W2 -[hidden]down- W3
 }
-
-component "**Shuffle**\n<size:10>Group by key</size>" as SORT_XFER <<Control>>
-
-rectangle "REDUCE PHASE" #FFFFFF {
-    component "**R1**\n<size:10>Aggregate</size>" as R1 <<Task>>
-    component "**R2**\n<size:10>Aggregate</size>" as R2 <<Task>>
-    R1 -[hidden]down- R2
+component "Shuffle" as SORT_XFER <<process>>
+rectangle "Reduce" as REDUCE_PHASE {
+  component "R1" as R1 <<process>>
+  component "R2" as R2 <<process>>
+  R1 -[hidden]down- R2
 }
+database "Result" as OUT <<store>>
 
-database "**Result**\n<size:10>Output</size>" as OUT <<Schema>>
-
-INP -right-> SPLIT
-SPLIT -right-> W1 : c1
-SPLIT -right-> W2 : c2
-SPLIT -right-> W3 : c3
-W1 -right-> SORT_XFER
-W2 -right-> SORT_XFER
-W3 -right-> SORT_XFER
-SORT_XFER -right-> R1 : keys A
-SORT_XFER -right-> R2 : keys B
-R1 -right-> OUT
-R2 -right-> OUT
+INP -down-> SPLIT
+SPLIT -down-> W1
+SPLIT -down-> W2
+SPLIT -down-> W3
+W1 -down-> SORT_XFER
+W2 -down-> SORT_XFER
+W3 -down-> SORT_XFER
+SORT_XFER -down-> R1
+SORT_XFER -down-> R2
+R1 -down-> OUT
+R2 -down-> OUT
 
 @enduml

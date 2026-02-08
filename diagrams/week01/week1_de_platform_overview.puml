@@ -1,18 +1,21 @@
 @startuml
 !include ../_template_styles.puml
-' Data Engineer — platform overview
+!include _week1_visual_style.puml
+
 top to bottom direction
+skinparam nodesep 100
+skinparam ranksep 70
 
-cloud "**Data Platform**\n<size:14>Infrastructure of data</size>" as P <<Primary>>
+cloud "Data Platform" as P <<store>>
 
-database "**Databases**" as DB <<Control>>
-database "**Warehouses**" as WH <<Task>>
-rectangle "**Integration\nTools**" as I <<Schema>>
-rectangle "**Analytical\nSystems**" as A <<Control>>
+database "Databases" as DB <<store>>
+database "Warehouses" as WH <<store>>
+rectangle "Integration\nTools" as I <<process>>
+rectangle "Analytical\nSystems" as A <<good>>
 
-P --> DB
-P --> WH
-P --> I
-P --> A
+P -down-> DB
+P -down-> WH
+P -down-> I
+P -down-> A
 
 @enduml

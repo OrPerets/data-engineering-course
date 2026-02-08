@@ -1,17 +1,18 @@
 @startuml
 !include ../_template_styles.puml
-' Data Engineering Lifecycle — four phases
+!include _week1_visual_style.puml
+
 left to right direction
-component "**INGESTION**\n\n<size:14>• Extract</size>\n<size:14>• Validate</size>\n<size:14>• Handle errors</size>" as I <<Control>>
+skinparam nodesep 90
+skinparam ranksep 70
 
-database "**STORAGE**\n\n<size:14>• Data lake</size>\n<size:14>• Partitioned</size>\n<size:14>• Versioned</size>" as S <<Schema>>
+component "Ingestion" as I <<source>>
+database "Storage" as S <<store>>
+component "Processing" as P <<process>>
+rectangle "Consumption" as C <<good>>
 
-component "**PROCESSING**\n\n<size:14>• Transform</size>\n<size:14>• Aggregate</size>\n<size:14>• Join</size>" as P <<Task>>
-
-cloud "**CONSUMPTION**\n\n<size:14>• Dashboards</size>\n<size:14>• APIs</size>\n<size:14>• ML</size>" as C <<Primary>>
-
-I -> S : **Raw**
-S -> P : **Read**
-P -> C : **Serve**
+I -right-> S : Raw
+S -right-> P : Read
+P -right-> C : Serve
 
 @enduml

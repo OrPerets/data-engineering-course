@@ -1,15 +1,16 @@
 @startuml
 !include ../_template_styles.puml
-' Cloud Computing Services — SaaS, PaaS, IaaS stack
+!include _week1_visual_style.puml
+
 top to bottom direction
+skinparam nodesep 100
+skinparam ranksep 70
 
-rectangle "**SaaS**\nSoftware as a Service\n<size:14>Applications through the browser</size>" as SaaS <<Primary>>
+rectangle "SaaS" as SaaS <<good>>
+rectangle "PaaS" as PaaS <<process>>
+rectangle "IaaS" as IaaS <<source>>
 
-rectangle "**PaaS**\nPlatform as a Service\n<size:14>Platform for custom software development</size>" as PaaS <<Control>>
-
-rectangle "**IaaS**\nInfrastructure as a Service\n<size:14>Computing infrastructure delivery</size>" as IaaS <<Task>>
-
-SaaS -> PaaS
-PaaS -> IaaS
+SaaS -down-> PaaS
+PaaS -down-> IaaS
 
 @enduml

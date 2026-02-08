@@ -1,4 +1,4 @@
-' Week 02 visual style overrides (inspired by legacy lecture visuals)
+' Week 03 visual style (aligned with week01/week02 — pastel / elegant)
 skinparam backgroundColor transparent
 skinparam shadowing true
 skinparam roundcorner 14
@@ -46,6 +46,29 @@ skinparam database {
   FontColor #37474F
 }
 
+skinparam storage {
+  BorderColor #90A4AE
+  BorderThickness 1.5
+  BackgroundColor #FFFFFF
+  FontColor #37474F
+}
+
+skinparam cloud {
+  BorderColor #90A4AE
+  BorderThickness 1.5
+  BackgroundColor #FFFFFF
+  FontColor #37474F
+}
+
+skinparam card {
+  BorderColor #90A4AE
+  BorderThickness 1.5
+  BackgroundColor #FFFFFF
+  FontColor #37474F
+  RoundCorner 14
+}
+
+' Semantic stereotypes — pastel / elegant palette
 skinparam rectangle<<source>> {
   BackgroundColor #B3E5FC
   BorderColor #81D4FA
@@ -82,26 +105,44 @@ skinparam database<<store>> {
   FontColor #0D47A1
 }
 
-skinparam database<<shardA>> {
+skinparam component<<source>> {
   BackgroundColor #B3E5FC
   BorderColor #81D4FA
   FontColor #01579B
 }
 
-skinparam database<<shardB>> {
+skinparam component<<process>> {
   BackgroundColor #C8E6C9
   BorderColor #A5D6A7
   FontColor #1B5E20
 }
 
-skinparam database<<shardC>> {
-  BackgroundColor #FFE0B2
-  BorderColor #FFCC80
-  FontColor #E65100
+skinparam component<<good>> {
+  BackgroundColor #C5E1A5
+  BorderColor #AED581
+  FontColor #33691E
 }
 
-skinparam database<<warn>> {
+skinparam component<<failure>> {
   BackgroundColor #FFCDD2
   BorderColor #EF9A9A
   FontColor #B71C1C
+}
+
+skinparam cloud<<store>> {
+  BackgroundColor #BBDEFB
+  BorderColor #90CAF9
+  FontColor #0D47A1
+}
+
+skinparam rectangle<<store>> {
+  BackgroundColor #BBDEFB
+  BorderColor #90CAF9
+  FontColor #0D47A1
+}
+
+skinparam storage<<store>> {
+  BackgroundColor #BBDEFB
+  BorderColor #90CAF9
+  FontColor #0D47A1
 }

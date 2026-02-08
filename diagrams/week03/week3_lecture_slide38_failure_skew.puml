@@ -1,33 +1,30 @@
 @startuml
 !include ../_template_styles.puml
-' FAILURE: DATA SKEW (HOT KEY -> ONE REDUCER) - Mixed layout for PPTX
+!include _week3_visual_style.puml
+
 top to bottom direction
+skinparam nodesep 70
+skinparam ranksep 55
 
-component "**Partition by hash(key)**\n<size:10>Keys -> Reducers</size>" as PART <<Control>>
-
-rectangle "REDUCERS" #FFFFFF {
-    component "**R1**\n<size:10>10 keys, 1M vals</size>" as R1 <<Task>>
-    component "**R2**\n<size:10>10 keys, 1M vals</size>" as R2 <<Task>>
-    component "**R3 (HOT)**\n<size:10>1 key, 800M vals</size>" as R3 <<Failure>>
-    R1 -[hidden]right- R2
-    R2 -[hidden]right- R3
+component "Partition\nby key" as PART <<process>>
+rectangle "Reducers" as REDS {
+  component "R1" as R1 <<good>>
+  component "R2" as R2 <<good>>
+  component "R3 (hot)" as R3 <<failure>>
+  R1 -[hidden]right- R2
+  R2 -[hidden]right- R3
 }
+database "Done" as D1 <<good>>
+database "Done" as D2 <<good>>
+component "OOM" as FAIL <<failure>>
+component "Mitigation" as FIX <<process>>
 
-together {
-    database "**Done**" as D1 <<up>>
-    database "**Done**" as D2 <<up>>
-    component "**OOM / Timeout**\n<size:10>Overloaded</size>" as FAIL <<failure>>
-}
-
-component "**Mitigation**\n<size:10>salting / combiner</size>" as FIX <<Control>>
-
-PART -down-> R1 : balanced
-PART -down-> R2 : balanced
-PART -down-> R3 : hot key
-
+PART -down-> R1
+PART -down-> R2
+PART -down-> R3
 R1 -down-> D1
 R2 -down-> D2
-R3 -down-> FAIL : crash
-FAIL -down-> FIX : rebalance
+R3 -down-> FAIL
+FAIL -down-> FIX
 
 @enduml

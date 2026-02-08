@@ -1,18 +1,18 @@
 @startuml
 !include ../_template_styles.puml
+!include _week1_visual_style.puml
 
-start
-:Ingest;
-:Transform;
-:Aggregate;
-:Load;
-stop
+top to bottom direction
+skinparam nodesep 80
+skinparam ranksep 60
 
-note right
-T_total = T_ingest + T_transform
-         + T_aggregate + T_load
+rectangle "Ingest" as I <<source>>
+rectangle "Transform" as T <<process>>
+rectangle "Aggregate" as A <<process>>
+rectangle "Load" as L <<good>>
 
-Slowest stage dominates wall-clock time.
-end note
+I -down-> T
+T -down-> A
+A -down-> L
 
 @enduml
