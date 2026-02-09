@@ -1,35 +1,30 @@
 @startuml
-'=================================================
-' DWH AND LAKE IN THE ANALYTICS PIPELINE
-'=================================================
-
 !include ../_template_styles.puml
+!include _week5_visual_style.puml
 
 top to bottom direction
+skinparam nodesep 75
+skinparam ranksep 58
 
-rectangle "SOURCES" <<Primary>> {
-    database "**DB / API**\n<size:10>Operational systems</size>" as SRC1 <<Primary>>
-    database "**Files / Logs**\n<size:10>Raw data</size>" as SRC2 <<Primary>>
+rectangle "Sources" as SRC {
+  database "DB / API" as SRC1 <<source>>
+  database "Files / Logs" as SRC2 <<source>>
 }
 
-rectangle "ETL / ELT" <<Primary>> {
-    component "**Extract • Transform**\n<size:10>Load to DWH / Lake</size>" as ETL <<Task>>
+component "ETL / ELT" as ETL <<process>>
+
+rectangle "Storage" as STO {
+  database "DWH" as DWH <<store>>
+  database "Lake" as LAKE <<store>>
 }
 
-rectangle "STORAGE" <<Primary>> {
-    database "**Data Warehouse**\n<size:10>Schema-on-write • Star schema</size>" as DWH <<Control>>
-    database "**Data Lake**\n<size:10>Schema-on-read • Raw + processed</size>" as LAKE <<Task>>
-}
+component "BI / Analytics" as BI <<good>>
 
-rectangle "CONSUMERS" <<Primary>> {
-    component "**BI / Analytics**\n<size:10>SQL • Reports</size>" as BI <<Control>>
-}
-
-SRC1 --> ETL
-SRC2 --> ETL
-ETL --> DWH
-ETL --> LAKE
-DWH --> BI : "governed BI"
-LAKE --> BI : "ad-hoc / ML"
+SRC1 -down-> ETL
+SRC2 -down-> ETL
+ETL -down-> DWH
+ETL -down-> LAKE
+DWH -down-> BI
+LAKE -down-> BI
 
 @enduml

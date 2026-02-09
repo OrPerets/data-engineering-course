@@ -1,34 +1,35 @@
 @startuml
-'=================================================
-' EVOLUTION: v1 FULL REFRESH -> v2 INCREMENTAL + IDEMPOTENT
-'=================================================
-
 !include ../_template_styles.puml
+!include _week4_visual_style.puml
 
 top to bottom direction
+skinparam nodesep 65
+skinparam ranksep 55
 
-rectangle "v1 - Full refresh (does not scale)" <<Schema>> {
-    database "**Source**" as S1 <<Primary>>
-    component "**Read full**\n<size:10>No watermark</size>" as R1 <<V1>>
-    component "**INSERT**\n<size:10>Rerun duplicates</size>" as I1 <<V1>>
-    database "**Target**\n<size:10>Full scan</size>" as T1 <<Primary>>
-    S1 -right-> R1
-    R1 -right-> I1
-    I1 -right-> T1
+rectangle "v1 Full refresh" as V1 {
+  database "Source" as S1 <<source>>
+  component "Read full" as R1 <<risk>>
+  component "INSERT" as I1 <<risk>>
+  database "Target" as T1 <<store>>
+  S1 -right-> R1
+  R1 -right-> I1
+  I1 -right-> T1
 }
 
-rectangle "v2 - Incremental + idempotent" <<Task>> {
-    database "**Source**" as S2 <<Primary>>
-    component "**Read slice**\n<size:10>Watermark</size>" as R2 <<V2>>
-    database "**Staging**\n<size:10>Dedup</size>" as ST2 <<Primary>>
-    component "**MERGE**\n<size:10>Idempotent</size>" as M2 <<V2>>
-    database "**Target**\n<size:10>No dups</size>" as T2 <<success>>
-    database "**Control**\n<size:10>watermark</size>" as C2 <<Schema>>
-    S2 -right-> R2
-    R2 -right-> ST2
-    ST2 -right-> M2
-    M2 -right-> T2
-    M2 -down-> C2 : "update"
+rectangle "v2 Incremental" as V2 {
+  database "Source" as S2 <<source>>
+  component "Read slice" as R2 <<process>>
+  database "Staging" as ST2 <<store>>
+  component "MERGE" as M2 <<process>>
+  database "Target" as T2 <<good>>
+  database "Control" as C2 <<store>>
+  S2 -right-> R2
+  R2 -right-> ST2
+  ST2 -right-> M2
+  M2 -right-> T2
+  M2 -down-> C2
 }
+
+T1 -[hidden]right- S2
 
 @enduml

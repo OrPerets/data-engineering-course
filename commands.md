@@ -24,3 +24,8 @@ pandoc lectures/11-feature-engineering/lecture.md  -o build/11-feature-engineeri
 --resource-path=diagrams/week11 --pdf-engine=xelatex
 
 pandoc lectures/12-feature-engineering-advanced/lecture.md  -o build/11-feature-engineering-advanced.pptx     --reference-doc=reference.pptx --resource-path=diagrams/week11 --pdf-engine=xelatex
+
+
+pandoc lectures/15-sql-opt/lecture.md  -o build/02-sql-optimization.pptx     --reference-doc=reference.pptx --pdf-engine=xelatex
+
+pandoc lectures/16-distributed-parallelism/lecture.md  -o build/03-distributed-dbs.pptx  --resource-path=diagrams/week02   --reference-doc=reference.pptx --pdf-engine=xelatex

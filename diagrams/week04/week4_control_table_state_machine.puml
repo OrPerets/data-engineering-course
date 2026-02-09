@@ -1,13 +1,14 @@
 @startuml
 !include ../_template_styles.puml
+!include _week4_visual_style.puml
 
 [*] --> STARTED
 STARTED --> VALIDATED : quality pass
-VALIDATED --> LOADED : merge/overwrite success
-LOADED --> PUBLISHED : checkpoint watermark
-STARTED --> FAILED : extractor error
-VALIDATED --> FAILED : schema/type failure
-LOADED --> FAILED : target write failure
-FAILED --> STARTED : rerun from last published watermark
+VALIDATED --> LOADED : merge success
+LOADED --> PUBLISHED : watermark
+STARTED --> FAILED : error
+VALIDATED --> FAILED : schema fail
+LOADED --> FAILED : write fail
+FAILED --> STARTED : rerun
 
 @enduml

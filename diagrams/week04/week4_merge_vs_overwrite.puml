@@ -1,18 +1,14 @@
 @startuml
-'=================================================
-' MERGE vs PARTITION OVERWRITE - Load options
-' Row-level upsert vs replace partition
-'=================================================
-
 !include ../_template_styles.puml
+!include _week4_visual_style.puml
 
-left to right direction
+top to bottom direction
+skinparam nodesep 100
+skinparam ranksep 70
 
-rectangle "**MERGE / Upsert**\n\n<size:14>ON key match: update or insert</size>\n<size:14>Rerun safe (idempotent)</size>\n\n<size:13>Pros: handles duplicates, late updates</size>\n<size:13>Cons: join cost; needs index</size>" as MERGE <<Task>>
-
-rectangle "**Partition Overwrite**\n\n<size:14>Replace whole partition (e.g. by date)</size>\n<size:14>Idempotent at partition level</size>\n\n<size:13>Pros: simple, no join</size>\n<size:13>Cons: full partition reload only</size>" as OVER <<Schema>>
-
-rectangle "**Choose**\n\n<size:14>MERGE: row-level upsert</size>\n<size:14>Overwrite: full day reload</size>" as CHOICE <<Control>>
+rectangle "MERGE" as MERGE <<process>>
+rectangle "Partition\nOverwrite" as OVER <<process>>
+rectangle "Choose" as CHOICE <<decision>>
 
 MERGE -down-> CHOICE
 OVER -down-> CHOICE

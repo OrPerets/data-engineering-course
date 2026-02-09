@@ -1,23 +1,18 @@
 @startuml
-'=================================================
-' STAR SCHEMA - One fact table + dimension tables
-' sales_fact partitioned by date_key; FK to dims
-'=================================================
-
 !include ../_template_styles.puml
+!include _week5_visual_style.puml
 
 top to bottom direction
+skinparam nodesep 80
+skinparam ranksep 60
 
-database "**dim_customer**\n<size:10>customer_key, name, region</size>" as DIM_C <<Control>>
+database "dim_customer" as DIM_C <<store>>
+database "dim_product" as DIM_P <<store>>
+database "dim_date" as DIM_D <<store>>
+database "sales_fact" as FACT <<store>>
 
-database "**dim_product**\n<size:10>product_key, name, category</size>" as DIM_P <<Task>>
-
-database "**dim_date**\n<size:10>date_key, month, year</size>" as DIM_D <<Primary>>
-
-database "**sales_fact**\n<size:10>customer_key, product_key, date_key, amount</size>\n<size:9>partition by date_key</size>" as FACT <<Schema>>
-
-DIM_C -down-> FACT : <size:11>customer_key</size>
-DIM_P -down-> FACT : <size:11>product_key</size>
-DIM_D -down-> FACT : <size:11>date_key</size>
+DIM_C -down-> FACT
+DIM_P -down-> FACT
+DIM_D -down-> FACT
 
 @enduml

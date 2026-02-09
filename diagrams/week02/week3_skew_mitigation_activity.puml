@@ -1,0 +1,20 @@
+@startuml
+!include ../_template_styles.puml
+!include _week3_visual_style.puml
+
+start
+:Measure partition size;
+if (Hot key?) then (yes)
+  :Apply salting;
+  :Second-stage merge;
+else (no)
+  :Hash partitioning;
+endif
+if (Shuffle high?) then (yes)
+  :Local aggregation;
+else (no)
+  :Ship pipeline;
+endif
+stop
+
+@enduml

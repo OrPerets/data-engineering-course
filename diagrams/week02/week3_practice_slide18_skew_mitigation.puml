@@ -1,0 +1,35 @@
+@startuml
+!include ../_template_styles.puml
+!include _week3_visual_style.puml
+
+left to right direction
+skinparam nodesep 70
+skinparam ranksep 55
+
+rectangle "Before" as BEF {
+  component "Large table" as LARGE1 <<store>>
+  component "Shuffle" as SHUFFLE1 <<process>>
+  component "Reducer" as REDUCE1 <<failure>>
+  LARGE1 -right-> SHUFFLE1
+  SHUFFLE1 -right-> REDUCE1
+}
+
+rectangle "Salting" as MID {
+  component "Large table" as LARGE2 <<store>>
+  component "Map: salt" as SALT <<process>>
+  component "Small table" as REPL <<store>>
+  LARGE2 -right-> SALT
+}
+
+rectangle "After" as AFT {
+  component "Shuffle" as SHUFFLE2 <<process>>
+  component "N Reducers" as REDUCE2 <<good>>
+  component "Merge" as MERGE <<process>>
+  SHUFFLE2 -right-> REDUCE2
+  REDUCE2 -right-> MERGE
+}
+
+SALT -down-> SHUFFLE2
+REPL -down-> SHUFFLE2
+
+@enduml

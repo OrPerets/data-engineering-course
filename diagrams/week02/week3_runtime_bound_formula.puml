@@ -1,0 +1,20 @@
+@startuml
+!include ../_template_styles.puml
+!include _week3_visual_style.puml
+
+left to right direction
+skinparam nodesep 80
+skinparam ranksep 60
+
+rectangle "W\n(work)" as W <<source>>
+rectangle "S\n(span)" as S <<source>>
+rectangle "p\n(workers)" as P <<source>>
+component "T_p ≥ max(W/p, S)" as F <<process>>
+database "Runtime" as O <<store>>
+
+W -down-> F
+S -down-> F
+P -down-> F
+F -right-> O
+
+@enduml

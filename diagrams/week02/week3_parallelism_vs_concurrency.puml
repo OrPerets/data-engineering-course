@@ -1,0 +1,16 @@
+@startuml
+!include ../_template_styles.puml
+!include _week3_visual_style.puml
+
+top to bottom direction
+skinparam nodesep 100
+skinparam ranksep 70
+
+rectangle "Parallelism" as PAR <<process>>
+rectangle "Concurrency" as CON <<process>>
+rectangle "Shared" as SHARED <<good>>
+
+PAR -down-> SHARED
+CON -down-> SHARED
+
+@enduml

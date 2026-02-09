@@ -1,30 +1,18 @@
 @startuml
 !include ../_template_styles.puml
+!include _week4_visual_style.puml
 
 left to right direction
+skinparam nodesep 75
+skinparam ranksep 65
 
-rectangle "Snapshot" as S {
-  card "Simple" as S1
-  card "High read cost" as S2
-}
+rectangle "Snapshot" as S <<process>>
+rectangle "Timestamp" as T <<process>>
+rectangle "Log-based" as L <<good>>
+rectangle "Trigger" as G <<process>>
 
-rectangle "Timestamp" as T {
-  card "Easy to adopt" as T1
-  card "Misses deletes\nwithout tombstones" as T2
-}
-
-rectangle "Log-based" as L {
-  card "Best fidelity" as L1
-  card "Higher ops complexity" as L2
-}
-
-rectangle "Trigger" as G {
-  card "Accurate changes" as G1
-  card "Can burden source DB" as G2
-}
-
-S -[hidden]right- T
-T -[hidden]right- L
-L -[hidden]right- G
+S -right-> T
+T -right-> L
+L -right-> G
 
 @enduml

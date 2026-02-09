@@ -1,0 +1,26 @@
+@startuml
+!include ../_template_styles.puml
+!include _week3_visual_style.puml
+
+top to bottom direction
+skinparam nodesep 80
+skinparam ranksep 60
+
+component "Partition\nShuffle" as PART <<process>>
+rectangle "Workers" as WRK {
+  component "W1" as W1 <<good>>
+  component "W2" as W2 <<good>>
+  component "W3\n(straggler)" as W3 <<risk>>
+  W1 -[hidden]right- W2
+  W2 -[hidden]right- W3
+}
+component "Output" as OUT <<store>>
+
+PART -down-> W1
+PART -down-> W2
+PART -down-> W3
+W1 -down-> OUT
+W2 -down-> OUT
+W3 -[dashed]down-> OUT
+
+@enduml

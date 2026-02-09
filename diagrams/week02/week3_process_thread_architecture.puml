@@ -1,0 +1,27 @@
+@startuml
+!include ../_template_styles.puml
+!include _week3_visual_style.puml
+
+left to right direction
+skinparam nodesep 90
+skinparam ranksep 70
+
+rectangle "Process model" as PROC {
+  rectangle "Process A" as P1 <<source>>
+  rectangle "Process B" as P2 <<source>>
+  P1 -[hidden]down- P2
+}
+
+rectangle "Thread model" as THR {
+  rectangle "Process" as PR {
+    component "Thread 1" as T1 <<process>>
+    component "Thread 2" as T2 <<process>>
+    storage "Shared memory" as TM <<store>>
+    T1 -down-> TM
+    T2 -down-> TM
+  }
+}
+
+P2 -[hidden]right- PR
+
+@enduml

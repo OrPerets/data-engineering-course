@@ -1,15 +1,16 @@
 @startuml
 !include ../_template_styles.puml
+!include _week5_visual_style.puml
 
 start
 :Parse BI query;
-if (Has date_key predicate?) then (yes)
+if (date_key predicate?) then (yes)
   :Allow execution;
   :Prune partitions;
-  :Track bytes scanned;
+  :Track bytes;
 else (no)
   :Reject query;
-  :Return guardrail hint;
+  :Return hint;
 endif
 stop
 

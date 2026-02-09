@@ -1,27 +1,34 @@
 @startuml
 !include ../_template_styles.puml
+!include _week5_visual_style.puml
 
 left to right direction
+skinparam nodesep 75
+skinparam ranksep 60
 
-frame "Star" {
-  database "Fact" as SF
-  component "Flat dims" as SD
-  SF --> SD
+rectangle "Star" as STAR {
+  database "Fact" as SF <<store>>
+  component "Flat dims" as SD <<process>>
+  SF -right-> SD
 }
 
-frame "Snowflake" {
-  database "Fact" as NF
-  component "Normalized dims" as ND
-  component "More joins" as NJ
-  NF --> ND --> NJ
+rectangle "Snowflake" as SNOW {
+  database "Fact" as NF <<store>>
+  component "Normalized dims" as ND <<process>>
+  component "More joins" as NJ <<risk>>
+  NF -right-> ND
+  ND -right-> NJ
 }
 
-frame "Galaxy" {
-  database "Fact A" as G1
-  database "Fact B" as G2
-  component "Conformed dims" as GD
-  G1 --> GD
-  G2 --> GD
+rectangle "Galaxy" as GAL {
+  database "Fact A" as G1 <<store>>
+  database "Fact B" as G2 <<store>>
+  component "Conformed dims" as GD <<process>>
+  G1 -right-> GD
+  G2 -right-> GD
 }
+
+SF -[hidden]right- NF
+NF -[hidden]right- G1
 
 @enduml

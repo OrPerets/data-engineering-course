@@ -1,26 +1,25 @@
 @startuml
-'=================================================
-' DIMENSION HIERARCHY - Two chains for OLAP
-' Time: year -> quarter -> month -> day
-' Product: category -> brand -> product
-'=================================================
-
 !include ../_template_styles.puml
+!include _week5_visual_style.puml
 
 left to right direction
+skinparam nodesep 70
+skinparam ranksep 60
 
-database "**year**" as Y <<Control>>
-database "**quarter**" as Q <<Control>>
-database "**month**" as M <<Control>>
-database "**day**" as D <<Control>>
+database "year" as Y <<store>>
+database "quarter" as Q <<store>>
+database "month" as M <<store>>
+database "day" as D <<store>>
+
+database "category" as C <<store>>
+database "brand" as B <<store>>
+database "line" as L <<store>>
+database "product" as P <<store>>
+
 Y -right-> Q
 Q -right-> M
-M -right-> D : <size:10>drill-down</size>
+M -right-> D
 
-database "**category**" as C <<Schema>>
-database "**brand**" as B <<Schema>>
-database "**line**" as L <<Schema>>
-database "**product**" as P <<Schema>>
 C -right-> B
 B -right-> L
 L -right-> P

@@ -1,19 +1,16 @@
 @startuml
-'=================================================
-' INMON DWH - Four characteristics feed DWH
-' Short labels; flow into central node
-'=================================================
-
 !include ../_template_styles.puml
+!include _week5_visual_style.puml
 
 top to bottom direction
+skinparam nodesep 90
+skinparam ranksep 65
 
-rectangle "**Subject-Oriented**\n<size:10>Customer, product, sales</size>" as SUBJ <<Control>>
-rectangle "**Integrated**\n<size:10>One model from many sources</size>" as INT <<Task>>
-rectangle "**Time-Variant**\n<size:10>History, 5-10 years</size>" as TIME <<Schema>>
-rectangle "**Non-Volatile**\n<size:10>Read-only; append/refresh</size>" as NONV <<Primary>>
-
-database "**Data Warehouse**\n<size:10>Analytics, decision support</size>" as DWH <<success>>
+rectangle "Subject-Oriented" as SUBJ <<process>>
+rectangle "Integrated" as INT <<process>>
+rectangle "Time-Variant" as TIME <<process>>
+rectangle "Non-Volatile" as NONV <<process>>
+database "Data Warehouse" as DWH <<good>>
 
 SUBJ -down-> DWH
 INT -down-> DWH

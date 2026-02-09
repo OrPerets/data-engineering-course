@@ -1,0 +1,26 @@
+@startuml
+!include ../_template_styles.puml
+!include _week3_visual_style.puml
+
+left to right direction
+skinparam nodesep 80
+skinparam ranksep 60
+
+rectangle "Before" as BEF {
+  database "Map output" as MAP1 <<store>>
+  component "Repartition" as REP1 <<process>>
+  MAP1 -right-> REP1
+}
+
+rectangle "After" as AFT {
+  component "Combine" as COMB <<process>>
+  database "Fewer pairs" as MAP2 <<store>>
+  component "Repartition" as REP2 <<process>>
+  COMB -right-> MAP2
+  MAP2 -right-> REP2
+}
+
+MAP1 -[dashed]down-> COMB
+REP1 -[hidden]down- REP2
+
+@enduml

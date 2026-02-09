@@ -1,0 +1,19 @@
+@startuml
+!include ../_template_styles.puml
+!include _week3_visual_style.puml
+
+participant "Core 1" as C1
+participant "Core 2" as C2
+participant "I/O" as IO
+
+== Parallelism ==
+C1 -> C1 : Task A
+C2 -> C2 : Task B
+
+== Concurrency ==
+C1 -> IO : request
+IO --> C1 : wait
+C1 -> C1 : Task C
+IO --> C1 : response
+
+@enduml

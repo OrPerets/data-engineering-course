@@ -1,19 +1,15 @@
 @startuml
 !include ../_template_styles.puml
+!include _week5_visual_style.puml
 
 actor ETL
 participant "dim_customer" as D
 participant "sales_fact" as F
 
-ETL -> D : current row region=North (valid_to=9999)
+ETL -> D : current row region=North
 ETL -> D : detect change to Center
 ETL -> D : close old row (valid_to=t-1)
 ETL -> D : insert new row (valid_from=t)
-ETL -> F : future facts use new surrogate key
-
-note right of D
-Past facts keep North.
-New facts use Center.
-end note
+ETL -> F : facts use new surrogate key
 
 @enduml

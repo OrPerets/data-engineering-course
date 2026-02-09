@@ -50,7 +50,11 @@
 - Quality thresholds (null rate, type errors, duplicates)
 - Recovery policy for rerun, backfill, and schema changes
 
-![Ingestion contract hierarchy](../../diagrams/week04/week4_ingestion_contract_hierarchy.png){width=74%}
+---
+
+## Ingestion Contract Hierarchy
+
+![](../../diagrams/week04/week4_ingestion_contract_hierarchy.png){width=74%}
 
 ---
 
@@ -64,14 +68,21 @@
 ---
 
 ## Data Warehouse Definition (Inmon)
-- Inmon definition: a subject-oriented, integrated, time-variant, nonvolatile data store for decision support
+- Inmon: a subject-oriented, integrated, time-variant, nonvolatile data store for decision support
 - **Subject-oriented**: organized around major subjects (customer, product, sales)
 - **Integrated**: multiple heterogeneous sources, cleaned and consistent naming/encoding
+
+---
+
+## Data Warehouse Definition (Inmon) — Time and Volatility
 - **Time-variant**: historical perspective (past 5–10 years) vs operational current-value data
 - **Nonvolatile**: physically separate; operational updates do not occur in the warehouse
 
-![DWH vs lake](../../diagrams/week04/week5_dwh_vs_lake.png){width=76%}
+---
 
+## DWH vs Lake
+
+![](../../diagrams/week04/week5_dwh_vs_lake.png){width=76%}
 
 ---
 
@@ -81,8 +92,11 @@
 - Schema-on-write reduces BI surprise and metric drift
 - Schema-on-read speeds onboarding but needs stronger governance
 
-![Schema strategies](../../diagrams/week04/week5_schema_on_read_vs_write.png){width=76%}
+---
 
+## Schema-on-Write vs Schema-on-Read — Visual
+
+![](../../diagrams/week04/week5_schema_on_read_vs_write.png){width=76%}
 
 ---
 
@@ -92,7 +106,11 @@
 - Ingestion must preserve keys, timestamps, and lineage
 - Ingestion quality defects propagate to all downstream marts
 
-![Star schema context](../../diagrams/week04/week5_star_schema.png){width=74%}
+---
+
+## Star Schema Context
+
+![](../../diagrams/week04/week5_star_schema.png){width=74%}
 
 ---
 
@@ -102,8 +120,11 @@
 - ETL gives stronger pre-load control
 - ELT gives better replay and faster iteration
 
-![ETL vs ELT](../../diagrams/week04/week4_etl_vs_elt.png){width=76%}
+---
 
+## ETL vs ELT — Visual
+
+![](../../diagrams/week04/week4_etl_vs_elt.png){width=76%}
 
 ---
 
@@ -111,10 +132,20 @@
 - Source and target schemas rarely match when moving data between systems
 - STTM: a set of instructions defining how structure and content transfer from source to target
 - Critical when integrating multiple sources with different schemas into a central warehouse
-- STTM provides guidelines for: multiple data types, unknown members, default values, foreign keys, metadata
 
-![STTM mapping flow](../../diagrams/week04/week4_sttm_mapping_flow.png){width=76%}
+---
 
+## STTM: What It Covers
+- Multiple data types and encodings
+- Unknown members and default values
+- Foreign keys and referential integrity
+- Metadata and lineage
+
+---
+
+## STTM Mapping Flow
+
+![](../../diagrams/week04/week4_sttm_mapping_flow.png){width=76%}
 
 ---
 
@@ -126,11 +157,15 @@
 
 ---
 
-## ETL vs ELT Decision Table
-- Strict regulatory filters before persistence -> ETL
-- Fast-changing source schema -> ELT with raw bronze layer
-- Expensive source DB reads -> ELT batched extracts
-- Low tolerance for malformed curated rows -> ETL gates + quarantine
+## ETL vs ELT Decision Table (1/2)
+- Strict regulatory filters before persistence → **ETL**
+- Fast-changing source schema → **ELT** with raw bronze layer
+
+---
+
+## ETL vs ELT Decision Table (2/2)
+- Expensive source DB reads → **ELT** batched extracts
+- Low tolerance for malformed curated rows → **ETL** gates + quarantine
 
 
 ---
@@ -141,8 +176,11 @@
 - Log-based CDC: best fidelity, higher operational complexity
 - Trigger-based CDC: accurate but can burden source DB
 
-![CDC options comparison](../../diagrams/week04/week4_cdc_options_comparison.png){width=88%}
+---
 
+## CDC Options Comparison
+
+![](../../diagrams/week04/week4_cdc_options_comparison.png){width=88%}
 
 ---
 
@@ -155,10 +193,14 @@
 
 ---
 
-## DWH Back-End Tools
+## DWH Back-End Tools (1/2)
 - **Extraction**: get data from multiple, heterogeneous sources
 - **Cleaning**: detect and rectify errors
 - **Transformation**: convert from legacy/host format to warehouse format
+
+---
+
+## DWH Back-End Tools (2/2)
 - **Load**: sort, summarize, consolidate, check integrity, build indices and partitions
 - **Refresh**: propagate updates from sources to warehouse
 
@@ -179,8 +221,11 @@
 - Read `(watermark, upper_bound]`
 - Advance watermark only after successful target commit
 
-![Watermark incremental](../../diagrams/week04/week4_watermark_incremental.png){width=76%}
+---
 
+## Watermark Incremental — Visual
+
+![](../../diagrams/week04/week4_watermark_incremental.png){width=76%}
 
 ---
 
@@ -208,7 +253,11 @@
 - Final curated state must match exactly one successful run
 - This requires deterministic dedup + idempotent merge
 
-![Incremental rerun pattern](../../diagrams/week04/week4_practice_slide18_incremental_rerun.png){width=76%}
+---
+
+## Incremental Rerun — Visual
+
+![](../../diagrams/week04/week4_practice_slide18_incremental_rerun.png){width=76%}
 
 ---
 
@@ -220,7 +269,11 @@ $$
 - Requires stable keys and deterministic transformation rules
 - Implement with conflict-safe `MERGE`/upsert patterns
 
-![Idempotency](../../diagrams/week04/week4_idempotency.png){width=74%}
+---
+
+## Idempotency — Visual
+
+![](../../diagrams/week04/week4_idempotency.png){width=74%}
 
 
 ---
@@ -273,29 +326,49 @@ WHEN NOT MATCHED THEN
 - Use `MERGE` for mixed insert/update streams
 - Use overwrite for controlled historical backfills
 
-![MERGE vs overwrite](../../diagrams/week04/week4_merge_vs_overwrite.png){width=76%}
+---
+
+## MERGE vs Overwrite — Visual
+
+![](../../diagrams/week04/week4_merge_vs_overwrite.png){width=76%}
 
 ---
 
-## Reference Pipeline Architecture
-- Source -> Extract -> Stage -> Validate -> Transform -> Load -> Publish
+## Reference Pipeline Architecture (1/2)
+- Source → Extract → Stage → Validate → Transform → Load → Publish
 - Staging isolates raw variability from curated contracts
+
+---
+
+## Reference Pipeline Architecture (2/2)
 - Invalid records routed to DLQ, not analytics tables
 - Control table captures run state and window boundaries
 
-![Pipeline overview](../../diagrams/week04/week4_lecture_slide13_pipeline_overview.png){width=78%}
+---
+
+## Pipeline Overview
+
+![](../../diagrams/week04/week4_lecture_slide13_pipeline_overview.png){width=78%}
 
 
 ---
 
-## Pipeline Execution (Step-by-Step)
+## Pipeline Execution (1/2)
 - Extract window by watermark and buffer
 - Stage data with run metadata
 - Validate schema, types, and business rules
+
+---
+
+## Pipeline Execution (2/2)
 - Dedup and transform into curated shape
 - Merge/publish and then checkpoint watermark
 
-![Execution flow](../../diagrams/week04/week4_lecture_slide22_execution_flow.png){width=76%}
+---
+
+## Execution Flow
+
+![](../../diagrams/week04/week4_lecture_slide22_execution_flow.png){width=76%}
 
 
 ---
@@ -323,7 +396,11 @@ WHEN NOT MATCHED THEN
 - Mid-run failures leave partial visible state
 - Reruns duplicate rows and break KPI trust
 
-![Bad architecture](../../diagrams/week04/week4_lecture_bad_architecture.png){width=76%}
+---
+
+## Bad Architecture — Visual
+
+![](../../diagrams/week04/week4_lecture_bad_architecture.png){width=76%}
 
 
 ---
@@ -334,7 +411,11 @@ WHEN NOT MATCHED THEN
 - KPI inflation may be silent
 - Fix: partition-level checkpoint + idempotent load
 
-![Failure rerun](../../diagrams/week04/week4_lecture_slide38_failure_rerun.png){width=76%}
+---
+
+## Failure Rerun — Visual
+
+![](../../diagrams/week04/week4_lecture_slide38_failure_rerun.png){width=76%}
 
 
 ---
@@ -345,7 +426,11 @@ WHEN NOT MATCHED THEN
 - Fix: staging validation and DLQ routing
 - Alert on DLQ spikes by reason and source
 
-![DLQ flow](../../diagrams/week04/week4_dlq_flow.png){width=74%}
+---
+
+## DLQ Flow
+
+![](../../diagrams/week04/week4_dlq_flow.png){width=74%}
 
 
 ---
@@ -358,10 +443,14 @@ WHEN NOT MATCHED THEN
 
 ---
 
-## Control Table Design (Minimum)
-- `job_key`, `run_id`, `watermark`, `upper_bound`
-- `status`, `rows_read`, `rows_loaded`, `rows_dlq`
-- `started_at`, `finished_at`, `error_code`
+## Control Table Design (1/2)
+- **Identity and bounds**: `job_key`, `run_id`, `watermark`, `upper_bound`
+- **Status and counts**: `status`, `rows_read`, `rows_loaded`, `rows_dlq`
+
+---
+
+## Control Table Design (2/2)
+- **Timing and errors**: `started_at`, `finished_at`, `error_code`
 - Optional: per-partition completion markers
 
 
@@ -373,23 +462,35 @@ WHEN NOT MATCHED THEN
 - Restart reads last `PUBLISHED` watermark only
 - Avoid advancing watermark on partial success
 
-![Control table state machine](../../diagrams/week04/week4_control_table_state_machine.png){width=74%}
+---
+
+## Control Table State Machine — Visual
+
+![](../../diagrams/week04/week4_control_table_state_machine.png){width=74%}
 
 
 ---
 
-## Monitoring and SLOs
+## Monitoring and SLOs (1/2)
 - Freshness lag (`now - published_watermark`)
 - Data quality pass rate and DLQ percentage
+
+---
+
+## Monitoring and SLOs (2/2)
 - Duplicate-key conflict rate
 - Runtime p50/p95 and failure-retry counts
 
 
 ---
 
-## Production Runbook Checklist
+## Production Runbook Checklist (1/2)
 - Is late-data window documented and monitored?
 - Is rerun path tested on same input window?
+
+---
+
+## Production Runbook Checklist (2/2)
 - Can you recover one failed partition without full reload?
 - Are quality failures observable by reason code?
 

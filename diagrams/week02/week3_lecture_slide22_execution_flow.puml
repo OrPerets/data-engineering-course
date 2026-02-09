@@ -1,0 +1,30 @@
+@startuml
+!include ../_template_styles.puml
+!include _week3_visual_style.puml
+
+left to right direction
+skinparam nodesep 70
+skinparam ranksep 60
+
+rectangle "Map" as MAP_PHASE {
+  database "Records" as RECS <<store>>
+  component "Map" as MAP_FN <<process>>
+  RECS -down-> MAP_FN
+}
+
+rectangle "Shuffle" as SHUFFLE_PHASE {
+  component "Sort &\nTransfer" as SORT_XFER <<process>>
+  database "Groups" as GROUPS <<store>>
+  SORT_XFER -down-> GROUPS
+}
+
+rectangle "Reduce" as REDUCE_PHASE {
+  component "Reduce" as RED <<process>>
+  database "Output" as OUT <<store>>
+  RED -down-> OUT
+}
+
+MAP_FN -right-> SORT_XFER
+GROUPS -right-> RED
+
+@enduml

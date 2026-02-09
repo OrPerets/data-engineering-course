@@ -1,19 +1,16 @@
 @startuml
-'=================================================
-' PARTITION PRUNING - Two query paths to fact
-' Full scan vs pruned scan; ScanCost = s * |F|
-'=================================================
-
 !include ../_template_styles.puml
+!include _week5_visual_style.puml
 
 left to right direction
+skinparam nodesep 90
+skinparam ranksep 70
 
-component "**Query**\n<size:10>No WHERE date_key</size>" as Q_BAD <<Failure>>
-component "**Query**\n<size:10>WHERE date_key IN (Dec)</size>" as Q_GOOD <<Task>>
+component "Query\nNo date_key" as Q_BAD <<failure>>
+component "Query\nWHERE date_key" as Q_GOOD <<process>>
+database "sales_fact\n365 partitions" as FACT <<store>>
 
-database "**sales_fact**\n<size:10>1 TB, 365 partitions</size>\n<size:10>Partition by date_key</size>" as FACT <<Primary>>
-
-Q_BAD -right-> FACT : <size:10>Full scan\n365 parts</size>
-Q_GOOD -right-> FACT : <size:10>Pruned\n31 parts</size>
+Q_BAD -right-> FACT : Full scan
+Q_GOOD -right-> FACT : Pruned
 
 @enduml

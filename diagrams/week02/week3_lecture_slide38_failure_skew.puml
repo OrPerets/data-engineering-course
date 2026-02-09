@@ -1,0 +1,30 @@
+@startuml
+!include ../_template_styles.puml
+!include _week3_visual_style.puml
+
+top to bottom direction
+skinparam nodesep 70
+skinparam ranksep 55
+
+component "Partition\nby key" as PART <<process>>
+rectangle "Reducers" as REDS {
+  component "R1" as R1 <<good>>
+  component "R2" as R2 <<good>>
+  component "R3 (hot)" as R3 <<failure>>
+  R1 -[hidden]right- R2
+  R2 -[hidden]right- R3
+}
+database "Done" as D1 <<good>>
+database "Done" as D2 <<good>>
+component "OOM" as FAIL <<failure>>
+component "Mitigation" as FIX <<process>>
+
+PART -down-> R1
+PART -down-> R2
+PART -down-> R3
+R1 -down-> D1
+R2 -down-> D2
+R3 -down-> FAIL
+FAIL -down-> FIX
+
+@enduml

@@ -1,27 +1,26 @@
 @startuml
-'=================================================
-' EVOLUTION: v1 SINGLE TABLE -> v2 STAR + PARTITIONED FACT
-'=================================================
-
 !include ../_template_styles.puml
+!include _week5_visual_style.puml
 
 top to bottom direction
+skinparam nodesep 70
+skinparam ranksep 55
 
-rectangle "v1 - Single table / no star (does not scale)" <<Schema>> {
-    database "**One big table**\n<size:10>No partition key</size>" as T1 <<V1>>
-    component "**BI**\n<size:10>Ad-hoc WHERE</size>" as BI1 <<V1>>
+rectangle "v1 Single table" as V1 {
+  database "One big table" as T1 <<risk>>
+  component "BI" as BI1 <<process>>
+  BI1 -down-> T1
 }
-BI1 --> T1 : "Full scan"
 
-rectangle "v2 - Star + partitioned fact" <<Task>> {
-    database "**sales_fact**\n<size:10>Partition by date_key</size>" as F2 <<V2>>
-    database "**dim_customer**\n<size:10>dim_product, dim_date</size>" as D2 <<Primary>>
-    component "**BI**\n<size:10>WHERE date_key required</size>" as BI2 <<V2>>
+rectangle "v2 Star" as V2 {
+  database "sales_fact" as F2 <<store>>
+  database "dims" as D2 <<store>>
+  component "BI" as BI2 <<good>>
+  BI2 -down-> F2
+  F2 -down-> D2
+  BI2 -down-> D2
 }
-BI2 --> F2 : "Pruning"
-F2 --> D2 : "Join"
-BI2 --> D2
-T1 --> BI1 : "full scan cost"
-F2 --> BI2 : "pruned scan"
+
+T1 -[hidden]right- F2
 
 @enduml

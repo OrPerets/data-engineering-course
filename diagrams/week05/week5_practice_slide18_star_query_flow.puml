@@ -1,29 +1,23 @@
 @startuml
-'=================================================
-' STAR SCHEMA QUERY PATH AND PARTITION PRUNING
-'=================================================
-
 !include ../_template_styles.puml
+!include _week5_visual_style.puml
 
 top to bottom direction
+skinparam nodesep 70
+skinparam ranksep 55
 
-component "**BI: Revenue by region**\n<size:10>SQL + date filter</size>" as BI <<Control>>
+component "BI\nRevenue by region" as BI <<process>>
+component "Planner\nPartition pruning" as PLAN <<process>>
+database "sales_fact" as FACT <<store>>
+database "dim_customer" as DIM <<store>>
+component "Join · Aggregate" as AGG <<process>>
+database "Result" as RESULT <<good>>
 
-component "**Planner**\n<size:10>Partition pruning (date_key)</size>" as PLAN <<Task>>
-
-database "**sales_fact**\n<size:10>Scan pruned partitions only</size>" as FACT <<Schema>>
-
-database "**dim_customer**\n<size:10>Broadcast (small)</size>" as DIM <<Primary>>
-
-component "**Join • Aggregate**\n<size:10>region, SUM(amount)</size>" as AGG <<Task>>
-
-database "**Result**\n<size:10>region, total_revenue</size>" as RESULT <<success>>
-
-BI --> PLAN : "1"
-PLAN --> FACT : "2 Partitions only"
-PLAN --> DIM : "2"
-FACT --> AGG : "fact scan (pruned)"
-DIM --> AGG : "broadcast dim"
-AGG --> RESULT : "4"
+BI -down-> PLAN
+PLAN -down-> FACT
+PLAN -down-> DIM
+FACT -down-> AGG
+DIM -down-> AGG
+AGG -down-> RESULT
 
 @enduml

@@ -1,32 +1,30 @@
 @startuml
-'=================================================
-' FAILURE: PARTIAL RUN AND IDEMPOTENT RERUN - Mixed layout for PPTX
-'=================================================
-
 !include ../_template_styles.puml
+!include _week4_visual_style.puml
 
 top to bottom direction
+skinparam nodesep 70
+skinparam ranksep 55
 
-rectangle "RUN 1" <<Primary>> {
-    component "**P1**\n<size:10>2025-12-01</size>" as P1 <<Task>>
-    component "**P2**\n<size:10>2025-12-02</size>" as P2 <<Task>>
-    component "**P3**\n<size:10>2025-12-03</size>" as P3 <<Failure>>
-    P1 -[hidden]right- P2
-    P2 -[hidden]right- P3
+rectangle "Run 1" as R1 {
+  component "P1" as P1 <<good>>
+  component "P2" as P2 <<good>>
+  component "P3" as P3 <<failure>>
+  P1 -[hidden]right- P2
+  P2 -[hidden]right- P3
 }
 
-database "**Target**\n<size:10>P1, P2 written</size>" as TARGET <<Primary>>
+database "Target" as TARGET <<store>>
 
-rectangle "RUN 2 (Rerun)" <<Task>> {
-    component "**Skip P1, P2**\n<size:10>Committed</size>" as SKIP <<Control>>
-    component "**Process P3**\n<size:10>Idempotent</size>" as P3B <<Task>>
-    SKIP -right-> P3B : "resume"
+rectangle "Run 2" as R2 {
+  component "Skip P1,P2" as SKIP <<process>>
+  component "Process P3" as P3B <<process>>
+  SKIP -right-> P3B
 }
 
-P1 -down-> TARGET : "OK"
-P2 -down-> TARGET : "OK"
-P3 -down-> TARGET : "fails"
-
-P3B -down-> TARGET : "write P3"
+P1 -down-> TARGET
+P2 -down-> TARGET
+P3 -down-> TARGET : fails
+P3B -down-> TARGET
 
 @enduml

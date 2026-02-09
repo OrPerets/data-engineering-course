@@ -1,17 +1,20 @@
 @startuml
 !include ../_template_styles.puml
+!include _week5_visual_style.puml
 
 top to bottom direction
+skinparam nodesep 90
+skinparam ranksep 65
 
-rectangle "Governance Controls" as G
-card "SQL guardrails" as A
-card "Semantic metrics" as B
-card "Data contracts" as C
-card "Cost monitoring" as D
+rectangle "Governance\nControls" as G <<process>>
+rectangle "SQL guardrails" as A <<good>>
+rectangle "Semantic metrics" as B <<good>>
+rectangle "Data contracts" as C <<good>>
+rectangle "Cost monitoring" as D <<good>>
 
-G --> A
-G --> B
-G --> C
-G --> D
+G -down-> A
+G -down-> B
+G -down-> C
+G -down-> D
 
 @enduml

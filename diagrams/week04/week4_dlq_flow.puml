@@ -1,23 +1,18 @@
 @startuml
-'=================================================
-' DLQ FLOW - Valid to target, invalid to DLQ
-' Schema-on-read: bad rows do not kill batch
-'=================================================
-
 !include ../_template_styles.puml
+!include _week4_visual_style.puml
 
 left to right direction
+skinparam nodesep 90
+skinparam ranksep 70
 
-database "**Staging**\n<size:12>Raw load</size>\n<size:12>schema-on-read</size>" as STG <<Primary>>
+database "Staging" as STG <<store>>
+component "Validate" as VALID <<process>>
+database "Target" as TGT <<good>>
+database "DLQ" as DLQ <<failure>>
 
-component "**Validate**\n<size:12>Cast / filter</size>\n<size:12>per row</size>" as VALID <<Task>>
-
-database "**Target**\n<size:12>events_clean</size>" as TGT <<success>>
-
-database "**DLQ**\n<size:12>raw row, error_reason</size>\n<size:12>ingest_ts</size>" as DLQ <<Failure>>
-
-STG -right-> VALID : <size:11>read</size>
-VALID -right-> TGT : <size:11>valid</size>
-VALID -down-> DLQ : <size:11>invalid</size>
+STG -right-> VALID
+VALID -right-> TGT : valid
+VALID -down-> DLQ : invalid
 
 @enduml

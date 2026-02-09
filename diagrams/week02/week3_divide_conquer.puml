@@ -1,0 +1,24 @@
+@startuml
+!include ../_template_styles.puml
+!include _week3_visual_style.puml
+
+left to right direction
+skinparam nodesep 90
+skinparam ranksep 70
+
+database "Input" as INP <<store>>
+component "Divide" as DIV <<process>>
+rectangle "Conquer" as CONQ {
+  component "Same function\nper chunk" as C1 <<process>>
+  component "No shared\nstate" as C2 <<risk>>
+  C1 -[hidden]down- C2
+}
+component "Combine" as COMB <<process>>
+database "Output" as OUT <<store>>
+
+INP -right-> DIV
+DIV -right-> C1
+C1 -right-> COMB
+COMB -right-> OUT
+
+@enduml

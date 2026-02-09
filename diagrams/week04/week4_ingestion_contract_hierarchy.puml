@@ -1,17 +1,20 @@
 @startuml
 !include ../_template_styles.puml
+!include _week4_visual_style.puml
 
 top to bottom direction
+skinparam nodesep 90
+skinparam ranksep 65
 
-rectangle "Ingestion Contract" as ROOT
-card "Business key + event time" as K
-card "Accepted lateness window" as L
-card "Quality thresholds" as Q
-card "Recovery policy" as R
+rectangle "Ingestion\nContract" as ROOT <<process>>
+rectangle "Business key\nEvent time" as K <<source>>
+rectangle "Lateness\nwindow" as L <<decision>>
+rectangle "Quality\nthresholds" as Q <<process>>
+rectangle "Recovery\npolicy" as R <<good>>
 
-ROOT --> K
-ROOT --> L
-ROOT --> Q
-ROOT --> R
+ROOT -down-> K
+ROOT -down-> L
+ROOT -down-> Q
+ROOT -down-> R
 
 @enduml

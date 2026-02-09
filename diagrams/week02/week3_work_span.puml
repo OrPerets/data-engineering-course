@@ -1,0 +1,16 @@
+@startuml
+!include ../_template_styles.puml
+!include _week3_visual_style.puml
+
+top to bottom direction
+skinparam nodesep 100
+skinparam ranksep 70
+
+rectangle "Work W" as W <<source>>
+rectangle "Span S" as S <<risk>>
+rectangle "T_p ≥ max(W/p, S)" as BOUND <<process>>
+
+W -down-> BOUND
+S -down-> BOUND
+
+@enduml

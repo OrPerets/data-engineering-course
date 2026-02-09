@@ -1,18 +1,19 @@
 @startuml
 !include ../_template_styles.puml
+!include _week4_visual_style.puml
 
 start
 :Read source schema;
-:Map fields to target columns;
+:Map to target;
 if (Type mismatch?) then (yes)
-  :Apply conversion rule;
+  :Apply conversion;
 else (no)
-  :Pass-through field;
+  :Pass-through;
 endif
-if (Unknown member?) then (yes)
-  :Assign default surrogate key;
+if (Unknown?) then (yes)
+  :Surrogate key;
 endif
-:Write mapping spec (STTM);
+:Write STTM spec;
 stop
 
 @enduml

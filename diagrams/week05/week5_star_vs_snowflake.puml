@@ -1,30 +1,32 @@
 @startuml
-'=================================================
-' STAR vs SNOWFLAKE - Schema structure only
-' Left: fact + 3 flat dims; Right: fact + dim -> dim
-'=================================================
-
 !include ../_template_styles.puml
+!include _week5_visual_style.puml
 
 left to right direction
+skinparam nodesep 70
+skinparam ranksep 60
 
-database "**sales_fact**" as F1 <<Schema>>
-database "**dim_customer**" as DC <<Task>>
-database "**dim_product**" as DP <<Task>>
-database "**dim_date**" as DD <<Task>>
-F1 -up-> DC : <size:9>FK</size>
-F1 -up-> DP : <size:9>FK</size>
-F1 -up-> DD : <size:9>FK</size>
-DC -[hidden]right- DP
-DP -[hidden]right- DD
+rectangle "Star" as STAR {
+  database "sales_fact" as F1 <<store>>
+  database "dim_customer" as DC <<store>>
+  database "dim_product" as DP <<store>>
+  database "dim_date" as DD <<store>>
+  F1 -up-> DC
+  F1 -up-> DP
+  F1 -up-> DD
+  DC -[hidden]right- DP
+  DP -[hidden]right- DD
+}
 
-database "**sales_fact**" as F2 <<Schema>>
-database "**dim_product**" as D2P <<Control>>
-database "**dim_brand**" as DB <<Control>>
-database "**dim_category**" as D2C <<Control>>
-F2 -up-> D2P : <size:9>FK</size>
-D2P -up-> DB : <size:9>FK</size>
-DB -up-> D2C : <size:9>FK</size>
+rectangle "Snowflake" as SNOW {
+  database "sales_fact" as F2 <<store>>
+  database "dim_product" as D2P <<store>>
+  database "dim_brand" as DB <<store>>
+  database "dim_category" as D2C <<store>>
+  F2 -up-> D2P
+  D2P -up-> DB
+  DB -up-> D2C
+}
 
 F1 -[hidden]right- F2
 

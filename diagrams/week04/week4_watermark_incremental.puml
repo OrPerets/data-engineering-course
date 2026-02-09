@@ -1,24 +1,19 @@
 @startuml
-'=================================================
-' WATERMARK - Incremental load slice
-' last_watermark; next run reads only new data
-'=================================================
-
 !include ../_template_styles.puml
+!include _week4_visual_style.puml
 
 left to right direction
+skinparam nodesep 80
+skinparam ranksep 65
 
-database "**Source**\n<size:12>raw_events</size>\n<size:12>append-only</size>" as SRC <<Primary>>
+database "Source" as SRC <<source>>
+database "Control" as CTRL <<store>>
+component "Extract" as EXTRACT <<process>>
+database "Target" as TGT <<good>>
 
-database "**Control**\n<size:12>job_key</size>\n<size:12>last_watermark</size>\n<size:12>last_run_ts</size>" as CTRL <<Schema>>
-
-component "**Extract**\n<size:12>WHERE ts > watermark</size>\n<size:12>AND ts <= upper_bound</size>" as EXTRACT <<Task>>
-
-database "**Target**\n<size:12>events_clean</size>" as TGT <<success>>
-
-CTRL -down-> EXTRACT : <size:11>read watermark</size>
-SRC -right-> EXTRACT : <size:11>slice</size>
-EXTRACT -right-> TGT : <size:11>MERGE</size>
-TGT -up-> CTRL : <size:11>update after commit</size>
+CTRL -down-> EXTRACT : watermark
+SRC -right-> EXTRACT : slice
+EXTRACT -right-> TGT : MERGE
+TGT -up-> CTRL : update
 
 @enduml

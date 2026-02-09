@@ -1,32 +1,33 @@
 @startuml
-'=================================================
-' BAD ARCHITECTURE vs CORRECT - Mixed layout for PPTX
-'=================================================
-
 !include ../_template_styles.puml
+!include _week4_visual_style.puml
 
 top to bottom direction
+skinparam nodesep 70
+skinparam ranksep 55
 
-rectangle "BAD (fails in production)" <<Failure>> {
-    database "**Source**\n<size:10>raw_events</size>" as SRC_BAD
-    component "**INSERT**\n<size:10>No staging</size>" as INS_BAD <<Failure>>
-    database "**Target**\n<size:10>Duplicates</size>" as TGT_BAD <<Failure>>
-    SRC_BAD -right-> INS_BAD : "full"
-    INS_BAD -right-> TGT_BAD : "2× rows"
+rectangle "Bad" as BAD {
+  database "Source" as SRC_BAD <<source>>
+  component "INSERT" as INS_BAD <<failure>>
+  database "Target" as TGT_BAD <<failure>>
+  SRC_BAD -right-> INS_BAD
+  INS_BAD -right-> TGT_BAD
 }
 
-rectangle "CORRECT" <<Task>> {
-    database "**Source**\n<size:10>raw_events</size>" as SRC_OK <<Primary>>
-    component "**Extract**\n<size:10>Watermark</size>" as EXT <<Task>>
-    database "**Staging**\n<size:10>Dedup</size>" as STG <<Primary>>
-    component "**MERGE**\n<size:10>Idempotent</size>" as MERGE <<Control>>
-    database "**Target**\n<size:10>clean</size>" as TGT_OK <<success>>
-    database "**Control**\n<size:10>watermark</size>" as CTRL <<Schema>>
-    SRC_OK -right-> EXT
-    EXT -right-> STG
-    STG -right-> MERGE
-    MERGE -right-> TGT_OK
-    MERGE -down-> CTRL : "update"
+rectangle "Correct" as OK {
+  database "Source" as SRC_OK <<source>>
+  component "Extract" as EXT <<process>>
+  database "Staging" as STG <<store>>
+  component "MERGE" as MERGE <<process>>
+  database "Target" as TGT_OK <<good>>
+  database "Control" as CTRL <<store>>
+  SRC_OK -right-> EXT
+  EXT -right-> STG
+  STG -right-> MERGE
+  MERGE -right-> TGT_OK
+  MERGE -down-> CTRL
 }
+
+TGT_BAD -[hidden]right- SRC_OK
 
 @enduml

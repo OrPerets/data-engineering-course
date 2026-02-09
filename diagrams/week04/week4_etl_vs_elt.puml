@@ -1,24 +1,19 @@
 @startuml
-'=================================================
-' ETL vs ELT - Comparison
-' Transform before load vs after load
-'=================================================
-
 !include ../_template_styles.puml
+!include _week4_visual_style.puml
 
 left to right direction
+skinparam nodesep 90
+skinparam ranksep 70
 
-rectangle "**ETL**\n\n<size:13>Extract then Transform</size>\n<size:13>then Load</size>\n\n<size:12>Target sees clean data</size>\n<size:12>Smaller load volume</size>" as ETL <<Control>>
+database "Source" as SRC <<source>>
+rectangle "ETL" as ETL <<process>>
+rectangle "ELT" as ELT <<process>>
+database "Target" as TGT <<good>>
 
-rectangle "**ELT**\n\n<size:13>Extract then Load</size>\n<size:13>then Transform (SQL)</size>\n\n<size:12>One copy of raw</size>\n<size:12>Transform in DWH</size>" as ELT <<Task>>
-
-database "**Source**\n<size:12>DB / files</size>" as SRC <<Primary>>
-database "**Target**\n<size:12>DWH / Lake</size>" as TGT <<success>>
-
-SRC -right-> ETL : <size:11>Extract</size>
-SRC -right-> ELT : <size:11>Extract</size>
-ETL -right-> TGT : <size:11>Load clean</size>
-ELT -right-> TGT : <size:11>Load raw</size>
-TGT -[hidden]right- ELT
+SRC -right-> ETL : Extract
+SRC -right-> ELT : Extract
+ETL -right-> TGT : Load clean
+ELT -right-> TGT : Load raw
 
 @enduml

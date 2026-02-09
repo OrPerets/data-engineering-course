@@ -1,32 +1,25 @@
 @startuml
-'=================================================
-' INCREMENTAL LOAD + RERUN (NO DUPLICATES) - Mixed layout for PPTX
-'=================================================
-
 !include ../_template_styles.puml
+!include _week4_visual_style.puml
 
-top to bottom direction
+left to right direction
+skinparam nodesep 65
+skinparam ranksep 55
 
-database "**Control**\n<size:10>watermark</size>" as CTRL <<Schema>>
+database "Control" as CTRL <<store>>
+component "Read watermark" as READ <<process>>
+database "Source" as SRC <<source>>
+component "Extract slice" as EXTRACT <<process>>
+component "Transform" as TRANSFORM <<process>>
+component "MERGE" as MERGE <<process>>
+database "Target" as TGT <<good>>
 
-component "**Read watermark**\n<size:10>Get last_ts</size>" as READ <<Task>>
-
-database "**Source**\n<size:10>Partitioned</size>" as SRC <<Primary>>
-
-component "**Extract slice**\n<size:10>WHERE ts > wm</size>" as EXTRACT <<Task>>
-
-component "**Transform**\n<size:10>Dedup</size>" as TRANSFORM <<Task>>
-
-component "**MERGE**\n<size:10>ON CONFLICT</size>" as MERGE <<Control>>
-
-database "**Target**\n<size:10>No dups</size>" as TGT <<success>>
-
-CTRL -right-> READ : "1"
-READ -right-> EXTRACT : "2"
+CTRL -right-> READ
+READ -right-> EXTRACT
 SRC -down-> EXTRACT
-EXTRACT -right-> TRANSFORM : "3"
-TRANSFORM -right-> MERGE : "4"
+EXTRACT -right-> TRANSFORM
+TRANSFORM -right-> MERGE
 MERGE -right-> TGT
-MERGE -down-> CTRL : "5 update"
+MERGE -down-> CTRL : update
 
 @enduml
