@@ -1,0 +1,125 @@
+@startuml
+'========================
+' SETUP & STYLING
+'========================
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam handwritten false
+skinparam nodesep 60
+skinparam ranksep 80
+
+' Font Settings
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 14
+skinparam defaultFontColor #2C3E50
+
+' Package (Layer) Styling
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2.5
+    FontColor #263238
+    FontSize 16
+    FontStyle bold
+    Padding 5
+}
+
+' Component Styling
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 2
+    FontSize 13
+    Padding 5
+}
+
+' Database Styling
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #546E7A
+    BorderThickness 2
+    FontSize 13
+}
+
+' Arrow Styling
+skinparam arrow {
+    Color #607D8B
+    Thickness 2
+    FontSize 10
+    FontColor #546E7A
+}
+
+'========================
+' CUSTOM STEREOTYPES
+'========================
+
+skinparam component<<Orchestration>> {
+    BorderColor #0288D1
+    BackgroundColor #E1F5FE
+    FontColor #01579B
+}
+
+skinparam component<<UI>> {
+    BorderColor #8E24AA
+    BackgroundColor #F3E5F5
+    FontColor #4A148C
+}
+
+skinparam database {
+    BorderColor #546E7A
+    BackgroundColor #ECEFF1
+    FontColor #263238
+}
+
+skinparam component<<Gov>> {
+    BorderColor #D32F2F
+    BackgroundColor #FFEBEE
+    FontColor #B71C1C
+}
+
+'========================
+' LAYER DEFINITIONS: DATA LAKE vs DATA WAREHOUSE
+'========================
+
+left to right direction
+
+'--- DATA LAKE ---
+rectangle "<size:16>**DATA LAKE**</size>\n<size:11>Schema-on-Read | Raw to Curated Zones</size>" as LAKE #F8F9FA {
+    component "<size:13>**Sources**</size>\n<size:11>Files, Logs, IoT</size>\n<size:11>Streams, Events</size>" as L_SRC <<Orchestration>>
+    database "<size:13>**Raw Zone**</size>\n<size:11>Unstructured / Semi-structured</size>\n<size:11>Object Storage (S3, ADLS)</size>" as L_RAW
+    database "<size:13>**Curated Zone**</size>\n<size:11>Cleaned, Parquet/Delta</size>\n<size:11>Optional</size>" as L_CUR
+    component "<size:13>**Consumers**</size>\n<size:11>ML, Data Science</size>\n<size:11>Exploration, Ad-hoc</size>" as L_CONS <<UI>>
+    L_SRC -[hidden]right-> L_RAW
+    L_RAW -[hidden]right-> L_CUR
+    L_CUR -[hidden]right-> L_CONS
+}
+
+'--- DATA WAREHOUSE ---
+rectangle "<size:16>**DATA WAREHOUSE**</size>\n<size:11>Schema-on-Write | Structured for BI</size>" as DWH #F8F9FA {
+    component "<size:13>**Sources**</size>\n<size:11>DBs, ERPs, APIs</size>\n<size:11>Structured Feeds</size>" as D_SRC <<Orchestration>>
+    component "<size:13>**ETL / ELT**</size>\n<size:11>Transform & Load</size>\n<size:11>Staging → Model</size>" as D_ETL <<Orchestration>>
+    database "<size:13>**Dimensional Model**</size>\n<size:11>Star/Snowflake</size>\n<size:11>Facts & Dimensions</size>" as D_DIM
+    component "<size:13>**Consumers**</size>\n<size:11>BI, Dashboards</size>\n<size:11>SQL Reports, KPIs</size>" as D_CONS <<UI>>
+    D_SRC -[hidden]right-> D_ETL
+    D_ETL -[hidden]right-> D_DIM
+    D_DIM -[hidden]right-> D_CONS
+}
+
+
+'========================
+' FLOWS: DATA LAKE
+'========================
+L_SRC --> L_RAW : <size:10>Ingest</size>
+L_RAW --> L_CUR : <size:10>Process</size>
+L_CUR --> L_CONS : <size:10>Query</size>
+
+'========================
+' FLOWS: DATA WAREHOUSE
+'========================
+D_SRC --> D_ETL : <size:10>Extract</size>
+D_ETL --> D_DIM : <size:10>Load</size>
+D_DIM --> D_CONS : <size:10>Query</size>
+
+
+@enduml

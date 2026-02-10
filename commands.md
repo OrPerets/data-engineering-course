@@ -6,8 +6,7 @@ pandoc lectures/03-parallelism/lecture.md  -o build/03-parallelism.pptx     --re
 
 pandoc lectures/04-etl-ingestion/lecture.md  -o build/04-DWH-1.pptx     --reference-doc=reference.pptx --resource-path=diagrams/week04 --pdf-engine=xelatex
 
-pandoc lectures/05-dwh-datalake/lecture.md  -o build/05-DWH.pptx     --reference-doc=reference.pptx
---resource-path=diagrams/week05 --pdf-engine=xelatex
+pandoc lectures/05-dwh-datalake/lecture.md  -o build/05-DWH.pptx     --reference-doc=reference.pptx --resource-path=diagrams/week05 --pdf-engine=xelatex
 
 pandoc lectures/06-mapreduce/lecture.md  -o build/06-map-reduce.pptx     --reference-doc=reference.pptx --resource-path=diagrams/week06 --pdf-engine=xelatex
 

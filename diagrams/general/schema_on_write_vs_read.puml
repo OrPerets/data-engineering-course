@@ -1,0 +1,138 @@
+@startuml
+'========================
+' SETUP & STYLING
+'========================
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam handwritten false
+skinparam nodesep 60
+skinparam ranksep 80
+
+' Font Settings
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 14
+skinparam defaultFontColor #2C3E50
+
+' Package (Layer) Styling
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2.5
+    FontColor #263238
+    FontSize 16
+    FontStyle bold
+    Padding 5
+}
+
+' Component Styling
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 2
+    FontSize 13
+    Padding 5
+}
+
+' Database Styling
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #546E7A
+    BorderThickness 2
+    FontSize 13
+}
+
+' Arrow Styling
+skinparam arrow {
+    Color #607D8B
+    Thickness 2
+    FontSize 10
+    FontColor #546E7A
+}
+
+'========================
+' CUSTOM STEREOTYPES
+'========================
+
+skinparam component<<Orchestration>> {
+    BorderColor #0288D1
+    BackgroundColor #E1F5FE
+    FontColor #01579B
+}
+
+skinparam component<<UI>> {
+    BorderColor #8E24AA
+    BackgroundColor #F3E5F5
+    FontColor #4A148C
+}
+
+skinparam database {
+    BorderColor #546E7A
+    BackgroundColor #ECEFF1
+    FontColor #263238
+}
+
+skinparam component<<Gov>> {
+    BorderColor #D32F2F
+    BackgroundColor #FFEBEE
+    FontColor #B71C1C
+}
+
+'========================
+' SCHEMA-ON-WRITE vs SCHEMA-ON-READ
+'========================
+
+left to right direction
+
+'--- SCHEMA-ON-WRITE (e.g. Data Warehouse) ---
+rectangle "<size:16>**SCHEMA-ON-WRITE**</size>\n<size:11>Schema defined before data is stored</size>" as WRITE #F8F9FA {
+    component "<size:13>**1. Define Schema**</size>\n<size:11>Tables, columns, types</size>\n<size:11>Constraints up front</size>" as W_DEF <<Orchestration>>
+    component "<size:13>**2. Transform & Validate**</size>\n<size:11>ETL enforces schema</size>\n<size:11>Reject or fix invalid data</size>" as W_ETL <<Orchestration>>
+    database "<size:13>**3. Store**</size>\n<size:11>Structured only</size>\n<size:11>Schema baked in</size>" as W_STORE
+    component "<size:13>**4. Read**</size>\n<size:11>Query with known schema</size>\n<size:11>Predictable, fast</size>" as W_READ <<UI>>
+    W_DEF -[hidden]right- W_ETL
+    W_ETL -[hidden]right- W_STORE
+    W_STORE -[hidden]right- W_READ
+}
+
+'--- SCHEMA-ON-READ (e.g. Data Lake) ---
+rectangle "<size:16>**SCHEMA-ON-READ**</size>\n<size:11>Schema applied when data is read</size>" as READ #F8F9FA {
+    component "<size:13>**1. Ingest Raw**</size>\n<size:11>No schema enforced</size>\n<size:11>Store as-is (files, objects)</size>" as R_INGEST <<Orchestration>>
+    database "<size:13>**2. Store**</size>\n<size:11>Unstructured / semi-structured</size>\n<size:11>Multiple formats OK</size>" as R_STORE
+    component "<size:13>**3. Apply Schema at Read**</size>\n<size:11>Each consumer defines view</size>\n<size:11>Or use catalog at query time</size>" as R_SCHEMA <<Orchestration>>
+    component "<size:13>**4. Read**</size>\n<size:11>Flexible, multiple interpretations</size>\n<size:11>Schema can change per use case</size>" as R_READ <<UI>>
+    R_INGEST -[hidden]right- R_STORE
+    R_STORE -[hidden]right- R_SCHEMA
+    R_SCHEMA -[hidden]right- R_READ
+}
+
+WRITE -[hidden]right- READ
+
+'========================
+' FLOWS: SCHEMA-ON-WRITE
+'========================
+W_DEF -down-> W_ETL : <size:10>Schema first</size>
+W_ETL -down-> W_STORE : <size:10>Load</size>
+W_STORE -down-> W_READ : <size:10>Query</size>
+
+'========================
+' FLOWS: SCHEMA-ON-READ
+'========================
+R_INGEST -down-> R_STORE : <size:10>Load raw</size>
+R_STORE -down-> R_SCHEMA : <size:10>At read time</size>
+R_SCHEMA -down-> R_READ : <size:10>Query</size>
+
+'========================
+' KEY DIFFERENCE (GOVERNANCE STYLE)
+'========================
+rectangle "**KEY DIFFERENCE**" as DIFF #F8F9FA {
+    component "<size:13>**Schema-on-Write**</size>\n<size:10>Schema at write → strict, consistent</size>\n<size:10>Best for: BI, reporting, compliance</size>" as GOV1 <<Gov>>
+    component "<size:13>**Schema-on-Read**</size>\n<size:10>Schema at read → flexible, exploratory</size>\n<size:10>Best for: ML, discovery, polyglot data</size>" as GOV2 <<Gov>>
+    GOV1 -[hidden]right- GOV2
+}
+
+WRITE -down-> DIFF
+READ -down-> DIFF
+
+@enduml

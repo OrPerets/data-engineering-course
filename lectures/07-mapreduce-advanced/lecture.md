@@ -1,576 +1,337 @@
-# MapReduce for IEM: Week 6 (Fundamentals) + Week 7 (Advanced)
+# Week 7: MapReduce Examples
 
-## Audience Framing: Why IEM Should Care
-- You already optimize flow, queues, and bottlenecks—MapReduce is the same logic at data scale.
-- Every batch job is a production system: throughput, WIP (in-flight data), and a critical path.
-- Cost is dominated by transfer and coordination (the “shuffle”), not local compute.
-- Determinism under retries is the data equivalent of repeatable SOPs in operations.
-- Skew is a classic bottleneck problem: one “hot” key can stall the whole line.
-- SQL logic (GROUP BY, JOIN) still applies—but scale forces different tactics.
+## Purpose & Learning Objectives
 
----
-
-# Week 6: MapReduce Fundamentals (IEM Adaptation)
-
-## Purpose
-- Learn the core model behind distributed batch processing
-- Understand why shuffle dominates cost at scale
-- Design jobs that are correct under retries and skew
-
-## Learning Objectives
-- Explain map, shuffle, and reduce as formal operators
-- Estimate runtime and communication bottlenecks
-- Detect and mitigate skew/hot-key failures
-- Use combiners and partitioning strategies safely
-
-## Why MapReduce Matters (IEM Lens)
-- Single-node processing is like a single workstation: it cannot handle enterprise-scale WIP.
-- MapReduce turns a huge batch into parallel micro-batches with controlled aggregation.
-- The real “cost center” is moving and consolidating data (shuffle), not local computation.
-- **SQL lens:** MapReduce is a physical execution model for `GROUP BY` and `JOIN` at scale.
-
-> **Managerial takeaway:** Treat shuffle as the main bottleneck. Most optimization effort should reduce intermediate data volume.
-
-## The Core Problem
-- **Input:** massive dataset distributed across many machines
-- **Goal:** compute aggregate results over all records
-- **Constraint:** no single machine can store/process full input
-- **Need:** parallel processing plus coordinated aggregation
-- **SQL lens:** This is `SELECT ... GROUP BY ...` on a table too large for one database server.
-
-## MapReduce Model (Operational View)
-- **Map:** `(k1, v1) -> [(k2, v2)]` transforms each record into key-value pairs.
-- **Shuffle:** groups all values by key `k2` across the cluster.
-- **Reduce:** `(k2, [v2]) -> [(k3, v3)]` aggregates each group into final output.
-- **SQL lens:** `Map = SELECT key, value FROM table`, `Shuffle = GROUP BY key`, `Reduce = aggregate per group`.
-
-## Why Shuffle Is the Bottleneck
-- All map outputs must be redistributed by key.
-- Network + disk spill dominate total runtime.
-- CPU can be idle while waiting for shuffle.
-- **SQL lens:** This is like a global `GROUP BY` needing a full data repartition.
-
-## Shuffle Cost Formula (Simple Model)
-\[
-C_{shuffle} = E \cdot s
-\]
-- `E`: number of emitted key-value pairs from map
-- `s`: average serialized pair size
-- Reduce `E` (via combiner) or `s` (via compact encoding) to reduce cost.
-
-> **Managerial takeaway:** Estimate shuffle cost before running jobs. If the shuffle is huge, the job will be slow and expensive regardless of CPU.
-
-## Runtime Decomposition (Bottleneck Focus)
-\[
-T_{total} = T_{map} + T_{shuffle} + T_{reduce}
-\]
-- Map scales well with more workers.
-- Shuffle scales with bandwidth and spill behavior.
-- Reduce is limited by the largest key-group.
-- **SQL lens:** Large `GROUP BY` jobs are constrained by data movement, not just SQL compute.
-
-## Determinism and Correctness
-- Map/reduce logic should be pure and deterministic.
-- Retries must produce the same output (idempotent behavior).
-- Non-deterministic logic breaks trust in KPIs.
-- **SQL lens:** Imagine a `GROUP BY` that changes results on re-run—unacceptable for financial reporting.
-
-> **Managerial takeaway:** Treat deterministic logic as a quality control requirement. If it can’t be re-run reliably, it’s not production-ready.
-
-## Worked Example 1: Order Counts by Customer (GROUP BY)
-**Scenario (Orders):** Count orders per customer.
-
-**Input (Orders)**
-
-| OrderID | CustomerID | Amount |
-|---|---|---|
-| O1 | C1 | 120 |
-| O2 | C2 | 80 |
-| O3 | C1 | 50 |
-| O4 | C3 | 200 |
-| O5 | C1 | 30 |
-
-**Map output** (emit `(CustomerID, 1)`)
-- O1 → (C1,1)
-- O2 → (C2,1)
-- O3 → (C1,1)
-- O4 → (C3,1)
-- O5 → (C1,1)
-
-**Shuffle grouping**
-- C1 → [1,1,1]
-- C2 → [1]
-- C3 → [1]
-
-**Reduce output** (sum counts)
-- (C1,3), (C2,1), (C3,1)
-
-**SQL equivalent**
-```sql
-SELECT CustomerID, COUNT(*)
-FROM Orders
-GROUP BY CustomerID;
-```
-
-**Mini cost estimate**
-- Emitted pairs `E = 5`
-- If average pair size `s = 16 bytes`, `C_shuffle ≈ 5 * 16 = 80 bytes`
-- **Dominant stage:** shuffle, even for small datasets it is the coordination step.
-
-## Combiner (Local Pre-Aggregation)
-- Runs after map, before shuffle.
-- Reduces duplicate keys per mapper.
-- Greatly reduces shuffle bytes for count/sum/max/min.
-- **SQL lens:** This is like partial aggregation at each shard before a global `GROUP BY`.
-
-## Combiner Validity Rule
-- Safe when operation is **associative** and **commutative**.
-- Valid: sum, count, min, max.
-- Not directly valid: median, exact distinct, naive average.
-- For average, combine `(sum, count)` tuples instead.
-
-## Worked Example 2: Inventory Movement Totals (Combiner-Safe Sum)
-**Scenario (InventoryMovements):** Total units moved per product.
-
-**Input (InventoryMovements)**
-
-| MovementID | ProductID | Qty |
-|---|---|---|
-| M1 | P1 | +10 |
-| M2 | P2 | -4 |
-| M3 | P1 | +6 |
-| M4 | P2 | +3 |
-
-**Map output** (emit `(ProductID, Qty)`)
-- (P1,+10), (P2,-4), (P1,+6), (P2,+3)
-
-**Combiner output** (per mapper)
-- (P1,16), (P2,-1)
-
-**Shuffle grouping**
-- P1 → [16]
-- P2 → [-1]
-
-**Reduce output**
-- (P1,16), (P2,-1)
-
-**SQL equivalent**
-```sql
-SELECT ProductID, SUM(Qty)
-FROM InventoryMovements
-GROUP BY ProductID;
-```
-
-**Mini cost estimate**
-- Without combiner: `E = 4`
-- With combiner: `E = 2` (half the shuffle)
-- If `s = 16 bytes`, shuffle drops from 64 to 32 bytes.
-
-> **Managerial takeaway:** Use combiners whenever the metric is additive. It’s the easiest “free” cost reduction.
-
-## Worked Example 3: Call Center Average Handle Time (Combiner-Unsafe Naive Avg)
-**Scenario (CallCenterLogs):** Average handle time per agent.
-
-**Input (CallCenterLogs)**
-
-| CallID | AgentID | HandleTime |
-|---|---|---|
-| C1 | A1 | 6 |
-| C2 | A1 | 4 |
-| C3 | A2 | 10 |
-| C4 | A1 | 20 |
-
-**Naive map output** (emit `(AgentID, HandleTime)`)
-- (A1,6), (A1,4), (A2,10), (A1,20)
-
-**Naive combiner (WRONG):** averaging locally then averaging again
-- Suppose mapper1 sees A1: [6,4] → avg=5
-- mapper2 sees A1: [20] → avg=20
-- Shuffle A1 → [5,20] → reduce avg = 12.5 (WRONG)
-
-**Correct map output** (emit `(AgentID, (sum, count))`)
-- (A1,(6,1)), (A1,(4,1)), (A2,(10,1)), (A1,(20,1))
-
-**Combiner output**
-- (A1,(10,2)), (A2,(10,1)), (A1,(20,1))
-
-**Shuffle grouping**
-- A1 → [(10,2),(20,1)]
-- A2 → [(10,1)]
-
-**Reduce output**
-- A1: sum=30, count=3 → avg=10
-- A2: sum=10, count=1 → avg=10
-
-**SQL equivalent**
-```sql
-SELECT AgentID, AVG(HandleTime)
-FROM CallCenterLogs
-GROUP BY AgentID;
-```
-
-**Mini cost estimate**
-- Correct approach doubles pair size `(sum,count)` but enables safe combiner.
-- If `E=4`, `s=32 bytes`, `C_shuffle ≈ 128 bytes`.
-- Still cheaper than wrong results.
-
-## Joins in MapReduce (SQL Lens)
-- **Reduce-side join:** shuffle both tables by join key.
-- **Broadcast/map-side join:** replicate small table to mappers.
-- **SQL lens:** Both implement `SELECT ... FROM R JOIN S ON key` with different execution plans.
-
-## Worked Example 4: Reduce-Side Join (Orders + Customers)
-**Scenario:** Enrich orders with customer segment when both tables are large.
-
-**Input (Orders)**
-
-| OrderID | CustomerID | Amount |
-|---|---|---|
-| O1 | C1 | 120 |
-| O2 | C2 | 80 |
-
-**Input (Customers)**
-
-| CustomerID | Segment |
-|---|---|
-| C1 | Enterprise |
-| C2 | SMB |
-
-**Map outputs (tagged)**
-- Orders → (C1, ("O", O1,120)), (C2,("O",O2,80))
-- Customers → (C1,("C",Enterprise)), (C2,("C",SMB))
-
-**Shuffle grouping**
-- C1 → [O1,120], [Enterprise]
-- C2 → [O2,80], [SMB]
-
-**Reduce output**
-- (O1, C1, 120, Enterprise)
-- (O2, C2, 80, SMB)
-
-**SQL equivalent**
-```sql
-SELECT o.OrderID, o.CustomerID, o.Amount, c.Segment
-FROM Orders o
-JOIN Customers c ON o.CustomerID = c.CustomerID;
-```
-
-**Mini cost estimate**
-- Shuffle bytes proportional to `|Orders| + |Customers|`.
-- If `|Orders| = 10^8 rows`, `|Customers| = 10^7 rows`, shuffle dominates.
-
-## Failure Mode: Data Skew (Bottleneck Risk)
-- One hot key sends huge volume to one reducer.
-- That reducer spills heavily, becomes straggler, may OOM.
-- Whole job waits for this reducer.
-- **SQL lens:** A `GROUP BY` where one group is 90% of all rows.
-
-## Skew Detection Signals
-- Max reducer input vs median reducer input.
-- Reducer runtime p99 vs median.
-- Spill bytes and retry counts per reducer.
-- Alert when imbalance ratio crosses threshold.
-
-> **Managerial takeaway:** Skew is a production risk, not a corner case. Monitor reducer balance like you monitor utilization in a factory line.
+- **Purpose:** Demonstrate MapReduce through four canonical examples, from simple filtering to multi-phase joins and graph algorithms. Each example shows problem → solution design → step-by-step input/output per phase.
+- **Learning Objectives:**
+  - Design key/value pairs so Map → Shuffle → Reduce produce the desired result
+  - Trace data flow phase-by-phase with concrete inputs and outputs
+  - Decide when combiners are safe and when multiple MapReduce phases are needed
+  - Recognize patterns: filtering, inverted index, join+aggregate, iterative graph
 
 ---
 
-# Week 7: Advanced MapReduce — Skew, Joins, and Cost Optimization (IEM Adaptation)
+## Example 1: Filtering Pattern — Count Errors by Service
 
-## Purpose
-- Solve real production bottlenecks in MapReduce pipelines
-- Control shuffle cost and load imbalance under skewed data
-- Choose join and partitioning strategies from measurable constraints
+## 1.1 Problem
 
-## Learning Objectives
-- Quantify skew and estimate its runtime impact
-- Apply combiner, salting, and custom partitioning correctly
-- Select reduce-side vs broadcast vs salted joins
-- Build operational guardrails for shuffle-heavy jobs
+You run a fleet of API services and need to **count errors by service name**. Raw logs are large; only rows with status code ≥ 500 are relevant. You want to avoid shuffling and reducing over successful requests.
 
-## Core Metric: Skew Ratio
-\[
-\sigma = \frac{\max_i n_i}{N/R}
-\]
-- `N`: total values, `R`: reducers, `n_i`: reducer load.
-- `sigma = 1` is perfectly balanced.
-- High `sigma` predicts stragglers and possible OOM.
-- **SQL lens:** This is the uneven group-size ratio in `GROUP BY` results.
-
-## Latency Impact of Skew
-\[
-T_{job} \approx \alpha \cdot \max_i n_i = \sigma \cdot T_{balanced}
-\]
-- Job time is driven by the hottest reducer.
-- 20× skew can produce ~20× tail latency.
-- Retries do not help when skew is structural.
-
-## Why Skew Appears (Operations Analogy)
-- Real key distributions are long-tail (few products/customers dominate volume).
-- Hash partitioning sends all of a hot key to one reducer.
-- **SQL lens:** A `GROUP BY` with a single group holding most rows.
-
-## Worked Example 5: Skewed Key and Salting (Two-Stage Reduce)
-**Scenario (OrderItems):** Count items per ProductID; one mega-product dominates.
-
-**Input (OrderItems)**
-
-| ItemID | ProductID |
-|---|---|
-| I1 | P_HOT |
-| I2 | P_HOT |
-| I3 | P_HOT |
-| I4 | P2 |
-| I5 | P3 |
-
-**Problem:** P_HOT has 60% of rows → one reducer overload.
-
-**Stage 1 Map output (salted)**
-- Use 2 salts for P_HOT: `P_HOT#0`, `P_HOT#1`
-- I1 → (P_HOT#0,1), I2 → (P_HOT#1,1), I3 → (P_HOT#0,1)
-- I4 → (P2,1), I5 → (P3,1)
-
-**Stage 1 Reduce output**
-- (P_HOT#0,2), (P_HOT#1,1), (P2,1), (P3,1)
-
-**Stage 2 Map output** (unsalt)
-- (P_HOT,2), (P_HOT,1), (P2,1), (P3,1)
-
-**Stage 2 Reduce output**
-- (P_HOT,3), (P2,1), (P3,1)
-
-**SQL equivalent**
-```sql
-SELECT ProductID, COUNT(*)
-FROM OrderItems
-GROUP BY ProductID;
-```
-
-**Mini cost estimate**
-- Stage 1 shuffle increases pairs slightly but prevents single-reducer overload.
-- Cost tradeoff: extra stage vs avoiding straggler/OOM risk.
-
-> **Managerial takeaway:** Use salting when a single key threatens SLA. The extra stage is cheaper than a failed run.
-
-## Combiner: First Optimization Lever
-- Local pre-aggregation before shuffle.
-- Reduces duplicate key emissions per mapper.
-- Biggest benefit on count/sum-style workloads.
-- **SQL lens:** Partial aggregation at each shard.
-
-## Shuffle Reduction Model
-\[
-C_0 = E \cdot s, \quad C_1 = \left(\sum_m U_m\right) \cdot s
-\]
-- `E`: raw emissions, `U_m`: unique keys per mapper.
-- Reduction depends on duplicate density per mapper.
-
-## Join Strategy 1: Reduce-Side Join
-- Shuffle both sides on join key.
-- Works for general large-large joins.
-- Expensive network cost (`|R| + |S|` moved).
-- Highest skew risk on popular keys.
-
-## Join Strategy 2: Broadcast Join
-- Replicate small side to mappers.
-- Stream large side locally, no global join shuffle.
-- Fast when small table fits mapper memory.
-- **SQL lens:** Same `JOIN`, but the small table is cached on each worker.
-
-## Worked Example 6: Broadcast Join Decision (OrderItems + Products)
-**Scenario:** Products table is small; OrderItems is huge.
-
-**Input sizes (story)**
-- Products: 50,000 rows (~5 MB)
-- OrderItems: 200 million rows (~20 GB)
-
-**Map-side join approach**
-- Load Products into memory on each mapper.
-- Map OrderItems and attach product info locally.
-
-**Map output**
-- For each item: (OrderID, ProductID, Category, Qty)
-
-**Shuffle grouping** (only if further aggregation needed)
-- Example: group by Category to sum Qty.
-
-**Reduce output**
-- (Category, TotalQty)
-
-**SQL equivalent**
-```sql
-SELECT p.Category, SUM(oi.Qty)
-FROM OrderItems oi
-JOIN Products p ON oi.ProductID = p.ProductID
-GROUP BY p.Category;
-```
-
-**Mini cost estimate**
-- Broadcast cost: replicate ~5 MB to each mapper.
-- Shuffle cost avoided for join; only aggregated output shuffles.
-
-> **Managerial takeaway:** If a dimension table is “small enough to email,” broadcast it.
-
-## Join Strategy 3: Salted Join (Skewed Keys)
-- For skewed join keys in reduce-side joins.
-- Salt heavy side; replicate matching records on light side.
-- Balances hot join key across reducers.
-- Adds controlled replication cost.
-
-## Worked Example 7: Salted Reduce-Side Join (Mega-Customer)
-**Scenario:** A single customer (C_HOT) has 40% of orders.
-
-**Input (Orders)**
-
-| OrderID | CustomerID | Amount |
-|---|---|---|
-| O1 | C_HOT | 100 |
-| O2 | C_HOT | 90 |
-| O3 | C2 | 70 |
-
-**Input (Customers)**
-
-| CustomerID | Segment |
-|---|---|
-| C_HOT | Enterprise |
-| C2 | SMB |
-
-**Salted approach**
-- Orders map: `C_HOT#0`, `C_HOT#1` to split load.
-- Customers map: replicate C_HOT across salts.
-
-**Map output (tagged)**
-- Orders → (C_HOT#0,("O",O1,100)), (C_HOT#1,("O",O2,90)), (C2,("O",O3,70))
-- Customers → (C_HOT#0,("C",Enterprise)), (C_HOT#1,("C",Enterprise)), (C2,("C",SMB))
-
-**Shuffle grouping**
-- C_HOT#0 → [O1,100], [Enterprise]
-- C_HOT#1 → [O2,90], [Enterprise]
-- C2 → [O3,70], [SMB]
-
-**Reduce output**
-- (O1,C_HOT,100,Enterprise), (O2,C_HOT,90,Enterprise), (O3,C2,70,SMB)
-
-**SQL equivalent**
-```sql
-SELECT o.OrderID, o.CustomerID, o.Amount, c.Segment
-FROM Orders o
-JOIN Customers c ON o.CustomerID = c.CustomerID;
-```
-
-**Mini cost estimate**
-- Additional replication of the hot customer row (small cost).
-- Prevents single reducer overload for C_HOT.
-
-> **Managerial takeaway:** Salted joins trade a small, controlled replication cost for big reductions in risk and tail latency.
-
-## Practical Cost Estimates (Before Running)
-\[
-B_{shuffle} = N_{emit} \times s_{pair}
-\]
-- Estimate shuffle bytes before launching large runs.
-- Size reducers for expected hottest partition.
-- Validate memory headroom against hot-key scenarios.
-
-## Detection Signals (Operational KPIs)
-- `max reducer input / median` ratio.
-- Reducer runtime p95/p50 spread.
-- Spill bytes per task and retry count.
-- Shuffle MB per input record trend.
-
-## Mitigation Playbook
-- Apply combiner for valid aggregations.
-- Salt hot keys above skew threshold.
-- Repartition with custom logic for known heavy keys.
-- Prefer broadcast joins when memory allows.
-
-> **Managerial takeaway:** Treat reducer balance metrics like utilization metrics in a factory: persistent imbalance requires redesign, not more resources.
+**Input:** API request logs (timestamp, service, status, latency_ms).  
+**Output:** For each service, the number of error rows (status ≥ 500).
 
 ---
 
-# Example Bank (All Worked Examples)
+## 1.2 Solution (Key/Value Design)
 
-## Example A: Order Counts by Customer
-- **Input:** Orders table with 5 rows.
-- **Map:** emit `(CustomerID,1)`.
-- **Shuffle:** group by CustomerID.
-- **Reduce:** sum counts.
-- **SQL:** `SELECT CustomerID, COUNT(*) FROM Orders GROUP BY CustomerID;`
-- **Cost:** `E=5`, `s=16B`, `C_shuffle≈80B`.
+- **Filter in the mapper:** emit only for status ≥ 500; non-error rows emit nothing.
+- **Key:** `service`
+- **Value:** `1` (one count per error row)
 
-## Example B: Inventory Movement Totals
-- **Input:** InventoryMovements with Qty.
-- **Map:** emit `(ProductID, Qty)`.
-- **Combiner:** sum per mapper.
-- **Reduce:** sum totals.
-- **SQL:** `SELECT ProductID, SUM(Qty) FROM InventoryMovements GROUP BY ProductID;`
-- **Cost:** combiner halves shuffle pairs in the example.
-
-## Example C: Call Center Average Handle Time
-- **Input:** CallCenterLogs with HandleTime.
-- **Map:** emit `(AgentID, (sum,count))`.
-- **Combiner:** sum partials.
-- **Reduce:** final average.
-- **SQL:** `SELECT AgentID, AVG(HandleTime) FROM CallCenterLogs GROUP BY AgentID;`
-- **Cost:** larger pair size but correct and combiner-safe.
-
-## Example D: Reduce-Side Join Orders + Customers
-- **Input:** Orders + Customers.
-- **Map:** tag each row with source.
-- **Shuffle:** group by CustomerID.
-- **Reduce:** join records.
-- **SQL:** standard `JOIN` on CustomerID.
-- **Cost:** shuffle proportional to `|Orders| + |Customers|`.
-
-## Example E: Skewed Product Counts with Salting
-- **Input:** OrderItems with P_HOT dominating.
-- **Map:** salt P_HOT into multiple keys.
-- **Reduce:** partial counts per salt.
-- **Second stage:** unsalt and recombine.
-- **SQL:** `SELECT ProductID, COUNT(*) FROM OrderItems GROUP BY ProductID;`
-- **Cost:** extra stage, but avoids straggler risk.
-
-## Example F: Broadcast Join for Small Dimension
-- **Input:** small Products, huge OrderItems.
-- **Map:** load Products into memory and join locally.
-- **Reduce:** optional aggregation (e.g., by Category).
-- **SQL:** join + group by Category.
-- **Cost:** replicating small table is cheaper than global shuffle.
-
-## Example G: Salted Join for Mega-Customer
-- **Input:** Orders + Customers with C_HOT.
-- **Map:** salt hot key; replicate customer row.
-- **Reduce:** join per salt.
-- **SQL:** standard join.
-- **Cost:** small replication cost for big skew mitigation.
+Reducer groups by service and sums the 1s → error count per service.
 
 ---
 
-# Practice Questions (10)
-1. Explain why shuffle usually dominates runtime in MapReduce. Provide a numeric example with `E` and `s`.
-2. Given 1,000,000 records and 100 reducers, a hot key has 300,000 records. Compute the skew ratio.
-3. Write the SQL equivalent of a MapReduce job that computes total defects by production line.
-4. Why is naive average not combiner-safe? Provide a two-mapper counterexample.
-5. For a join between a 2 GB Orders table and a 20 MB Customers table, which join strategy is best and why?
-6. In a job with `E=200M` and average pair size `s=24 bytes`, estimate shuffle bytes.
-7. Provide a salting strategy for a mega-product that appears in 50% of OrderItems.
-8. List three operational metrics that indicate skew risk.
-9. You need to compute max temperature by machine from MachineEvents. Is a combiner safe? Why?
-10. When would you accept a two-stage MapReduce job despite extra cost?
+## 1.3 Formal Solution (Filtering)
+
+```
+map(record):
+  if record.status < 500:
+    emit nothing
+  else:
+    emit (record.service, 1)
+
+reduce(key, values):
+  emit (key, sum(values))
+```
+
 
 ---
 
-# Instructor Notes
-## 90-Minute Teaching Plan
-1. **0–10 min:** Motivation (bottlenecks, flow, shuffle cost). Use Audience Framing.
-2. **10–30 min:** Map → Shuffle → Reduce fundamentals with Example 1.
-3. **30–45 min:** Combiner correctness with Example 2 and Example 3.
-4. **45–60 min:** Joins (reduce-side vs broadcast) with Example 4 and Example 6.
-5. **60–75 min:** Skew ratio + salting with Example 5 and Example 7.
-6. **75–90 min:** Practice questions + managerial takeaways.
+## 1.4 Step-by-Step: Input (Filtering)
 
-## Common Confusions to Address
-- **“More reducers fixes skew.”** No—hot keys still go to one reducer.
-- **“Combiner always helps.”** Only for associative/commutative operations; naive average breaks.
-- **“Shuffle is just network.”** It is network + disk spill + merge CPU.
-- **“SQL hides the cost.”** The physical plan still requires data movement at scale.
+| ts   | service | status | latency_ms |
+|------|--------|--------|------------|
+| 10:00 | auth   | 200    | 35         |
+| 10:01 | auth   | 500    | 120        |
+| 10:02 | cart   | 404    | 22         |
+| 10:03 | cart   | 500    | 300        |
+| 10:04 | search | 200    | 18         |
+| 10:05 | search | 500    | 210        |
+
+---
+
+## 1.5 Step-by-Step: Map & Shuffle (Filtering)
+
+- Rows with status &lt; 500 → **emit nothing** (filtered out).
+- Rows with status ≥ 500 → emit `(service, 1)`.
+
+**Mapper output (only error rows):** 10:01 → (auth, 1), 10:03 → (cart, 1), 10:05 → (search, 1).
+
+**Shuffle — grouped by key `service`:** auth → [1], cart → [1], search → [1].
+
+---
+
+## 1.6 Step-by-Step: Reduce & Final Output (Filtering)
+
+For each service key: sum all values; emit `service<TAB>error_count`.
+
+| service | error_count |
+|---------|-------------|
+| auth    | 1           |
+| cart    | 1           |
+| search  | 1           |
+
+---
+
+## 1.7 Combiner & Engineering (Filtering)
+
+- **Combiner:** Safe — summing counts is associative and commutative. Can pre-aggregate (e.g. (auth, 1), (auth, 1) → (auth, 2) locally).
+- **Why filter in map:** Reduces shuffle traffic; only error rows move. Downside: wrong filter logic can silently drop data — monitor filter rates and validate with sampling.
+
+---
+
+## Example 2: Inverted Index — Term → Document Postings
+
+---
+
+## 2.1 Problem
+
+You have a small document collection (e.g. internal wiki or log snippets). For each **term**, you want a **posting list**: the documents that contain it and the **term frequency** in each document. This is the core structure for search.
+
+**Input:** Documents (doc_id + raw text).  
+**Output:** For each term: `doc_id:tf, doc_id:tf, ...` (e.g. `data → 1:1,2:2,3:1,4:1`).
+
+---
+
+## 2.2 Solution (Key/Value Design)
+
+- **Map:** Tokenize (lowercase, split on whitespace). Emit one pair per (term, doc) occurrence so we can count.
+- **Key:** `(term, doc_id)` — groups all occurrences of the same term in the same document.
+- **Value:** `1`
+
+Reducer (or combiner) sums the 1s → term frequency per (term, doc). Then we format postings per term (e.g. by tracking “current term” and emitting when term changes; postings are sorted by doc_id because key is (term, doc_id)).
+
+---
+
+## 2.3 Formal Solution (Inverted Index)
+
+```
+map(doc_id, text):
+  for term in tokenize(text):   // lowercase, split on whitespace
+    emit ((term, doc_id), 1)
+
+reduce((term, doc_id), values):
+  tf = sum(values)
+  emit (term, "doc_id:tf" appended to postings list for term)
+  // output: term \t doc1:tf1,doc2:tf2,...
+```
+
+---
+
+## 2.4 Step-by-Step: Input (Inverted Index)
+
+| doc_id | text                                                                 |
+|--------|----------------------------------------------------------------------|
+| 1      | data engineering is fun and practical                                |
+| 2      | data pipelines need reliable data quality                            |
+| 3      | mapreduce is practical for large scale data processing               |
+| 4      | quality matters in data engineering pipelines                         |
+
+Tokenization: lowercase, split on whitespace, keep duplicates (for term frequency).
+
+---
+
+## 2.5 Step-by-Step: Map & Shuffle (Inverted Index)
+
+For each token emit **((term, doc_id), 1)**. Example: doc 2 → ((data, 2), 1), ((pipelines, 2), 1), ((data, 2), 1), ((quality, 2), 1).
+
+**Shuffle — grouped by `(term, doc_id)`:** (data, 1)→[1], (data, 2)→[1,1], (data, 3)→[1], (data, 4)→[1], (engineering, 1)→[1], (engineering, 4)→[1], (pipelines, 2)→[1], (pipelines, 4)→[1], (quality, 2)→[1], (quality, 4)→[1].
+
+---
+
+## 2.6 Step-by-Step: Reduce & Final Output (Inverted Index)
+
+For each key `(term, doc_id)`: sum values → tf. Maintain current term; when term changes, emit previous term with posting list. Output: `term<TAB>doc1:tf1,doc2:tf2,...`.
+
+---
+
+## 2.7 Combiner & Pitfalls (Inverted Index)
+
+- **Combiner:** Safe and useful. Locally aggregate `((term, doc_id), 1)` → `((term, doc_id), partial_count)`. Sum is associative/commutative. Do not build final posting strings in the combiner — only counts.
+- **Pitfalls:** Removing duplicates in map breaks term frequency; keying only by term (no doc_id) loses per-document counts; unclear tokenization makes results ambiguous.
+
+---
+
+## Example 3: Matrix–Vector Multiplication (Two-Phase)
+
+---
+
+## 3.1 Problem
+
+You are scoring documents with a **sparse feature matrix** `A` and a **weight vector** `v`. Each `A[i,j]` is the feature value for document `i`, feature `j`; each `v[j]` is the weight for feature `j`. You need the score per document:
+
+**y[i] = Σ_j A[i,j] · v[j]**
+
+So you must **join** matrix entries with the vector on index `j`, compute products, then **sum by row** `i`. Join is keyed by `j`; final aggregation is keyed by `i` — hence **two MapReduce phases**.
+
+---
+
+## 3.2 Solution (Key/Value Design)
+
+**Phase 1 — Join on j:** Key `j`; value tagged — matrix: `(A, i, A[i,j])`, vector: `(V, v[j])`. Reducer computes partials and emits **(i, partial)**.
+
+**Phase 2 — Sum by i:** Key `i`; value partial product. Reducer sums → **y[i]**.
+
+---
+
+## 3.3 Formal Solution (Matrix–Vector)
+
+**Phase 1:** map emits (j, (A,i,A[i,j])) or (j, (V,v[j])); reduce(j) uses v_j, emits (i, a_ij*v_j).  
+**Phase 2:** map identity; reduce(i) emits (i, sum(values)).
+
+---
+
+## 3.4 Step-by-Step: Input (Matrix–Vector)
+
+**Matrix A (sparse):**
+
+| i (row) | j (col) | A[i,j] |
+|--------:|--------:|-------:|
+| 1       | 1       | 2      |
+| 1       | 3       | 1      |
+| 2       | 1       | 4      |
+| 2       | 2       | 5      |
+| 3       | 3       | 3      |
+
+**Vector v:** j=1→10, j=2→1, j=3→2.
+
+---
+
+## 3.5 Step-by-Step: Phase 1 — Map, Shuffle, Reduce (Matrix–Vector)
+
+**Map:** Matrix → (j, (A, i, A[i,j])); vector → (j, (V, v[j])). Example j=1: (1,(A,1,2)), (1,(A,2,4)), (1,(V,10)).
+
+**Shuffle:** Key 1 → [(A,1,2), (A,2,4), (V,10)].
+
+**Reduce:** For each j take v[j]; for each (A, i, a_ij) emit (i, a_ij*v_j). j=1 → (1,20), (2,40); j=2 → (2,5); j=3 → (1,2), (3,6).
+
+---
+
+## 3.6 Step-by-Step: Phase 2 & Final Output (Matrix–Vector)
+
+**Phase 2:** Identity map; shuffle by i: 1→[20,2], 2→[40,5], 3→[6]; reduce sums per i.
+
+| i | y[i] |
+|---|-----:|
+| 1 | 22   |
+| 2 | 45   |
+| 3 | 6    |
+
+---
+
+## 3.7 Combiner & Engineering (Matrix–Vector)
+
+- **Phase 1:** Combiner not applicable — need vector value to compute products; reducer must see both matrix and vector.
+- **Phase 2:** Combiner safe — sum of partials is associative and commutative.
+- **Bottleneck:** Shuffle of all matrix entries keyed by `j`; can be large if matrix is dense or skewed. Mitigate with map-side broadcast of vector if it fits in memory, or combiners in phase 2 to reduce network.
+
+---
+
+## Example 4: PageRank (Single Iteration, with Damping)
+
+---
+
+## 4.1 Problem
+
+You have a small directed graph (e.g. internal wiki pages). You want **one iteration of PageRank** with damping and proper handling of **dangling nodes** (no outlinks). Each page distributes its current rank equally to its outlinks; dangling rank is redistributed to all pages.
+
+**Input:** Edges (from_page, to_page) and set of pages (including dangling). Initial rank PR0 = 1/N per page.  
+**Output:** Updated rank PR1 per page after one iteration.
+
+Formula (with damping d = 0.85):  
+**PR1(p) = (1−d)/N + d · (sum of incoming contributions + dangling_mass/N)**
+
+---
+
+## 4.2 Solution (Key/Value Design)
+
+Mapper per page: has current rank and adjacency list.
+
+- **Rank contributions:** For each outlink `to_page`, emit **(to_page, contrib)** where contrib = current_rank / num_outlinks. If no outlinks (dangling), contrib is the full rank — tracked as “dangling mass” and redistributed in reducer.
+- **Structure:** Emit **(page, adjacency_list)** so the graph is preserved for the next iteration.
+
+Reducer for page `p`: receives contributions and (once) its adjacency list; sums incoming contributions; adds share of dangling mass; applies damping formula; emits **(p, PR1(p))** and passes adjacency list for next round.
+
+### Formal solution
+
+```
+map(page, rank, adj_list):
+  if adj_list is empty:
+    emit (page, [])                    // preserve structure
+    dangling_mass += rank              // tracked globally for reducer
+  else:
+    contrib = rank / len(adj_list)
+    for to_page in adj_list:
+      emit (to_page, contrib)
+    emit (page, adj_list)              // pass through for next iteration
+
+reduce(page, values):
+  adj_list = single value that is a list (pass through)
+  sum_in = sum(numeric values in values)
+  PR1 = (1-d)/N + d * (sum_in + dangling_mass/N)
+  emit (page, PR1)   // and adj_list for next iteration
+```
+
+---
+
+## 4.4 Step-by-Step: Input (PageRank)
+
+**Edges:** A→B, A→C, B→C, C→A. Pages: A, B, C, D (D dangling). N=4, PR0=0.25 each, d=0.85.
+
+---
+
+## 4.5 Step-by-Step: Map & Shuffle (PageRank)
+
+**Map:** A → (B,0.125), (C,0.125), (A,[B,C]). B → (C,0.25), (B,[C]). C → (A,0.25), (C,[A]). D → (D,[]); dangling mass 0.25.
+
+**Shuffle (e.g. key C):** [0.125 from A, 0.25 from B, adj list [A]]. Reducer separates contributions from adjacency list.
+
+---
+
+## 4.6 Step-by-Step: Reduce & Final Output (PageRank)
+
+Sum incoming contributions; add 0.0625 (dangling_mass/N); base 0.0375; PR1 = 0.0375 + 0.85·(sum_in + 0.0625).
+
+| page | PR1    |
+|------|--------|
+| A    | 0.3031 |
+| B    | 0.1969 |
+| C    | 0.4094 |
+| D    | 0.0906 |
+
+---
+
+## 4.7 Combiner & Engineering (PageRank)
+
+- **Combiner:** Safe for **summing contributions** per key (addition is associative). Must not drop the adjacency list — pass it through; only numeric contributions are combined.
+- **Dangling nodes:** If not handled, rank “leaks” and total rank shrinks each iteration. Redistributing dangling mass preserves total rank and keeps PageRank well-defined.
+
+---
+
+## Summary: Pattern Overview
+
+| Example              | Pattern              | Phases | Key idea                                      |
+|----------------------|----------------------|--------|-----------------------------------------------|
+| Filtering            | Filter + count       | 1      | Filter in map; key = group (service); value = 1 |
+| Inverted index       | Scan + group + count | 1      | Key (term, doc_id); value 1; format postings in reduce |
+| Matrix–vector        | Join + aggregate     | 2      | Phase 1 join on j; phase 2 sum on i           |
+| PageRank             | Graph iteration      | 1 (per iter) | Emit contributions to targets; preserve graph; handle dangling |
+
+---
+
+## Instructor Notes
+
+- **Teaching order:** Filtering (simplest) → Inverted index (canonical MR) → Matrix–vector (two phases) → PageRank (graph + special handling).
+- For each example: state problem → give key/value design → walk one concrete input through Map output → Shuffle grouping → Reduce output → final table.
+- Emphasize: key choice determines grouping; value choice determines what reducer aggregates; combiners only when operation is associative/commutative; multi-phase when join key ≠ aggregate key.
