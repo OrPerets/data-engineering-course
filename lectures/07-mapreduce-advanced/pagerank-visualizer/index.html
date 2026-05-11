@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PageRank Visualizer</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar" aria-labelledby="page-title">
+        <div>
+          <p class="course-label">Data Engineering / PageRank</p>
+          <h1 id="page-title">PageRank Visualizer</h1>
+          <p class="intro">
+            Follow rank as it moves through a directed graph, then connect the
+            same computation to Markov chains, damping, and MapReduce.
+          </p>
+        </div>
+        <div class="top-actions" aria-label="Graph presets">
+          <button class="preset-button is-active" type="button" data-preset="lecture">
+            Lecture graph
+          </button>
+          <button class="preset-button" type="button" data-preset="damping">
+            Dangling page
+          </button>
+          <button class="preset-button" type="button" data-preset="trap">
+            Spider trap
+          </button>
+        </div>
+      </header>
+
+      <section class="control-strip" aria-label="Simulation controls">
+        <button id="prevStep" type="button" title="Go to previous iteration">Back</button>
+        <button id="nextStep" class="primary-button" type="button" title="Run next iteration">
+          Next iteration
+        </button>
+        <button id="resetStep" type="button" title="Reset PageRank scores">Reset</button>
+        <label class="slider-control">
+          <span>Damping</span>
+          <input id="dampingSlider" type="range" min="0" max="1" value="0.85" step="0.05" />
+          <output id="dampingValue" for="dampingSlider">0.85</output>
+        </label>
+        <label class="toggle-control">
+          <input id="dampingToggle" type="checkbox" />
+          Apply teleportation + dangling mass
+        </label>
+      </section>
+
+      <section class="hero-grid" aria-label="Interactive PageRank workspace">
+        <section class="graph-panel" aria-labelledby="graph-title">
+          <div class="panel-heading">
+            <div>
+              <h2 id="graph-title">Directed Graph</h2>
+              <p id="iterationLabel">Iteration 0: all pages start equal.</p>
+            </div>
+            <div id="massBadge" class="mass-badge" title="Total rank mass">mass 1.0000</div>
+          </div>
+          <div class="graph-frame">
+            <svg id="graphSvg" viewBox="0 0 720 460" role="img" aria-label="Directed graph with PageRank scores"></svg>
+          </div>
+          <div id="pageCards" class="page-cards" aria-label="Current page ranks"></div>
+        </section>
+
+        <aside class="lesson-panel" aria-labelledby="lesson-title">
+          <p class="section-kicker">Current step</p>
+          <h2 id="lesson-title">Rank starts as a probability distribution</h2>
+          <p id="lessonText">
+            Each page begins with the same score. Because the scores sum to 1,
+            PageRank can be read as a probability distribution over pages.
+          </p>
+          <div class="formula-box">
+            <code id="formulaText">PR0(p) = 1 / N</code>
+          </div>
+          <div id="contributionList" class="contribution-list" aria-live="polite"></div>
+        </aside>
+      </section>
+
+      <section class="analysis-grid" aria-label="Results and explanations">
+        <section class="panel result-panel" aria-labelledby="result-title">
+          <div class="panel-heading compact">
+            <div>
+              <p class="section-kicker">Results</p>
+              <h2 id="result-title">Rank Table</h2>
+            </div>
+            <div id="deltaBadge" class="mass-badge">delta 0.0000</div>
+          </div>
+          <table class="rank-table">
+            <thead>
+              <tr>
+                <th>Page</th>
+                <th>PR before</th>
+                <th>Incoming link mass</th>
+                <th>PR after</th>
+              </tr>
+            </thead>
+            <tbody id="rankRows"></tbody>
+          </table>
+        </section>
+
+        <section class="panel matrix-panel" aria-labelledby="matrix-title">
+          <p class="section-kicker">Markov chain flow</p>
+          <h2 id="matrix-title">Transition Matrix</h2>
+          <p>
+            Column <strong>j</strong> describes where rank flows from page
+            <strong>j</strong>. Multiplying this sparse matrix by the rank vector
+            gives the next iteration.
+          </p>
+          <div id="matrixBoard" class="matrix-board" aria-label="Transition matrix"></div>
+          <div class="formula-box small">
+            <code id="matrixFormulaText">r(t+1) = M * r(t)</code>
+          </div>
+        </section>
+      </section>
+
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

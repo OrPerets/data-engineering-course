@@ -2,12 +2,9 @@
 
 ## Purpose & Learning Objectives
 
-- **Purpose:** Demonstrate MapReduce through four canonical examples, from simple filtering to multi-phase joins and graph algorithms. Each example shows problem → solution design → step-by-step input/output per phase.
-- **Learning Objectives:**
-  - Design key/value pairs so Map → Shuffle → Reduce produce the desired result
-  - Trace data flow phase-by-phase with concrete inputs and outputs
-  - Decide when combiners are safe and when multiple MapReduce phases are needed
-  - Recognize patterns: filtering, inverted index, join+aggregate, iterative graph
+- Demonstrate MapReduce through four canonical examples.
+- From simple filtering to multi-phase joins and graph algorithms.
+- Each example: problem, key/value design, flow, pseudocode, step-by-step, engineering notes.
 
 ---
 
@@ -15,24 +12,37 @@
 
 ## 1.1 Problem
 
-You run a fleet of API services and need to **count errors by service name**. Raw logs are large; only rows with status code ≥ 500 are relevant. You want to avoid shuffling and reducing over successful requests.
-
-**Input:** API request logs (timestamp, service, status, latency_ms).  
-**Output:** For each service, the number of error rows (status ≥ 500).
-
----
-
-## 1.2 Solution (Key/Value Design)
-
-- **Filter in the mapper:** emit only for status ≥ 500; non-error rows emit nothing.
-- **Key:** `service`
-- **Value:** `1` (one count per error row)
-
-Reducer groups by service and sums the 1s → error count per service.
+- **Goal:** Count errors by service name; only rows with status ≥ 500 matter.
+- **Input:** API request logs (timestamp, service, status, latency_ms).
+- **Output:** For each service, the number of error rows (status ≥ 500).
+- Filter in the mapper to avoid shuffling successful requests.
 
 ---
 
-## 1.3 Formal Solution (Filtering)
+## 1.2 Key/Value Design (Filtering)
+
+- **Mapper:** Emit only when status ≥ 500; non-error rows emit nothing.
+- **Key:** `service` (groups errors by service).
+- **Value:** `1` (one count per error row).
+- **Reducer:** Group by service; sum the 1s → error count per service. Single phase; no join.
+
+---
+
+## 1.3 Flow (Filtering)
+
+- **Map:** Read log rows; for each row with status ≥ 500, emit (service, 1).
+- **Shuffle:** Group all pairs by key `service`.
+- **Reduce:** For each service, sum values → one (service, error_count) per service.
+
+---
+
+## 1.4 Diagram (Filtering)
+
+![](../../diagrams/week7/week7_filtering_pattern_flow.png){width=78%}
+
+---
+
+## 1.5 Formal Pseudocode (Filtering)
 
 ```
 map(record):
@@ -45,10 +55,9 @@ reduce(key, values):
   emit (key, sum(values))
 ```
 
-
 ---
 
-## 1.4 Step-by-Step: Input (Filtering)
+## 1.6 Step-by-Step: Input (Filtering)
 
 | ts   | service | status | latency_ms |
 |------|--------|--------|------------|
@@ -61,18 +70,18 @@ reduce(key, values):
 
 ---
 
-## 1.5 Step-by-Step: Map & Shuffle (Filtering)
+## 1.7 Step-by-Step: Map Output & Shuffle (Filtering)
 
 - Rows with status &lt; 500 → **emit nothing** (filtered out).
 - Rows with status ≥ 500 → emit `(service, 1)`.
 
-**Mapper output (only error rows):** 10:01 → (auth, 1), 10:03 → (cart, 1), 10:05 → (search, 1).
+**Mapper output (only error rows):** (auth, 1), (cart, 1), (search, 1).
 
 **Shuffle — grouped by key `service`:** auth → [1], cart → [1], search → [1].
 
 ---
 
-## 1.6 Step-by-Step: Reduce & Final Output (Filtering)
+## 1.8 Step-by-Step: Reduce & Final Output (Filtering)
 
 For each service key: sum all values; emit `service<TAB>error_count`.
 
@@ -84,37 +93,49 @@ For each service key: sum all values; emit `service<TAB>error_count`.
 
 ---
 
-## 1.7 Combiner & Engineering (Filtering)
+## 1.9 Engineering Notes (Filtering)
 
-- **Combiner:** Safe — summing counts is associative and commutative. Can pre-aggregate (e.g. (auth, 1), (auth, 1) → (auth, 2) locally).
-- **Why filter in map:** Reduces shuffle traffic; only error rows move. Downside: wrong filter logic can silently drop data — monitor filter rates and validate with sampling.
+- **Combiner:** Safe — summing counts is associative and commutative. Pre-aggregate locally (e.g. (auth, 1), (auth, 1) → (auth, 2)).
+- **Why filter in map:** Reduces shuffle traffic; only error rows move.
+- **Pitfall:** Wrong filter logic can silently drop data — monitor filter rates and validate with sampling.
 
 ---
 
 ## Example 2: Inverted Index — Term → Document Postings
 
----
-
 ## 2.1 Problem
 
-You have a small document collection (e.g. internal wiki or log snippets). For each **term**, you want a **posting list**: the documents that contain it and the **term frequency** in each document. This is the core structure for search.
-
-**Input:** Documents (doc_id + raw text).  
-**Output:** For each term: `doc_id:tf, doc_id:tf, ...` (e.g. `data → 1:1,2:2,3:1,4:1`).
+- **Goal:** For each **term**, build a **posting list**: documents that contain it + **term frequency** per document.
+- **Input:** Documents (doc_id + raw text).
+- **Output:** For each term: `doc_id:tf, doc_id:tf, ...` (e.g. `data → 1:1,2:2,3:1,4:1`).
+- Core structure for search.
 
 ---
 
-## 2.2 Solution (Key/Value Design)
+## 2.2 Key/Value Design (Inverted Index)
 
-- **Map:** Tokenize (lowercase, split on whitespace). Emit one pair per (term, doc) occurrence so we can count.
+- **Mapper:** Tokenize (lowercase, split on whitespace). Emit one pair per (term, doc) occurrence.
 - **Key:** `(term, doc_id)` — groups all occurrences of the same term in the same document.
-- **Value:** `1`
-
-Reducer (or combiner) sums the 1s → term frequency per (term, doc). Then we format postings per term (e.g. by tracking “current term” and emitting when term changes; postings are sorted by doc_id because key is (term, doc_id)).
+- **Value:** `1`.
+- **Reducer:** Sum the 1s → term frequency per (term, doc). Format postings per term (emit when term changes; postings sorted by doc_id).
 
 ---
 
-## 2.3 Formal Solution (Inverted Index)
+## 2.3 Flow (Inverted Index)
+
+- **Map:** Tokenize each document; for each token emit ((term, doc_id), 1).
+- **Shuffle:** Group by (term, doc_id).
+- **Reduce:** Sum values → tf per (term, doc); emit term and posting list when term changes.
+
+---
+
+## 2.4 Diagram (Inverted Index)
+
+![](../../diagrams/week7/week7_inverted_index_flow.png){width=78%}
+
+---
+
+## 2.5 Formal Pseudocode (Inverted Index)
 
 ```
 map(doc_id, text):
@@ -129,7 +150,7 @@ reduce((term, doc_id), values):
 
 ---
 
-## 2.4 Step-by-Step: Input (Inverted Index)
+## 2.6 Step-by-Step: Input (Inverted Index)
 
 | doc_id | text                                                                 |
 |--------|----------------------------------------------------------------------|
@@ -142,61 +163,104 @@ Tokenization: lowercase, split on whitespace, keep duplicates (for term frequenc
 
 ---
 
-## 2.5 Step-by-Step: Map & Shuffle (Inverted Index)
+## 2.7 Step-by-Step: Map Output & Shuffle (Inverted Index)
 
-For each token emit **((term, doc_id), 1)**. Example: doc 2 → ((data, 2), 1), ((pipelines, 2), 1), ((data, 2), 1), ((quality, 2), 1).
-
-**Shuffle — grouped by `(term, doc_id)`:** (data, 1)→[1], (data, 2)→[1,1], (data, 3)→[1], (data, 4)→[1], (engineering, 1)→[1], (engineering, 4)→[1], (pipelines, 2)→[1], (pipelines, 4)→[1], (quality, 2)→[1], (quality, 4)→[1].
-
----
-
-## 2.6 Step-by-Step: Reduce & Final Output (Inverted Index)
-
-For each key `(term, doc_id)`: sum values → tf. Maintain current term; when term changes, emit previous term with posting list. Output: `term<TAB>doc1:tf1,doc2:tf2,...`.
+- **Map:** For each token emit **((term, doc_id), 1)**. Example: doc 2 → ((data, 2), 1) twice, ((pipelines, 2), 1), ((quality, 2), 1).
+- **Shuffle:** Group by `(term, doc_id)`. Example: (data, 1)→[1], (data, 2)→[1,1], (data, 3)→[1], (data, 4)→[1]; same for other terms.
 
 ---
 
-## 2.7 Combiner & Pitfalls (Inverted Index)
+## 2.8 Step-by-Step: Reduce & Final Output (Inverted Index)
 
-- **Combiner:** Safe and useful. Locally aggregate `((term, doc_id), 1)` → `((term, doc_id), partial_count)`. Sum is associative/commutative. Do not build final posting strings in the combiner — only counts.
+For each key `(term, doc_id)`: sum values → tf. Maintain current term; when term changes, emit previous term with posting list.
+
+**Example output:** `data<TAB>1:1,2:2,3:1,4:1` and similarly for other terms (e.g. `quality<TAB>2:1,4:1`).
+
+---
+
+## 2.9 Engineering Notes (Inverted Index)
+
+- **Combiner:** Safe and useful. Locally aggregate ((term, doc_id), 1) → ((term, doc_id), partial_count). Do not build final posting strings in the combiner — only counts.
 - **Pitfalls:** Removing duplicates in map breaks term frequency; keying only by term (no doc_id) loses per-document counts; unclear tokenization makes results ambiguous.
 
 ---
 
 ## Example 3: Matrix–Vector Multiplication (Two-Phase)
 
----
+## 3.1 Problem: Goal & Formula (Matrix–Vector)
 
-## 3.1 Problem
+- **Goal:** Compute $\mathbf{y} = \mathbf{A}\mathbf{v}$: score per row $i$ using sparse matrix $\mathbf{A}$ and vector $\mathbf{v}$.
 
-You are scoring documents with a **sparse feature matrix** `A` and a **weight vector** `v`. Each `A[i,j]` is the feature value for document `i`, feature `j`; each `v[j]` is the weight for feature `j`. You need the score per document:
-
-**y[i] = Σ_j A[i,j] · v[j]**
-
-So you must **join** matrix entries with the vector on index `j`, compute products, then **sum by row** `i`. Join is keyed by `j`; final aggregation is keyed by `i` — hence **two MapReduce phases**.
+**Formula (row $i$, over all columns $j$):**
+$$y_i = \sum_{j} A_{i,j} \cdot v_j$$
 
 ---
 
-## 3.2 Solution (Key/Value Design)
+## 3.2 Problem: Notation & Two Phases (Matrix–Vector)
 
-**Phase 1 — Join on j:** Key `j`; value tagged — matrix: `(A, i, A[i,j])`, vector: `(V, v[j])`. Reducer computes partials and emits **(i, partial)**.
-
-**Phase 2 — Sum by i:** Key `i`; value partial product. Reducer sums → **y[i]**.
-
----
-
-## 3.3 Formal Solution (Matrix–Vector)
-
-**Phase 1:** map emits (j, (A,i,A[i,j])) or (j, (V,v[j])); reduce(j) uses v_j, emits (i, a_ij*v_j).  
-**Phase 2:** map identity; reduce(i) emits (i, sum(values)).
+- **Notation:** $i$ = row index (document), $j$ = column index (feature); $A_{i,j}$ = matrix entry, $v_j$ = vector entry.
+- **Input:** Sparse $\mathbf{A}$ (entries $(i,j,A_{i,j})$); vector $\mathbf{v}$ (entries $v_j$).
+- **Output:** Vector $\mathbf{y}$ (one value $y_i$ per row $i$).
+- **Why two phases:** Join on $j$ (compute $A_{i,j} \cdot v_j$), then sum by $i$ to get $y_i$. Key by $j$ then by $i$.
 
 ---
 
-## 3.4 Step-by-Step: Input (Matrix–Vector)
+## 3.3 Key/Value: Phase 1 (Matrix–Vector)
 
-**Matrix A (sparse):**
+- **Join on $j$:** Key = $j$.
+- **Value:** matrix → $(A, i, A_{i,j})$; vector → $(V, v_j)$.
+- **Reducer for key $j$:** For each $(A, i, A_{i,j})$ emit $(i,\; A_{i,j} \cdot v_j)$.
 
-| i (row) | j (col) | A[i,j] |
+---
+
+## 3.4 Key/Value: Phase 2 (Matrix–Vector)
+
+- **Sum by $i$:** Key = $i$; value = partial product $A_{i,j} v_j$.
+- **Reducer:** Sum values → $y_i = \sum_j A_{i,j} v_j$.
+
+---
+
+## 3.5 Flow (Matrix–Vector)
+
+- **Phase 1 Map:** Matrix → $(j, (A, i, A_{i,j}))$; vector → $(j, (V, v_j))$.
+- **Phase 1 Shuffle/Reduce:** Group by $j$; reducer emits $(i,\; A_{i,j} v_j)$ for each matrix row at column $j$.
+- **Phase 2 Map:** Identity. Shuffle by $i$; reducer sums partials → $y_i$.
+
+---
+
+## 3.6 Diagram (Matrix–Vector)
+
+![](../../diagrams/week7/week7_matrix_vector_two_phase.png){width=82%}
+
+---
+
+## 3.7 Formal Pseudocode (Matrix–Vector)
+
+```
+// Phase 1: join on j, emit (i, a_ij * v_j)
+map_phase1(record):
+  if record is (i, j, A[i,j]):
+    emit (j, ("A", i, A[i,j]))
+  else if record is (j, v[j]):
+    emit (j, ("V", v[j]))
+
+reduce_phase1(j, values):
+  v_j = value from ("V", v[j])
+  for ("A", i, a_ij) in values:
+    emit (i, a_ij * v_j)
+
+// Phase 2: sum by i
+map_phase2(i, partial):  emit (i, partial)   // identity
+reduce_phase2(i, partials):  emit (i, sum(partials))
+```
+
+---
+
+## 3.8 Step-by-Step: Input — Matrix (Matrix–Vector)
+
+**Matrix $\mathbf{A}$ (sparse):**
+
+| i (row) | j (col) | A(i,j) |
 |--------:|--------:|-------:|
 | 1       | 1       | 2      |
 | 1       | 3       | 1      |
@@ -204,25 +268,43 @@ So you must **join** matrix entries with the vector on index `j`, compute produc
 | 2       | 2       | 5      |
 | 3       | 3       | 3      |
 
-**Vector v:** j=1→10, j=2→1, j=3→2.
+---
+
+## 3.9 Step-by-Step: Input — Vector & Target (Matrix–Vector)
+
+- **Vector $\mathbf{v}$:** $v_1 = 10$, $v_2 = 1$, $v_3 = 2$.
+- **Target:** $y_i = \sum_j A_{i,j} v_j$ (one value per row $i$).
 
 ---
 
-## 3.5 Step-by-Step: Phase 1 — Map, Shuffle, Reduce (Matrix–Vector)
+## 3.10 Step-by-Step: Phase 1 — Map & Shuffle (Matrix–Vector)
 
-**Map:** Matrix → (j, (A, i, A[i,j])); vector → (j, (V, v[j])). Example j=1: (1,(A,1,2)), (1,(A,2,4)), (1,(V,10)).
-
-**Shuffle:** Key 1 → [(A,1,2), (A,2,4), (V,10)].
-
-**Reduce:** For each j take v[j]; for each (A, i, a_ij) emit (i, a_ij*v_j). j=1 → (1,20), (2,40); j=2 → (2,5); j=3 → (1,2), (3,6).
+- **Map:** Matrix → $(j, (A, i, A_{i,j}))$; vector → $(j, (V, v_j))$.
+- Example key $j=1$: $(1,(A,1,2))$, $(1,(A,2,4))$, $(1,(V,10))$.
+- **Shuffle:** Group by key $j$. E.g. $j=1$ → [(A,1,2), (A,2,4), (V,10)]; $j=2$ → [(A,2,5), (V,1)]; $j=3$ → [(A,1,1), (A,3,3), (V,2)].
 
 ---
 
-## 3.6 Step-by-Step: Phase 2 & Final Output (Matrix–Vector)
+## 3.11 Step-by-Step: Phase 1 — Reduce Output (Matrix–Vector)
 
-**Phase 2:** Identity map; shuffle by i: 1→[20,2], 2→[40,5], 3→[6]; reduce sums per i.
+- **Reduce($j$):** Use $v_j$; for each $(A, i, A_{i,j})$ emit $(i,\; A_{i,j} \cdot v_j)$.
+- $j=1$: $(1, 2\cdot 10)$, $(2, 4\cdot 10)$ → (1, 20), (2, 40); $j=2$ → (2, 5); $j=3$ → (1, 2), (3, 6).
 
-| i | y[i] |
+---
+
+## 3.12 Step-by-Step: Phase 2 — Map, Shuffle, Reduce (Matrix–Vector)
+
+- **Phase 2 Map:** Identity — pass $(i, \text{partial})$ through.
+- **Shuffle by $i$:** $i=1$ → [20, 2]; $i=2$ → [40, 5]; $i=3$ → [6].
+- **Reduce($i$):** Sum values → $y_i = \sum_j A_{i,j} v_j$.
+
+---
+
+## 3.13 Step-by-Step: Phase 2 — Final Output (Matrix–Vector)
+
+**Result $\mathbf{y}$:** $y_i = \sum_j A_{i,j} v_j$
+
+| i | y_i |
 |---|-----:|
 | 1 | 22   |
 | 2 | 45   |
@@ -230,40 +312,66 @@ So you must **join** matrix entries with the vector on index `j`, compute produc
 
 ---
 
-## 3.7 Combiner & Engineering (Matrix–Vector)
+## 3.14 Engineering Notes (Matrix–Vector)
 
 - **Phase 1:** Combiner not applicable — need vector value to compute products; reducer must see both matrix and vector.
 - **Phase 2:** Combiner safe — sum of partials is associative and commutative.
-- **Bottleneck:** Shuffle of all matrix entries keyed by `j`; can be large if matrix is dense or skewed. Mitigate with map-side broadcast of vector if it fits in memory, or combiners in phase 2 to reduce network.
+- **Bottleneck:** Shuffle of all matrix entries keyed by j. Mitigate with map-side broadcast of vector if it fits in memory; combiners in phase 2 to reduce network.
 
 ---
 
 ## Example 4: PageRank (Single Iteration, with Damping)
 
----
+## 4.1 Problem: Goal & Notation (PageRank)
 
-## 4.1 Problem
-
-You have a small directed graph (e.g. internal wiki pages). You want **one iteration of PageRank** with damping and proper handling of **dangling nodes** (no outlinks). Each page distributes its current rank equally to its outlinks; dangling rank is redistributed to all pages.
-
-**Input:** Edges (from_page, to_page) and set of pages (including dangling). Initial rank PR0 = 1/N per page.  
-**Output:** Updated rank PR1 per page after one iteration.
-
-Formula (with damping d = 0.85):  
-**PR1(p) = (1−d)/N + d · (sum of incoming contributions + dangling_mass/N)**
+- **Goal:** One iteration of PageRank with damping; proper handling of **dangling nodes** (no outlinks).
+- **Notation:** $N$ = number of pages, $d$ = damping factor (e.g. 0.85). $\mathrm{PR}_0(p) = 1/N$ initially.
+- **Output:** Updated rank $\mathrm{PR}_1(p)$ per page $p$.
 
 ---
 
-## 4.2 Solution (Key/Value Design)
+## 4.2 Problem: Update Formula (PageRank)
 
-Mapper per page: has current rank and adjacency list.
+**Update formula:**
+$$\mathrm{PR}_1(p) = \frac{1-d}{N} + d \cdot \left( \sum_{q \to p} \frac{\mathrm{PR}_0(q)}{|\Gamma(q)|} + \frac{M}{N} \right)$$
 
-- **Rank contributions:** For each outlink `to_page`, emit **(to_page, contrib)** where contrib = current_rank / num_outlinks. If no outlinks (dangling), contrib is the full rank — tracked as “dangling mass” and redistributed in reducer.
-- **Structure:** Emit **(page, adjacency_list)** so the graph is preserved for the next iteration.
+- **Terms:** $\Gamma(q)$ = out-neighbors of $q$; $|\Gamma(q)|$ = out-degree; $M$ = total rank of dangling nodes (redistributed evenly).
 
-Reducer for page `p`: receives contributions and (once) its adjacency list; sums incoming contributions; adds share of dangling mass; applies damping formula; emits **(p, PR1(p))** and passes adjacency list for next round.
+---
 
-### Formal solution
+## 4.3 Key/Value: Mapper (PageRank)
+
+- **Mapper (per page $p$):** Has current rank $\mathrm{PR}_0(p)$ and out-neighbors $\Gamma(p)$.
+- For each outlink $q \in \Gamma(p)$, emit **($q$, contrib)** where
+  $$\mathrm{contrib}(p \to q) = \frac{\mathrm{PR}_0(p)}{|\Gamma(p)|}$$
+- If $|\Gamma(p)| = 0$ (dangling), full rank goes to “dangling mass” $M$.
+- Emit **($p$, $\Gamma(p)$)** to preserve graph for next iteration.
+
+---
+
+## 4.4 Key/Value: Reducer (PageRank)
+
+- **Reducer for page $p$:** Receives contributions and (once) adjacency list.
+- Sum incoming contributions; add $M/N$; apply damping formula → $\mathrm{PR}_1(p)$.
+- Pass adjacency list for next iteration.
+
+---
+
+## 4.5 Flow (PageRank)
+
+- **Map:** Emit (to_page, contrib) for each outlink; emit (page, adj_list) to preserve structure; dangling pages add to dangling_mass.
+- **Shuffle:** Group by page — contributions and (once) adjacency list.
+- **Reduce:** Sum contributions; add dangling_mass/N; apply damping; emit (page, PR1).
+
+---
+
+## 4.6 Diagram (PageRank)
+
+![](../../diagrams/week7/week7_pagerank_iteration_flow.png){width=78%}
+
+---
+
+## 4.7 Formal Pseudocode (PageRank)
 
 ```
 map(page, rank, adj_list):
@@ -279,31 +387,33 @@ map(page, rank, adj_list):
 reduce(page, values):
   adj_list = single value that is a list (pass through)
   sum_in = sum(numeric values in values)
-  PR1 = (1-d)/N + d * (sum_in + dangling_mass/N)
+  PR1 = (1-d)/N + d*(sum_in + dangling_mass/N)
   emit (page, PR1)   // and adj_list for next iteration
 ```
 
 ---
 
-## 4.4 Step-by-Step: Input (PageRank)
+## 4.8 Step-by-Step: Input (PageRank)
 
-**Edges:** A→B, A→C, B→C, C→A. Pages: A, B, C, D (D dangling). N=4, PR0=0.25 each, d=0.85.
-
----
-
-## 4.5 Step-by-Step: Map & Shuffle (PageRank)
-
-**Map:** A → (B,0.125), (C,0.125), (A,[B,C]). B → (C,0.25), (B,[C]). C → (A,0.25), (C,[A]). D → (D,[]); dangling mass 0.25.
-
-**Shuffle (e.g. key C):** [0.125 from A, 0.25 from B, adj list [A]]. Reducer separates contributions from adjacency list.
+- **Edges:** A→B, A→C, B→C, C→A. **Pages:** A, B, C, D (D dangling).
+- $N = 4$, $\mathrm{PR}_0(p) = 1/N = 0.25$ for all $p$, $d = 0.85$.
 
 ---
 
-## 4.6 Step-by-Step: Reduce & Final Output (PageRank)
+## 4.9 Step-by-Step: Map & Shuffle (PageRank)
 
-Sum incoming contributions; add 0.0625 (dangling_mass/N); base 0.0375; PR1 = 0.0375 + 0.85·(sum_in + 0.0625).
+- **Map:** A → (B, 0.125), (C, 0.125), (A, [B,C]). B → (C, 0.25), (B, [C]). C → (A, 0.25), (C, [A]). D → (D, []); dangling mass 0.25.
+- **Shuffle (e.g. key C):** [0.125 from A, 0.25 from B, adj list [A]]. Reducer separates contributions from adjacency list.
 
-| page | PR1    |
+---
+
+## 4.10 Step-by-Step: Reduce & Numeric Output (PageRank)
+
+$$\mathrm{PR}_1(p) = \frac{1-d}{N} + d \cdot \left( \mathrm{sum\_in}(p) + \frac{M}{N} \right)$$
+
+- Here: $(1-d)/N = 0.0375$, $M/N = 0.25/4 = 0.0625$. So $\mathrm{PR}_1(p) = 0.0375 + 0.85 \cdot (\mathrm{sum\_in}(p) + 0.0625)$.
+
+| page p | PR_1(p) |
 |------|--------|
 | A    | 0.3031 |
 | B    | 0.1969 |
@@ -312,26 +422,7 @@ Sum incoming contributions; add 0.0625 (dangling_mass/N); base 0.0375; PR1 = 0.0
 
 ---
 
-## 4.7 Combiner & Engineering (PageRank)
+## 4.11 Engineering Notes (PageRank)
 
 - **Combiner:** Safe for **summing contributions** per key (addition is associative). Must not drop the adjacency list — pass it through; only numeric contributions are combined.
 - **Dangling nodes:** If not handled, rank “leaks” and total rank shrinks each iteration. Redistributing dangling mass preserves total rank and keeps PageRank well-defined.
-
----
-
-## Summary: Pattern Overview
-
-| Example              | Pattern              | Phases | Key idea                                      |
-|----------------------|----------------------|--------|-----------------------------------------------|
-| Filtering            | Filter + count       | 1      | Filter in map; key = group (service); value = 1 |
-| Inverted index       | Scan + group + count | 1      | Key (term, doc_id); value 1; format postings in reduce |
-| Matrix–vector        | Join + aggregate     | 2      | Phase 1 join on j; phase 2 sum on i           |
-| PageRank             | Graph iteration      | 1 (per iter) | Emit contributions to targets; preserve graph; handle dangling |
-
----
-
-## Instructor Notes
-
-- **Teaching order:** Filtering (simplest) → Inverted index (canonical MR) → Matrix–vector (two phases) → PageRank (graph + special handling).
-- For each example: state problem → give key/value design → walk one concrete input through Map output → Shuffle grouping → Reduce output → final table.
-- Emphasize: key choice determines grouping; value choice determines what reducer aggregates; combiners only when operation is associative/commutative; multi-phase when join key ≠ aggregate key.

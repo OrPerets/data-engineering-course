@@ -1,0 +1,12 @@
+כמה שערי not קיימים בביטוי הלוגי לאחר פישוט דה-מורגן?[ \neg[\neg(A \lor B) \land (C \lor \neg(A \land C)] ]
+A) 3
+B) 6
+C) 2
+D) 8
+ANSWER: A
+כמה שערי not קיימים בביטוי הלוגי לאחר פישוט דה-מורגן?[ \neg[\neg(A \lor B)] ]
+A) 0
+B) 2
+C) 1
+D) 4
+ANSWER: A

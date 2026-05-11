@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Week 17 Canvas - Generation Loop</title>
+<style>
+  body { margin:0; background:#f7f9fc; font-family:Inter, Arial, sans-serif; }
+  canvas { width:100vw; height:56.25vw; max-height:100vh; display:block; margin:auto; background:#f7f9fc; }
+</style>
+<canvas id="c" width="1600" height="900"></canvas>
+<script>
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+const colors = { ink:"#172033", muted:"#637083", blue:"#2F5BEA", teal:"#00A7A5", amber:"#F5A524", purple:"#7C3AED", coral:"#F25F5C" };
+function roundRect(x,y,w,h,r,fill,stroke){
+  ctx.beginPath(); ctx.roundRect(x,y,w,h,r); ctx.fillStyle=fill; ctx.fill();
+  ctx.lineWidth=4; ctx.strokeStyle=stroke; ctx.stroke();
+}
+function arrow(x1,y1,x2,y2,color){
+  ctx.strokeStyle=color; ctx.lineWidth=5; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  const a=Math.atan2(y2-y1,x2-x1); ctx.beginPath(); ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-18*Math.cos(a-.45), y2-18*Math.sin(a-.45));
+  ctx.lineTo(x2-18*Math.cos(a+.45), y2-18*Math.sin(a+.45));
+  ctx.closePath(); ctx.fillStyle=color; ctx.fill();
+}
+ctx.fillStyle=colors.ink; ctx.font="800 46px Inter, Arial"; ctx.fillText("Next-token generation loop", 90, 95);
+ctx.fillStyle=colors.muted; ctx.font="24px Inter, Arial"; ctx.fillText("The model repeats: tokenize -> score -> decode -> append", 92, 135);
+const boxes = [
+  ["Prompt",90,280,250,130,colors.blue], ["Tokenizer",430,280,250,130,colors.teal],
+  ["Transformer",770,280,250,130,colors.purple], ["Decoder",1110,280,250,130,colors.amber],
+  ["Append token",610,570,360,130,colors.coral]
+];
+for (const [label,x,y,w,h,color] of boxes){ roundRect(x,y,w,h,24,"#fff",color); ctx.fillStyle=color; ctx.font="800 30px Inter, Arial"; ctx.fillText(label,x+32,y+78); }
+arrow(340,345,430,345,colors.muted); arrow(680,345,770,345,colors.muted); arrow(1020,345,1110,345,colors.muted);
+arrow(1235,410,880,570,colors.muted); arrow(610,635,215,410,colors.muted);
+ctx.fillStyle=colors.ink; ctx.font="700 27px Inter, Arial"; ctx.fillText("Probability distribution", 790, 505);
+ctx.fillStyle=colors.muted; ctx.font="22px Inter, Arial"; ctx.fillText("not truth verification", 830, 540);
+ctx.fillStyle=colors.ink; ctx.font="26px ui-monospace, SFMono-Regular, Menlo, monospace"; ctx.fillText('["vpn", "not"] -> "working"', 610, 760);
+</script>
+</html>

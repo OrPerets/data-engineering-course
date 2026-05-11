@@ -1,0 +1,64 @@
+- main [ref=e2]:
+  - generic "ויזואליזציה אינטראקטיבית של ERD ותהליך ETL" [ref=e3]:
+    - generic [ref=e4]:
+      - paragraph [ref=e5]: תרגול 4 / Data Warehouse & ETL
+      - heading "ויזואליזציה אינטראקטיבית של ERD ותהליך ETL" [level=1] [ref=e6]
+      - paragraph [ref=e7]: בחרו שלב כדי לחשוף בהדרגה את המקורות, ה-Staging, הטרנספורמציות, מחסן הנתונים והשאילתות האנליטיות.
+    - generic "בחירת מצב צפייה" [ref=e8]:
+      - button "ETL Flow" [ref=e9] [cursor=pointer]
+      - button "ERD Star Schema" [ref=e10] [cursor=pointer]
+  - region "שלבי התהליך" [ref=e11]:
+    - generic [ref=e12]:
+      - button "1 Sources" [ref=e13] [cursor=pointer]
+      - button "2 Staging" [ref=e14] [cursor=pointer]
+      - button "3 Clean Views" [ref=e15] [cursor=pointer]
+      - button "4 Dimensions" [ref=e16] [cursor=pointer]
+      - button "5 Fact" [ref=e17] [cursor=pointer]
+      - button "6 Analytics" [ref=e18] [cursor=pointer]
+  - region "אזור ויזואליזציה" [ref=e19]:
+    - complementary [ref=e20]:
+      - paragraph [ref=e21]: השלב הנוכחי
+      - 'heading "שלב 1: טבלאות מקור תפעוליות" [level=2] [ref=e22]'
+      - paragraph [ref=e23]: "זהו הדאטה כפי שהוא מגיע ממערכות שונות: הזמנות, פריטי הזמנה, קטלוג מוצרים, לקוחות והחזרות. עדיין אין מזהים אחידים, ערכים קנוניים או מודל אנליטי."
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - term [ref=e26]: קובץ SQL
+          - definition [ref=e27]:
+            - code [ref=e28]: 00_sources.sql
+        - generic [ref=e29]:
+          - term [ref=e30]: מושג מרכזי
+          - definition [ref=e31]: Operational messiness
+    - region "גרף אינטראקטיבי" [ref=e32]:
+      - generic [ref=e33]:
+        - button "התאמה למסך" [ref=e34] [cursor=pointer]
+        - button "איפוס בחירה" [ref=e35] [cursor=pointer]
+        - generic [ref=e36]:
+          - checkbox "הצג שדות טכניים" [ref=e37]
+          - text: הצג שדות טכניים
+      - img "גרף שכבות ETL ו-ERD" [ref=e38]
+      - generic "מקרא" [ref=e43]:
+        - generic [ref=e44]: Sources
+        - generic [ref=e46]: Staging
+        - generic [ref=e48]: Clean Views
+        - generic [ref=e50]: DWH
+        - generic [ref=e52]: Fact
+        - generic [ref=e54]: Analytics
+    - complementary [ref=e56]:
+      - paragraph [ref=e57]: פרטי אובייקט
+      - paragraph [ref=e59]: לחצו על טבלה, View, Fact או חץ כדי לראות הסבר קצר, שדות חשובים וקובץ SQL רלוונטי.
+  - region "שדות, חוקים וחישובים בשלב הנוכחי" [ref=e60]:
+    - generic [ref=e61]:
+      - generic [ref=e62]:
+        - paragraph [ref=e63]: Transformation Map
+        - heading "שדות, חוקים וחישובים בשלב הנוכחי" [level=2] [ref=e64]
+      - paragraph [ref=e65]: 0 טרנספורמציות
+    - generic "סוגי טרנספורמציות" [ref=e66]:
+      - generic [ref=e67]: COPY
+      - generic [ref=e68]: CLEAN
+      - generic [ref=e69]: DEDUP
+      - generic [ref=e70]: MAP
+      - generic [ref=e71]: JOIN
+      - generic [ref=e72]: CALC
+      - generic [ref=e73]: MERGE
+      - generic [ref=e74]: AGG
+    - paragraph [ref=e76]: בשלב המקורות אין עדיין טרנספורמציות. התחילו משלב 2 כדי לראות מיפוי שדות, metadata וחוקי ניקוי.

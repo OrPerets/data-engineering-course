@@ -1,0 +1,304 @@
+{
+  "version": "1.0.0",
+  "darkMode": false,
+  "gridEnabling": true,
+  "detailLevel": "Keys",
+  "tablePositions": [
+    {
+      "name": "orders_src",
+      "schemaName": "sources",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "name": "order_items_src",
+      "schemaName": "sources",
+      "x": 280,
+      "y": 0
+    },
+    {
+      "name": "customers_src",
+      "schemaName": "sources",
+      "x": 600,
+      "y": 0
+    },
+    {
+      "name": "returns_src",
+      "schemaName": "sources",
+      "x": 912,
+      "y": 0
+    },
+    {
+      "name": "orders_src",
+      "schemaName": "staging",
+      "x": 0,
+      "y": 144
+    },
+    {
+      "name": "order_items_src",
+      "schemaName": "staging",
+      "x": 280,
+      "y": 208
+    },
+    {
+      "name": "customers_src",
+      "schemaName": "staging",
+      "x": 600,
+      "y": 144
+    },
+    {
+      "name": "returns_src",
+      "schemaName": "staging",
+      "x": 912,
+      "y": 144
+    },
+    {
+      "name": "v_orders_latest",
+      "schemaName": "staging",
+      "x": 0,
+      "y": 296
+    },
+    {
+      "name": "v_order_items_latest",
+      "schemaName": "staging",
+      "x": 280,
+      "y": 456
+    },
+    {
+      "name": "v_customers_latest",
+      "schemaName": "staging",
+      "x": 600,
+      "y": 296
+    },
+    {
+      "name": "v_returns_agg",
+      "schemaName": "staging",
+      "x": 912,
+      "y": 296
+    },
+    {
+      "name": "dim_date",
+      "schemaName": "dwh",
+      "x": 0,
+      "y": 440
+    },
+    {
+      "name": "dim_channel",
+      "schemaName": "dwh",
+      "x": 280,
+      "y": 664
+    },
+    {
+      "name": "dim_product",
+      "schemaName": "dwh",
+      "x": 600,
+      "y": 408
+    },
+    {
+      "name": "dim_customer",
+      "schemaName": "dwh",
+      "x": 912,
+      "y": 408
+    },
+    {
+      "name": "fact_sales",
+      "schemaName": "dwh",
+      "x": 0,
+      "y": 592
+    },
+    {
+      "name": "etl_run_log",
+      "schemaName": "dwh",
+      "x": 280,
+      "y": 816
+    }
+  ],
+  "tableGroupCollapseStates": [],
+  "stickyNoteLayouts": [],
+  "referencePaths": [
+    {
+      "firstFieldNames": [
+        "date_key"
+      ],
+      "firstTableName": "fact_sales",
+      "firstSchemaName": "dwh",
+      "firstRelation": "*",
+      "secondFieldNames": [
+        "date_key"
+      ],
+      "secondTableName": "dim_date",
+      "secondSchemaName": "dwh",
+      "secondRelation": "1",
+      "checkPoints": []
+    },
+    {
+      "firstFieldNames": [
+        "product_key"
+      ],
+      "firstTableName": "fact_sales",
+      "firstSchemaName": "dwh",
+      "firstRelation": "*",
+      "secondFieldNames": [
+        "product_key"
+      ],
+      "secondTableName": "dim_product",
+      "secondSchemaName": "dwh",
+      "secondRelation": "1",
+      "checkPoints": []
+    },
+    {
+      "firstFieldNames": [
+        "customer_key"
+      ],
+      "firstTableName": "fact_sales",
+      "firstSchemaName": "dwh",
+      "firstRelation": "*",
+      "secondFieldNames": [
+        "customer_key"
+      ],
+      "secondTableName": "dim_customer",
+      "secondSchemaName": "dwh",
+      "secondRelation": "1",
+      "checkPoints": []
+    },
+    {
+      "firstFieldNames": [
+        "channel_key"
+      ],
+      "firstTableName": "fact_sales",
+      "firstSchemaName": "dwh",
+      "firstRelation": "*",
+      "secondFieldNames": [
+        "channel_key"
+      ],
+      "secondTableName": "dim_channel",
+      "secondSchemaName": "dwh",
+      "secondRelation": "1",
+      "checkPoints": []
+    },
+    {
+      "firstFieldNames": [
+        "order_id"
+      ],
+      "firstTableName": "orders_src",
+      "firstSchemaName": "staging",
+      "firstRelation": "*",
+      "secondFieldNames": [
+        "order_id"
+      ],
+      "secondTableName": "orders_src",
+      "secondSchemaName": "sources",
+      "secondRelation": "1",
+      "checkPoints": []
+    },
+    {
+      "firstFieldNames": [
+        "order_id",
+        "line_id"
+      ],
+      "firstTableName": "order_items_src",
+      "firstSchemaName": "staging",
+      "firstRelation": "*",
+      "secondFieldNames": [
+        "order_id",
+        "line_id"
+      ],
+      "secondTableName": "order_items_src",
+      "secondSchemaName": "sources",
+      "secondRelation": "1",
+      "checkPoints": []
+    },
+    {
+      "firstFieldNames": [
+        "customer_ref"
+      ],
+      "firstTableName": "customers_src",
+      "firstSchemaName": "staging",
+      "firstRelation": "*",
+      "secondFieldNames": [
+        "customer_ref"
+      ],
+      "secondTableName": "customers_src",
+      "secondSchemaName": "sources",
+      "secondRelation": "1",
+      "checkPoints": []
+    },
+    {
+      "firstFieldNames": [
+        "return_id"
+      ],
+      "firstTableName": "returns_src",
+      "firstSchemaName": "staging",
+      "firstRelation": "*",
+      "secondFieldNames": [
+        "return_id"
+      ],
+      "secondTableName": "returns_src",
+      "secondSchemaName": "sources",
+      "secondRelation": "1",
+      "checkPoints": []
+    },
+    {
+      "firstFieldNames": [
+        "product_id"
+      ],
+      "firstTableName": "dim_product",
+      "firstSchemaName": "dwh",
+      "firstRelation": "*",
+      "secondFieldNames": [
+        "product_id"
+      ],
+      "secondTableName": "order_items_src",
+      "secondSchemaName": "staging",
+      "secondRelation": "1",
+      "checkPoints": []
+    },
+    {
+      "firstFieldNames": [
+        "customer_ref"
+      ],
+      "firstTableName": "dim_customer",
+      "firstSchemaName": "dwh",
+      "firstRelation": "*",
+      "secondFieldNames": [
+        "customer_ref"
+      ],
+      "secondTableName": "customers_src",
+      "secondSchemaName": "staging",
+      "secondRelation": "1",
+      "checkPoints": []
+    },
+    {
+      "firstFieldNames": [
+        "order_id",
+        "line_id"
+      ],
+      "firstTableName": "fact_sales",
+      "firstSchemaName": "dwh",
+      "firstRelation": "*",
+      "secondFieldNames": [
+        "order_id",
+        "line_id"
+      ],
+      "secondTableName": "v_order_items_latest",
+      "secondSchemaName": "staging",
+      "secondRelation": "1",
+      "checkPoints": []
+    },
+    {
+      "firstFieldNames": [
+        "order_id"
+      ],
+      "firstTableName": "fact_sales",
+      "firstSchemaName": "dwh",
+      "firstRelation": "*",
+      "secondFieldNames": [
+        "order_id"
+      ],
+      "secondTableName": "v_orders_latest",
+      "secondSchemaName": "staging",
+      "secondRelation": "1",
+      "checkPoints": []
+    }
+  ]
+}

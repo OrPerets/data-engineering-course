@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Practice 4 Lineage</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./styles.css?v=compact-flow-1" />
+    <script src="https://unpkg.com/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar" aria-labelledby="page-title">
+        <div class="title-block">
+          <p class="eyebrow">Practice 4 / DWH + ETL</p>
+          <h1 id="page-title">SQL Lineage</h1>
+        </div>
+      </header>
+
+      <section class="step-shell" aria-label="שלבי התהליך">
+        <nav class="step-strip" aria-label="בחירת שלב">
+          <div id="stepButtons" class="step-buttons"></div>
+        </nav>
+      </section>
+
+      <section class="workspace" aria-label="אזור ויזואליזציה">
+        <section class="step-board-panel" aria-label="טבלאות ועמודות בשלב הנוכחי">
+          <div class="key-legend" aria-label="מקרא מפתחות ושדות">
+            <span title="Primary key"><b>PK</b></span>
+            <span title="Business key"><b>BK</b></span>
+            <span title="Foreign key"><b>FK</b></span>
+            <span title="Fact row grain"><b>Grain</b></span>
+            <span title="Metric / measure"><b>Metric</b></span>
+          </div>
+          <div id="stepBoard" class="step-board"></div>
+        </section>
+
+        <section class="graph-stage" aria-label="גרף אינטראקטיבי">
+          <div class="graph-toolbar">
+            <div class="toolbar-actions">
+              <button id="fitButton" type="button" title="Fit graph to screen">Fit</button>
+              <button id="resetButton" type="button" title="Clear selection">Reset</button>
+            </div>
+            <div class="trace-picker" aria-label="נתיבי דוגמה">
+              <span>Trace</span>
+              <div id="traceButtons" class="trace-buttons"></div>
+            </div>
+            <label class="tech-toggle">
+              <input id="techToggle" type="checkbox" />
+              Tech fields
+            </label>
+          </div>
+          <div id="cy" class="graph-canvas" role="img" aria-label="גרף שכבות ETL לפי שלבים"></div>
+          <div class="legend" aria-label="מקרא">
+            <span title="source tables"><i class="legend-swatch schema-source type-table"></i>source</span>
+            <span title="raw staging tables"><i class="legend-swatch schema-staging type-table"></i>raw</span>
+            <span title="clean staging views"><i class="legend-swatch schema-staging type-view"></i>view</span>
+            <span title="dimension tables"><i class="legend-swatch schema-dwh type-dim"></i>dim</span>
+            <span title="fact table"><i class="legend-swatch schema-dwh type-fact"></i>fact</span>
+            <span title="analytics queries"><i class="legend-swatch schema-analytics type-query"></i>KPI</span>
+          </div>
+        </section>
+
+        <div id="subflowBoard" class="subflow-board graph-subflow" aria-live="polite"></div>
+        <section class="learning-dock" aria-label="בחירה וטרנספורמציות">
+          <div id="detailsContent" class="selection-summary" aria-live="polite"></div>
+          <section class="transform-panel compact-transform-panel" aria-label="כללי טרנספורמציה">
+            <div class="transform-header">
+              <h2>Rules</h2>
+              <p id="transformCount" class="transform-count"></p>
+            </div>
+            <div id="transformBoard" class="transform-board"></div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <script src="./data.js?v=compact-flow-1"></script>
+    <script src="./app.js?v=compact-flow-1"></script>
+  </body>
+</html>

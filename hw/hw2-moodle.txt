@@ -1,0 +1,156 @@
+מהו המאפיין המרכזי של Data Warehouse?
+A) מאגר זמני ללא סכמה שמיועד רק לקבצי raw
+B) מאגר נתונים מאורגן, היסטורי ומותאם לשאילתות אנליטיות ו-BI
+C) מערכת OLTP שמעדכנת עסקאות בזמן אמת בלבד
+D) כלי להרצת MapReduce בלבד
+ANSWER: B
+מהו ״גרנולריות״ של Fact Table?
+A) סוג האינדקס הפיזי של הטבלה
+B) ההגדרה המדויקת של מה מייצגת שורה אחת בטבלת העובדות
+C) מספר השרתים שמריצים את השאילתה
+D) שם המפתח הראשי במערכת המקור
+ANSWER: B
+למה משתמשים בטבלאות Dimension ב-Data Warehouse?
+A) כדי לשמור רק לוגים טכניים של pipeline
+B) כדי לתאר ישויות כמו תאריך, מוצר, לקוח או אזור ולאפשר חיתוך וניתוח של מדדים
+C) כדי להחליף את כל טבלאות ה-Fact
+D) כדי להריץ reducers
+ANSWER: B
+מהו תהליך ETL?
+A) Extract, Transform, Load
+B) Encode, Train, Learn
+C) Execute, Test, Log
+D) Export, Transfer, Link
+ANSWER: A
+מה ההבדל המרכזי בין ETL ל-ELT?
+A) ב-ETL הטרנספורמציה מתבצעת לפני הטעינה ליעד; ב-ELT טוענים קודם ואז מבצעים טרנספורמציה בתוך פלטפורמת היעד
+B) ELT אינו כולל Load
+C) ETL מתאים רק לנתונים לא מובנים
+D) אין הבדל ביניהם
+ANSWER: A
+מהי אידמפוטנטיות בתהליך טעינה?
+A) כל הרצה חוזרת מכפילה את הנתונים ביעד
+B) הרצה חוזרת על אותו קלט משאירה את מצב היעד הסופי זהה
+C) כל job חייב לרוץ פעם אחת בלבד
+D) כל שורה מקבלת מפתח אקראי חדש בכל הרצה
+ANSWER: B
+מהו STTM?
+A) Source To Target Mapping
+B) Structured Text Transformation Model
+C) Storage Transaction Table Manager
+D) Streaming Token Transfer Method
+ANSWER: A
+מה תפקידו המרכזי של מסמך STTM?
+A) להגדיר כיצד שדות מקור ממופים לשדות יעד, כולל כללי המרה, ניקוי וברירת מחדל
+B) להחליף את כל בדיקות האיכות
+C) לבחור את מספר ה-reducers בלבד
+D) לחשב IDF עבור קורפוס
+ANSWER: A
+באיזה מצב STTM חשוב במיוחד?
+A) כאשר סכמת המקור והיעד אינן זהות ונדרשים כללי טרנספורמציה מפורשים
+B) כאשר קיימת רק טבלה אחת ללא עמודות
+C) כאשר אין תהליך טעינה
+D) כאשר הנתונים אינם נשמרים כלל
+ANSWER: A
+מהי דוגמה טובה לכלל מיפוי ב-STTM?
+A) target.total_price = source.qty * source.unit_price
+B) כל הנתונים עוברים כמו שהם בלי בדיקה
+C) reducer אחד תמיד מספיק
+D) IDF = count / doc_length
+ANSWER: A
+מהי מטרת שלב ה-Map ב-MapReduce?
+A) לקרוא קלט ולפלוט זוגות ביניים מסוג key-value
+B) לשמור את התוצאה הסופית בלבד
+C) למחוק את שלב ה-Shuffle
+D) להריץ שאילתות OLTP
+ANSWER: A
+מהי מטרת שלב ה-Reduce ב-MapReduce?
+A) לקבל את הערכים של כל מפתח ולחשב תוצאה מאוחדת עבור אותו מפתח
+B) לחלק מסמך למילים בלבד
+C) לבחור סכמה ל-Data Warehouse
+D) לבצע normalization של Dimension
+ANSWER: A
+למה Shuffle הוא לעיתים צוואר בקבוק?
+A) כי הוא כולל העברת נתונים ברשת ומיון או קיבוץ של זוגות ביניים רבים
+B) כי הוא תמיד רץ בזיכרון של Mapper יחיד
+C) כי הוא מבטל את הצורך ב-Reducers
+D) כי הוא לא משתמש בנתונים
+ANSWER: A
+ב-Word Count, Mapper פולט (word, 1). מה יפלוט Reducer עבור המפתח data אם קיבל את הערכים [1, 1, 1, 1]?
+A) (data, 4)
+B) (data, 1)
+C) (1, data)
+D) (data, [1, 1, 1, 1]) בלבד כתוצאה סופית
+ANSWER: A
+מהו TF במדד TF-IDF?
+A) שכיחות המונח במסמך, לרוב count(term, doc) / total_terms(doc)
+B) מספר כל המסמכים בקורפוס
+C) מספר השרתים ב-cluster
+D) מספר טבלאות Dimension
+ANSWER: A
+מהו IDF במדד TF-IDF?
+A) מדד שמגדיל משקל למונחים נדירים יחסית בקורפוס
+B) מספר הפעמים שמונח מופיע במסמך יחיד בלבד
+C) סוג של מפתח זר ב-Star Schema
+D) שלב טעינה ב-ETL
+ANSWER: A
+אם מונח מופיע 4 פעמים במסמך באורך 100 מילים, מה ה-TF לפי count/|doc|?
+A) 0.04
+B) 0.4
+C) 4
+D) 25
+ANSWER: A
+אם N=1000 מסמכים ו-df=10, מהו IDF לפי log10(N/df)?
+A) 2
+B) 10
+C) 0.01
+D) 100
+ANSWER: A
+למה TF-IDF נותן משקל נמוך למילים נפוצות מאוד כמו "the" או "את"?
+A) כי df שלהן גבוה ולכן ה-IDF שלהן נמוך
+B) כי TF שלהן תמיד אפס
+C) כי הן תמיד נמחקות על ידי Reducer
+D) כי הן לא יכולות להופיע במסמך
+ANSWER: A
+מהו אתגר מרכזי בחישוב TF-IDF ב-MapReduce?
+A) צריך גם שכיחות בתוך כל מסמך וגם document frequency גלובלי לכל מונח
+B) TF-IDF אינו דורש קורפוס
+C) אין צורך בשלב Shuffle
+D) כל Mapper יודע מראש את כל df הגלובלי בלי תקשורת
+ANSWER: A
+בטבלה sales יש את השורות הבאות: customer | amount; Dana | 100; Dana | 50; Eli | 80. מה תהיה תוצאת השאילתה עבור Dana? SELECT customer, amount, SUM(amount) OVER (PARTITION BY customer) AS customer_total FROM sales;
+A) שתי השורות של Dana יקבלו customer_total = 150
+B) רק השורה עם amount=100 תקבל customer_total = 150
+C) שתי השורות של Dana יקבלו customer_total = 100
+D) השאילתה תחזיר שורה אחת בלבד לכל customer
+ANSWER: A
+השאילתה הבאה מחזירה שגיאה במערכות SQL רבות: SELECT customer, order_date, amount, ROW_NUMBER(PARTITION BY customer ORDER BY order_date) AS rn FROM orders; מה התיקון הנכון?
+A) להוסיף OVER לפני הסוגריים: ROW_NUMBER() OVER (PARTITION BY customer ORDER BY order_date)
+B) להסיר את ORDER BY מתוך הפונקציה
+C) להחליף ROW_NUMBER ב-SUM בלי OVER
+D) להוסיף GROUP BY customer בלבד
+ANSWER: A
+במסמך באורך 200 מילים, המונח data מופיע 6 פעמים. בקורפוס יש N=1000 מסמכים, ומתוכם df=100 כוללים את המונח. מהו TF-IDF לפי TF=count/|doc| ו-IDF=log10(N/df)?
+A) 0.03
+B) 0.3
+C) 1
+D) 30
+ANSWER: A
+במסמך באורך 50 מילים, המונח sql מופיע 5 פעמים. בקורפוס יש N=100 מסמכים, ומתוכם df=10 כוללים את המונח. מהו TF-IDF לפי TF=count/|doc| ו-IDF=log10(N/df)?
+A) 0.1
+B) 1
+C) 10
+D) 0.01
+ANSWER: A
+בגרף PageRank פשוט ללא damping, לדף A יש קישור נכנס יחיד מדף B. ל-B יש PageRank=0.6 ושני קישורים יוצאים. מה התרומה של B ל-PageRank של A?
+A) 0.3
+B) 0.6
+C) 1.2
+D) 2
+ANSWER: A
+בחישוב PageRank עם damping=0.85 ו-N=4, סכום התרומות הנכנסות לדף הוא 0.5. מה ערך ה-PageRank החדש לפי הנוסחה (1-d)/N + d * incoming_sum?
+A) 0.4625
+B) 0.5
+C) 0.85
+D) 0.0375
+ANSWER: A

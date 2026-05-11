@@ -1,0 +1,346 @@
+\documentclass[10pt,a4paper]{article}
+
+\usepackage[a4paper,margin=1.25cm]{geometry}
+\usepackage{amsmath,amssymb,booktabs,tabularx,array,multicol,enumitem,xcolor}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setmainlanguage{hebrew}
+\setotherlanguage{english}
+\setmainfont{Arial}
+\newfontfamily\hebrewfont[Script=Hebrew]{Arial}
+\newfontfamily\englishfont{Arial}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{2pt}
+\setlength{\columnsep}{0.8cm}
+\setlist[itemize]{leftmargin=*,topsep=2pt,itemsep=1pt,parsep=0pt}
+\setlist[enumerate]{leftmargin=*,topsep=2pt,itemsep=1pt,parsep=0pt}
+\renewcommand{\arraystretch}{1.12}
+
+\definecolor{sectionblue}{HTML}{0B3D5C}
+\definecolor{lightgray}{HTML}{F4F6F8}
+
+\newcommand{\eng}[1]{\textenglish{#1}}
+\newcommand{\code}[1]{\textenglish{\texttt{\detokenize{#1}}}}
+\newcommand{\term}[1]{\textbf{#1}}
+\newcommand{\formula}[1]{\[
+#1
+\]}
+
+\newenvironment{cheatbox}[1]{
+  \vspace{2pt}
+  \noindent\colorbox{lightgray}{\parbox{\dimexpr\linewidth-2\fboxsep}{\textbf{\color{sectionblue}#1}}}
+  \vspace{2pt}
+}{\vspace{3pt}}
+
+\begin{document}
+
+\begin{center}
+{\Large \textbf{דף נוסחאות והגדרות לבחינה - הנדסת נתונים}}\\
+{\small מבוסס על נושאי הקורס: מערכות מבוזרות, \eng{ETL/DWH}, \eng{MapReduce}, טקסט, סטרימינג, מאפיינים, \eng{DataOps} ו-\eng{SQL}.}
+\end{center}
+
+\begin{multicols}{2}
+
+\begin{cheatbox}{1. עקרונות יסוד וצינורות נתונים}
+\term{הנדסת נתונים}: תכנון, בנייה ותפעול של צינורות נתונים אמינים, מדרגיים וניתנים לניטור, כך שנתונים גולמיים הופכים לנתונים שימושיים לצריכה אנליטית או מודלית.
+
+\term{צינור נתונים בסיסי}: מקור $\rightarrow$ קליטה $\rightarrow$ אחסון גולמי $\rightarrow$ טרנספורמציה $\rightarrow$ שכבה אוצרת $\rightarrow$ צריכה.
+
+\term{מודל זמן כולל}:
+\formula{T_{total}=T_{ingest}+T_{transform}+T_{aggregate}+T_{load}}
+או, בגרסת \eng{ETL}:
+\formula{T_{total}=T_{extract}+T_{transform}+T_{load}}
+
+\term{קיבולת אחסון}:
+\formula{S=\frac{V_d \cdot R \cdot r}{c}}
+$V_d$ - נפח יומי; $R$ - מספר ימי שמירה; $r$ - פקטור שכפול; $c$ - יחס דחיסה.
+
+\term{עלות העברה ברשת}: בקירוב, \eng{NetworkBytes} = מספר רשומות $\times$ גודל רשומה. העברה בין אזורים או בין צמתים עלולה להיות צוואר בקבוק.
+
+\term{\eng{Batch} מול \eng{Streaming}}: \eng{Batch} פשוט וזול יותר אך בעל שיהוי גבוה; \eng{Streaming} מתאים ל-\eng{SLA} נמוך אך דורש חלונות זמן, מצב, טיפול באיחורים וכתיבה אידמפוטנטית.
+\end{cheatbox}
+
+\begin{cheatbox}{2. מסדי נתונים מבוזרים}
+\term{חלוקה למחיצות}: פיזור נתונים בין צמתים לפי מפתח.
+\formula{partition(k)=hash(k)\bmod R}
+
+\term{עומס נתונים לצומת}:
+\formula{S_{node}=\frac{D\cdot r}{N}}
+$D$ - נפח נתונים; $r$ - מספר עותקים; $N$ - מספר צמתים.
+
+\term{זמינות בקירוב עם שכפול}:
+\formula{P_{avail}\approx 1-p^r}
+$p$ - הסתברות כשל של צומת; $r$ - פקטור שכפול.
+
+\term{\eng{Replication}}: שמירת עותקים של אותם נתונים לצורך זמינות וקריאה מהירה. המחיר: עלות אחסון, כתיבה, סנכרון וסיכון לקריאות ישנות.
+
+\term{\eng{Stale read}}: קריאה מרפליקה שעדיין לא קיבלה כתיבה חדשה. המדד המרכזי: \eng{replication lag}.
+
+\term{\eng{SQL} מול \eng{NoSQL}}:
+\begin{itemize}
+  \item \eng{SQL}: טוב ליחסים, \eng{JOIN}, עקביות ועסקאות; יקר יותר ב-\eng{cross-partition joins}.
+  \item \eng{NoSQL}: טוב לגישה לפי מפתח, זמינות וסקייל אופקי; דורש דנורמליזציה ולוגיקה אפליקטיבית.
+\end{itemize}
+
+\term{\eng{ACID}}: אטומיות, עקביות, בידוד, עמידות. מתאים לטרנזקציות קריטיות.
+
+\term{\eng{BASE}}: זמינות בסיסית, מצב רך, עקביות בסוף התהליך. מתאים לסקייל גבוה עם פשרות עקביות.
+
+\term{\eng{CAP}}: בזמן חלוקת רשת לא ניתן לקבל גם עקביות חזקה וגם זמינות מלאה. בוחרים \eng{CP} או \eng{AP}.
+\end{cheatbox}
+
+\begin{cheatbox}{3. מקביליות, חלוקה ועומס}
+\term{מקביליות}: משימות רצות בו-זמנית בפועל. \term{קונקרנציה}: משימות מתקדמות בחפיפה, גם אם לא בו-זמנית.
+
+\term{תהליך מול חוט}: תהליך מבודד יותר וכבד יותר; חוט קל יותר אך חולק זיכרון ולכן חשוף למצבי מרוץ.
+
+\term{מודל עבודה ומסלול קריטי}:
+\formula{T_p\ge \max\left(\frac{W}{p},S\right)}
+\formula{\text{Speedup}\le \frac{W}{S}}
+$W$ - כלל העבודה; $S$ - המסלול הקריטי; $p$ - מספר עובדים.
+
+\term{חוק אמדל}:
+\formula{Speedup(p)=\frac{1}{(1-\alpha)+\frac{\alpha}{p}}}
+$\alpha$ - החלק שניתן למקבל. כאשר $p\to\infty$, ההאצה חסומה על ידי החלק הסדרתי.
+
+\term{\eng{Skew}}: התפלגות לא מאוזנת של מפתחות או מחיצות. מדד שימושי:
+\formula{SkewRatio=\frac{\max(\text{partition size})}{median(\text{partition size})}}
+
+\term{טיפול ב-\eng{skew}}: אגרגציה מקומית, \eng{salting}, מחלק מותאם אישית, שינוי מפתח חלוקה, או פיצול מפתח חם לשני שלבים.
+\end{cheatbox}
+
+\begin{cheatbox}{4. \eng{ETL}, קליטה ואידמפוטנטיות}
+\term{\eng{ETL}}: חילוץ, טרנספורמציה ואז טעינה. טוב כאשר רוצים בקרת איכות לפני המחסן.
+
+\term{\eng{ELT}}: חילוץ וטעינה קודם, טרנספורמציה בתוך המחסן. טוב כאשר למחסן יש כוח חישוב גדול ורוצים לשמור נתונים גולמיים.
+
+\term{\eng{CDC}}: לכידת שינויים בלבד: \code{INSERT}, \code{UPDATE}, \code{DELETE}. מפחית טעינות מלאות.
+
+\term{\eng{Watermark}}: נקודת זמן או מזהה שמגדירים עד איפה נקראו נתונים בהצלחה. כלל חשוב: מקדמים \eng{watermark} רק אחרי פרסום מוצלח.
+
+\term{גבול קריאה בטוח}:
+\formula{upper\_bound=now-safety\_buffer}
+ה-\eng{safety buffer} מונע דילוג על רשומות שהגיעו מאוחר למקור.
+
+\term{אידמפוטנטיות}:
+\formula{f(f(D))=f(D)}
+הרצה חוזרת על אותו קלט לא משנה את מצב היעד. מממשים עם \code{MERGE}, \code{UPSERT}, או overwrite למחיצה מוגדרת.
+
+\term{דה-דופליקציה דטרמיניסטית}: בוחרים מפתח עסקי, כלל שבירת שוויון יציב, ושורד יחיד לכל מפתח.
+
+\term{טבלת בקרה}: \code{run_id}, \code{job_key}, \code{watermark}, \code{upper_bound}, \code{status}, \code{rows_read}, \code{rows_loaded}, \code{error_code}. מצבים טיפוסיים: \code{STARTED -> VALIDATED -> LOADED -> PUBLISHED}; כשל עובר ל-\code{FAILED}.
+\end{cheatbox}
+
+\begin{cheatbox}{5. מחסן נתונים, אגם נתונים ומידול}
+\term{\eng{DWH}}: שכבה מובנית ואוצרת לדוחות ו-\eng{BI}. לרוב \eng{schema-on-write}.
+
+\term{\eng{Data Lake}}: אחסון גולמי או חצי-מעובד בקנה מידה גדול. לרוב \eng{schema-on-read}.
+
+\term{טבלת \eng{Fact}}: מדדים כמותיים ברמת גרעין מוגדרת. \term{טבלת \eng{Dimension}}: מאפיינים לתיאור, סינון וחיתוך.
+
+\term{גרעין \eng{Fact}}: הרמה המדויקת של שורה אחת בטבלת העובדות. בלי גרעין ברור נוצרים מדדים כפולים.
+
+\term{\eng{Star schema}}: טבלת עובדות מרכזית ומסביבה מימדים. טוב לשאילתות \eng{BI}. \term{\eng{Snowflake schema}}: מימדים מנורמלים יותר; פחות כפילות, יותר \eng{joins}.
+
+\term{\eng{SCD Type 2}}: שמירת היסטוריה של מימד עם \code{valid_from}, \code{valid_to}, \code{is_current} ומפתח סרוגייט.
+
+\term{עלות סריקה עם \eng{partition pruning}}:
+\formula{\text{ScanCost}=s\cdot |F|}
+$|F|$ - גודל טבלת העובדות; $s$ - חלק המחיצות שנקרא. אם $s=0.05$, נסרקים רק 5\% מהנתונים.
+
+\term{עלות \eng{join} אינטואיטיבית}:
+\formula{\text{JoinWork}\approx O(|F_{pruned}|+\sum_i |D_i|)}
+ה-\eng{Fact} המסונן בדרך כלל דומיננטי. מימדים גדולים יכולים לגרום \eng{shuffle} ו-\eng{spill}.
+
+\term{כלל בחינה}: תמיד לציין גרעין, מפתחות, מחיצות, מימדים, מדדים, וסיכון של סריקה מלאה.
+\end{cheatbox}
+
+\begin{cheatbox}{6. \eng{MapReduce}}
+\term{מודל}: \eng{Map} פולט זוגות $(k_2,v_2)$; \eng{Shuffle} מקבץ לפי מפתח; \eng{Reduce} מחשב תוצאה לכל מפתח.
+
+\term{עלות \eng{Shuffle}}:
+\formula{C_{shuffle}=E\cdot s}
+$E$ - מספר זוגות שנפלטו מה-\eng{map}; $s$ - גודל זוג ממוצע. מפחיתים עלות בעזרת \eng{combiner}, סינון מוקדם, קידוד קומפקטי ואגרגציה מקומית.
+
+\term{פירוק זמן ריצה}:
+\formula{T_{total}=T_{map}+T_{shuffle}+T_{reduce}}
+בפועל, \eng{shuffle} וה-\eng{reducer} הגדול ביותר קובעים את זמן הסיום.
+
+\term{\eng{Combiner}}: אגרגציה מקומית לפני \eng{shuffle}. בטוח רק לפעולות אסוציאטיביות וקומוטטיביות כגון סכום, ספירה, מינימום ומקסימום. ממוצע דורש לשמור $(sum,count)$ ולא ממוצע מקומי בלבד.
+
+\term{\eng{Partitioner}}: קובע לאיזה \eng{Reducer} נשלח כל מפתח. ברירת מחדל: \code{hash(key) mod R}.
+
+\term{\eng{Reduce-side join}}: שני מקורות פולטים אותו מפתח הצטרפות. המחיר: \eng{shuffle} של שני הצדדים. אם צד קטן נכנס לזיכרון, שקלו \eng{broadcast/map-side join}.
+
+\term{תבניות נפוצות}: \eng{word count}; אינדקס הפוך; סינון במפה; מכפלת מטריצה-וקטור בשני שלבים; \eng{PageRank}.
+\end{cheatbox}
+
+\begin{cheatbox}{7. אלגוריתמים מבוזרים}
+\term{מכפלת מטריצה-וקטור}:
+\formula{y_i=\sum_j A_{i,j}\cdot v_j}
+שלב 1: מפתח $j$, מצמידים ערכי $A_{i,j}$ לערך $v_j$ ופולטים $(i,A_{i,j}v_j)$. שלב 2: מקבצים לפי $i$ וסוכמים.
+
+\term{\eng{PageRank} עם דעיכה}:
+\formula{\mathrm{PR}_1(p)=\frac{1-d}{N}+d\left(\sum_{q\to p}\frac{\mathrm{PR}_0(q)}{|\Gamma(q)|}+\frac{M}{N}\right)}
+$d$ - מקדם דעיכה; $N$ - מספר דפים; $\Gamma(q)$ - קישורים יוצאים מ-$q$; $M$ - מסה של צמתים תלויים ללא קישורים יוצאים.
+
+\term{כלל}: ב-\eng{PageRank} מותר לשלב תרומות מספריות ב-\eng{combiner}, אך אסור לאבד את רשימת השכנים.
+\end{cheatbox}
+
+\begin{cheatbox}{8. טקסט, \eng{TF-IDF}, \eng{n-grams} ודמיון}
+\term{טוקניזציה}: פירוק טקסט למונחים. חובה להגדיר ניקוי, אותיות גדולות/קטנות, סימני פיסוק, עצירות, ושפת מקור.
+
+\term{\eng{TF}}:
+\formula{\text{tf}(t,d)=\frac{f_{t,d}}{|d|}}
+$f_{t,d}$ - מספר הופעות המונח $t$ במסמך $d$; $|d|$ - אורך המסמך.
+
+\term{\eng{DF}}:
+\formula{\text{df}(t)=|\{d:t\in d\}|}
+
+\term{\eng{IDF}}:
+\formula{\text{idf}(t)=\log\left(\frac{N+1}{\text{df}(t)+1}\right)}
+בתרגילים ייתכן גם $\log(N/df)$. חשוב לציין בסיס לוג אם נדרש.
+
+\term{\eng{TF-IDF}}:
+\formula{\text{tfidf}(t,d)=\text{tf}(t,d)\cdot \text{idf}(t)}
+גבוה כאשר מונח נפוץ במסמך אך נדיר בקורפוס.
+
+\term{מספר \eng{n-grams} במסמך באורך $L$}:
+\formula{\max(L-n+1,0)}
+\term{גודל מילון אפשרי}:
+\formula{|V_n|\le |V|^n}
+
+\term{מודל שפה \eng{n-gram}}:
+\formula{P(w_{1:T})\approx\prod_{t=1}^{T}P(w_t\mid w_{t-n+1:t-1})}
+\formula{\hat P(w\mid h)=\frac{c(h,w)}{c(h)}}
+
+\term{דמיון קוסינוס}:
+\formula{\cos(a,b)=\frac{a\cdot b}{\|a\|\|b\|}}
+ערך קרוב ל-1 מצביע על כיוון דומה של וקטורים.
+\end{cheatbox}
+
+\begin{cheatbox}{9. סטרימינג ואלגוריתמי קירוב}
+\term{מודל זרם}: כל איבר נקרא פעם אחת או מעט פעמים, והזיכרון מוגבל. לכן לעיתים משתמשים ב-\eng{sketch}.
+
+\term{תוחלת ושונות}:
+\formula{E[X]=\sum_i x_iP(X=x_i)}
+\formula{V[X]=E[X^2]-(E[X])^2}
+
+\term{קירוב הסתברותי}:
+\formula{P(|\hat X-X|\le \epsilon X)\ge 1-\delta}
+$\epsilon$ - שגיאה יחסית; $\delta$ - הסתברות כשל.
+
+\term{\eng{Union bound}}:
+\formula{P(E_1\cup\cdots\cup E_n)\le \sum_i P(E_i)}
+
+\term{\eng{Markov}}:
+\formula{P(X>(1+\epsilon)\mu)\le \frac{1}{1+\epsilon}}
+\term{\eng{Chebyshev}}:
+\formula{P(|X-\mu|\ge \epsilon\mu)\le \frac{\sigma^2}{\mu^2\epsilon^2}}
+
+\term{\eng{Morris counter}}: מתחילים $X=0$; עבור כל איבר מגדילים את $X$ בהסתברות $2^{-X}$.
+\formula{\hat n=2^X-1}
+גרסת ממוצע עם $s$ מונים:
+\formula{\hat n=\frac{1}{s}\sum_i(2^{X_i}-1),\qquad s\ge \frac{1}{\delta\epsilon^2}}
+
+\term{\eng{Distinct count} $F_0$}: מספר ערכים שונים בזרם. חישוב מדויק דורש זיכרון גדול; \eng{FM/HLL} נותנים קירוב.
+
+\term{\eng{HyperLogLog}}:
+\formula{\text{Relative Error}\approx \frac{1.04}{\sqrt{m}}}
+$m$ - מספר רגיסטרים.
+
+\term{\eng{Count-Min Sketch}}: מעריך תדירות לכל מפתח, נוטה להערכת יתר בגלל התנגשויות. מתאים לזיהוי \eng{heavy hitters}.
+
+\term{חלונות זמן}: \eng{tumbling} לא חופפים; \eng{sliding} חופפים; \eng{session} תלויים בפעילות משתמש.
+
+\term{\eng{Event time}} לעומת \eng{processing time}: זמן האירוע עצמו מול זמן הגעתו למערכת. \eng{Watermark} מגדיר עד מתי מצפים לאירועים מאוחרים.
+\end{cheatbox}
+
+\begin{cheatbox}{10. הנדסת מאפיינים}
+\term{מאפיין נכון בזמן}:
+\formula{f(e,t)=g(\{x\mid x.entity=e,\ x.ts\le t\})}
+אסור להשתמש במידע אחרי זמן החיזוי.
+
+\term{עקביות אימון-שירות}:
+\formula{f_{train}(e,t)=f_{serve}(e,t)}
+אותו חישוב ואותן הגדרות חייבים לשמש באימון ובפרודקשן.
+
+\term{אחסון מאפיינים}:
+\formula{\text{feature\_storage}\approx N_{entities}\times N_{asof}\times bytes\_per\_row}
+
+\term{נרמול \eng{Min-Max}}:
+\formula{x'=\frac{x-\min(x)}{\max(x)-\min(x)}}
+
+\term{סטנדרטיזציה}:
+\formula{z=\frac{x-\mu}{\sigma}}
+
+\term{\eng{One-hot}}: עמודה בינארית לכל קטגוריה. מתאים לקרדינליות נמוכה. \term{\eng{Hashing trick}}: ממפה קטגוריות למספר קבוע של ממדים, עם סיכון להתנגשויות.
+
+\term{\eng{Target encoding}}: החלפת קטגוריה בממוצע יעד. חובה להשתמש בחלוקה תקינה או \eng{out-of-fold} כדי למנוע דליפת יעד.
+
+\term{עבודת \eng{backfill} מול אינקרמנטלי}:
+\formula{Work_{backfill}=O(|D|\cdot T),\qquad Work_{incremental}=O(|\Delta|)}
+\end{cheatbox}
+
+\begin{cheatbox}{11. \eng{DataOps}, איכות וניטור}
+\term{\eng{DataOps}}: אוטומציה, בדיקות, ניטור ושחרור מבוקר של צינורות נתונים.
+
+\term{ממדי איכות}: שלמות, תקפות, ייחודיות, עקביות, עדכניות, דיוק.
+
+\term{רעננות / שיהוי נתונים}:
+\formula{L_t=now-\max(event\_ts_t)}
+
+\term{חריגה לפי ציון תקן}:
+\formula{z_t=\frac{|N_t-\mu|}{\sigma}}
+$N_t$ - מספר רשומות או מדד בזמן $t$; $\mu,\sigma$ - בסיס היסטורי.
+
+\term{שיעור מעבר בדיקות}:
+\formula{PassRate=\frac{\#passed}{\#total}}
+\term{שיעור כשל}:
+\formula{FailureRate=\frac{\#failed}{\#total}}
+
+\term{\eng{Quality gate}}: אין פרסום לשכבה צרכנית אם בדיקות קריטיות נכשלות. בדיקות לא קריטיות יכולות להתריע בלי לחסום.
+
+\term{מדדי תפעול}: זמן ריצה p50/p95/p99, רעננות, כמות שורות, אחוז \eng{DLQ}, כפילויות, \eng{SLA} שהוחמצו, עלות סריקה, \eng{retry count}.
+\end{cheatbox}
+
+\begin{cheatbox}{12. \eng{SQL} מתקדם ואופטימיזציה}
+\term{\eng{DML}}: \code{SELECT}, \code{INSERT}, \code{UPDATE}, \code{DELETE}. \term{\eng{DDL}}: \code{CREATE}, \code{DROP}, \code{ALTER}.
+
+\term{סוגי \eng{JOIN}}:
+\begin{itemize}
+  \item \code{INNER JOIN}: רק התאמות בשני הצדדים.
+  \item \code{LEFT JOIN}: כל צד שמאל, ו-\code{NULL} כשאין התאמה בימין.
+  \item \code{RIGHT JOIN}: כל צד ימין.
+  \item \code{FULL OUTER JOIN}: כל השורות משני הצדדים.
+\end{itemize}
+
+\term{\code{NULL}}: אינו מחרוזת ואינו שווה לכלום, גם לא לעצמו. משתמשים ב-\code{IS NULL} ולא ב-\code{= NULL}.
+
+\term{חלונות ב-\eng{SQL}}:
+\[
+\text{\code{func(...) OVER (PARTITION BY ... ORDER BY ...)}}
+\]
+\code{PARTITION BY} מחלק קבוצות; \code{ORDER BY} קובע סדר בתוך חלון.
+
+\term{פונקציות דירוג}: \code{ROW_NUMBER} נותן מספר ייחודי; \code{RANK} משאיר חורים אחרי תיקו; \code{DENSE_RANK} לא משאיר חורים; \code{NTILE(n)} מחלק לדליים.
+
+\term{פונקציות ערך}: \code{LAG} ערך קודם; \code{LEAD} ערך הבא; \code{FIRST_VALUE}/\code{LAST_VALUE} לפי חלון וסדר.
+
+\term{כללי אופטימיזציה}: סננו מוקדם ב-\code{WHERE}; השתמשו במפתחות \eng{join}; הימנעו מסריקה מלאה; דחפו פילטר מחיצה; בדקו קרדינליות; אל תייצרו \eng{join explosion}.
+\end{cheatbox}
+
+\begin{cheatbox}{13. תבנית תשובה לבחינה}
+\begin{enumerate}
+  \item הגדירו דרישה: \eng{SLA}, עקביות, נפח, קצב, עלות, רעננות.
+  \item בחרו ארכיטקטורה: \eng{batch/stream}, \eng{SQL/NoSQL}, \eng{DWH/lake}, \eng{ETL/ELT}.
+  \item כתבו נוסחה או אומדן: זמן, אחסון, \eng{shuffle}, סריקה, זיכרון או שגיאה.
+  \item ציינו כשל סביר: כפילויות, \eng{skew}, איחור נתונים, דליפת מאפיינים, סריקה מלאה, רגרסיה שקטה.
+  \item הוסיפו מנגנון הגנה: \eng{watermark}, \code{MERGE}, \eng{quality gate}, ניטור p95/p99, \eng{DLQ}, מחיצות, \eng{combiner}, \eng{salting}.
+\end{enumerate}
+\end{cheatbox}
+
+\end{multicols}
+
+\end{document}

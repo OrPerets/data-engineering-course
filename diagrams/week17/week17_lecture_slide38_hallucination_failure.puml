@@ -1,0 +1,49 @@
+@startuml
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing true
+skinparam roundcorner 12
+skinparam defaultFontName "Segoe UI, Arial, sans-serif"
+skinparam defaultFontSize 18
+skinparam defaultFontColor #1A237E
+skinparam backgroundColor transparent
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #5C6BC0
+  BorderThickness 2
+  FontSize 16
+  Padding 14
+}
+skinparam component<<Bad>> {
+  BorderColor #D32F2F
+  BackgroundColor #FFEBEE
+  FontColor #B71C1C
+  BorderThickness 2.5
+}
+skinparam component<<Good>> {
+  BorderColor #00897B
+  BackgroundColor #E0F2F1
+  FontColor #004D40
+  BorderThickness 2.5
+}
+skinparam arrow {
+  Color #5C6BC0
+  Thickness 2
+  FontSize 14
+  FontColor #3949AB
+}
+
+component "User asks\npolicy question" as user
+component "Prompt has\nmissing evidence" as missing <<Bad>>
+component "LM predicts\nplausible text" as lm <<Bad>>
+component "Unsupported answer\nreturned" as bad <<Bad>>
+component "Mitigation:\nretrieve evidence" as retrieve <<Good>>
+component "Mitigation:\nrequire citation" as cite <<Good>>
+
+user --> missing
+missing --> lm
+lm --> bad
+missing --> retrieve
+retrieve --> cite
+cite --> lm : grounded context
+@enduml

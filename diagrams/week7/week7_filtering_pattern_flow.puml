@@ -1,0 +1,89 @@
+@startuml
+!include ../_template_styles.puml
+
+title Filtering pattern: count only server-side errors
+
+left to right direction
+skinparam backgroundColor #FFFFFF
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam nodesep 58
+skinparam ranksep 44
+skinparam defaultFontName "Segoe UI, Arial, sans-serif"
+skinparam defaultFontSize 15
+skinparam defaultFontColor #263238
+
+skinparam rectangle {
+  BackgroundColor #F8FAFC
+  BorderColor #90A4AE
+  BorderThickness 2
+  FontColor #263238
+  FontSize 16
+  FontStyle bold
+  Padding 16
+}
+skinparam component {
+  BorderThickness 2
+  FontSize 14
+  Padding 14
+}
+skinparam component<<Input>> {
+  BorderColor #607D8B
+  BackgroundColor #F5F7F9
+  FontColor #263238
+}
+skinparam component<<Map>> {
+  BorderColor #0288D1
+  BackgroundColor #E1F5FE
+  FontColor #01579B
+}
+skinparam component<<Shuffle>> {
+  BorderColor #1565C0
+  BackgroundColor #E3F2FD
+  FontColor #0D47A1
+}
+skinparam component<<Reduce>> {
+  BorderColor #2E7D32
+  BackgroundColor #E8F5E9
+  FontColor #1B5E20
+}
+skinparam component<<Drop>> {
+  BorderColor #D32F2F
+  BackgroundColor #FFEBEE
+  FontColor #B71C1C
+}
+skinparam arrow {
+  Color #607D8B
+  Thickness 2
+  FontSize 11
+  FontColor #455A64
+}
+
+rectangle "**INPUT LAYER**" as INPUT_LAYER {
+  component "**Log partition**\nRows local to one mapper\n\nauth 200  success\ncart 404  client error\nauth 500  server error\ncart 500  server error\nsearch 500 server error" as LOGS <<Input>>
+}
+
+rectangle "**MAPPER LAYER**" as MAP_LAYER {
+  component "**Server-error predicate**\nstatus >= 500\n\nemit (service, 1)" as MAP_OK <<Map>>
+  component "**Local rejection**\nstatus < 500\n\nemit nothing" as MAP_DROP <<Drop>>
+  MAP_OK -[hidden]down- MAP_DROP
+}
+
+rectangle "**SHUFFLE LAYER**" as SHUFFLE_LAYER {
+  component "**Intermediate pairs**\nOnly error records cross network\n\n(auth,1)\n(cart,1)\n(search,1)" as PAIRS <<Shuffle>>
+  component "**Grouped by service**\nshuffle + sort\n\nauth -> [1]\ncart -> [1]\nsearch -> [1]" as GROUPED <<Shuffle>>
+  PAIRS -[hidden]down- GROUPED
+}
+
+rectangle "**REDUCE LAYER**" as REDUCE_LAYER {
+  component "**Error counts**\nsum values per key\n\nauth 1\ncart 1\nsearch 1" as OUT <<Reduce>>
+}
+
+LOGS --> MAP_OK
+LOGS ..> MAP_DROP
+MAP_OK --> PAIRS
+PAIRS --> GROUPED
+GROUPED --> OUT
+
+@enduml

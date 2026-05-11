@@ -1,0 +1,108 @@
+@startuml
+!include ../_template_styles.puml
+
+title PageRank iteration: contributions, dangling mass, and structure
+
+left to right direction
+skinparam backgroundColor #FFFFFF
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam nodesep 48
+skinparam ranksep 38
+skinparam defaultFontName "Segoe UI, Arial, sans-serif"
+skinparam defaultFontSize 15
+skinparam defaultFontColor #263238
+
+skinparam rectangle {
+  BackgroundColor #F8FAFC
+  BorderColor #90A4AE
+  BorderThickness 2
+  FontColor #263238
+  FontSize 16
+  FontStyle bold
+  Padding 16
+}
+skinparam component {
+  BorderThickness 2
+  FontSize 14
+  Padding 14
+}
+skinparam component<<Input>> {
+  BorderColor #607D8B
+  BackgroundColor #F5F7F9
+  FontColor #263238
+}
+skinparam component<<Map>> {
+  BorderColor #0288D1
+  BackgroundColor #E1F5FE
+  FontColor #01579B
+}
+skinparam component<<Dangling>> {
+  BorderColor #D32F2F
+  BackgroundColor #FFEBEE
+  FontColor #B71C1C
+}
+skinparam component<<Shuffle>> {
+  BorderColor #1565C0
+  BackgroundColor #E3F2FD
+  FontColor #0D47A1
+}
+skinparam component<<Reduce>> {
+  BorderColor #2E7D32
+  BackgroundColor #E8F5E9
+  FontColor #1B5E20
+}
+skinparam note {
+  BackgroundColor #FFFDE7
+  BorderColor #9E9D24
+  FontColor #37474F
+  FontSize 12
+}
+skinparam arrow {
+  Color #607D8B
+  Thickness 2
+  FontSize 11
+  FontColor #455A64
+}
+
+rectangle "**INPUT LAYER**" as INPUT_LAYER {
+  component "**Page records**\n(page, PR0, adjacency)\n\nA 0.25 -> [B,C]\nB 0.25 -> [C]\nC 0.25 -> [A]\nD 0.25 -> []" as PAGES <<Input>>
+}
+
+rectangle "**MAPPER LAYER**" as MAP_LAYER {
+  component "**Rank contributions**\nemit (to_page, contribution)\n\nA -> B: 0.125\nA -> C: 0.125\nB -> C: 0.25\nC -> A: 0.25" as CONTRIB <<Map>>
+  component "**Structure pass-through**\nemit adjacency list\n\n(page, adjacency_list)" as STRUCT <<Map>>
+  component "**Dangling mass**\npage D has no outlinks\n\nadd 0.25 to global mass" as DANG <<Dangling>>
+  CONTRIB -[hidden]down- STRUCT
+  STRUCT -[hidden]down- DANG
+}
+
+rectangle "**SHUFFLE LAYER**" as SHUF_LAYER {
+  component "**Grouped by page**\ncollect contributions and structure\n\nA <- [0.25] + adj [B,C]\nB <- [0.125] + adj [C]\nC <- [0.125,0.25] + adj [A]\nD <- [] + adj []" as GROUPS <<Shuffle>>
+  component "**Dangling share**\nD / N\n\n0.25 / 4 = 0.0625" as SHARE <<Shuffle>>
+  GROUPS -[hidden]down- SHARE
+}
+
+rectangle "**REDUCER LAYER**" as RED_LAYER {
+  component "**Damped update**\nPR1(p) = (1-d)/N + d*(Sin(p)+D/N)\n\nd=0.85, N=4" as FORMULA <<Reduce>>
+  component "**Updated records**\nrank plus preserved adjacency\n\nA 0.3031 -> [B,C]\nB 0.1969 -> [C]\nC 0.4094 -> [A]\nD 0.0906 -> []" as OUT <<Reduce>>
+  FORMULA -[hidden]down- OUT
+}
+
+PAGES --> CONTRIB
+PAGES --> STRUCT
+PAGES ..> DANG
+CONTRIB --> GROUPS
+STRUCT --> GROUPS
+DANG --> SHARE
+GROUPS --> FORMULA
+SHARE --> FORMULA
+FORMULA --> OUT
+
+note bottom of STRUCT
+  Adjacency is structure,
+  not rank mass.
+end note
+
+@enduml

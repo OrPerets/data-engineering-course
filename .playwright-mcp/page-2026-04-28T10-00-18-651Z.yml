@@ -1,0 +1,179 @@
+- main [ref=e2]:
+  - generic "Step-by-step SQL Lineage Visualizer" [ref=e3]:
+    - generic [ref=e4]:
+      - paragraph [ref=e5]: תרגול 4 / Data Warehouse & ETL
+      - heading "Step-by-step SQL Lineage Visualizer" [level=1] [ref=e6]
+  - region "שלבי התהליך" [ref=e7]:
+    - navigation "בחירת שלב" [ref=e8]:
+      - generic [ref=e9]:
+        - button "1 Sources Tables, columns, business keys" [ref=e10] [cursor=pointer]:
+          - generic [ref=e11]: "1"
+          - generic [ref=e12]:
+            - strong [ref=e13]: Sources
+            - generic [ref=e14]: Tables, columns, business keys
+        - button "2 Staging schema TABLE + VIEW objects" [ref=e15] [cursor=pointer]:
+          - generic [ref=e16]: "2"
+          - generic [ref=e17]:
+            - strong [ref=e18]: Staging schema
+            - generic [ref=e19]: TABLE + VIEW objects
+        - button "3 Dimensions Surrogate keys from canonical views" [ref=e20] [cursor=pointer]:
+          - generic [ref=e21]: "3"
+          - generic [ref=e22]:
+            - strong [ref=e23]: Dimensions
+            - generic [ref=e24]: Surrogate keys from canonical views
+        - button "4 Fact Join dimensions, calculate measures, MERGE by grain" [ref=e25] [cursor=pointer]:
+          - generic [ref=e26]: "4"
+          - generic [ref=e27]:
+            - strong [ref=e28]: Fact
+            - generic [ref=e29]: Join dimensions, calculate measures, MERGE by grain
+        - button "5 Analytics Consume fact and dimensions" [ref=e30] [cursor=pointer]:
+          - generic [ref=e31]: "5"
+          - generic [ref=e32]:
+            - strong [ref=e33]: Analytics
+            - generic [ref=e34]: Consume fact and dimensions
+  - region "אזור ויזואליזציה" [ref=e35]:
+    - region "טבלאות ועמודות בשלב הנוכחי" [ref=e36]:
+      - generic "מקרא מפתחות ושדות" [ref=e37]:
+        - generic [ref=e38]: PK primary
+        - generic [ref=e39]: BK business
+        - generic [ref=e40]: FK foreign
+        - generic [ref=e41]: GRAIN row grain
+        - generic [ref=e42]: MEASURE metric
+      - generic [ref=e44]:
+        - heading "sources" [level=3] [ref=e47]
+        - generic [ref=e48]:
+          - generic [ref=e49]:
+            - strong [ref=e50]: sources / TABLE
+            - generic [ref=e51]: "4"
+          - generic [ref=e52]:
+            - article [ref=e53]:
+              - button "sources TABLE orders_src" [ref=e54] [cursor=pointer]:
+                - generic [ref=e55]:
+                  - generic [ref=e56]: sources
+                  - generic [ref=e57]: TABLE
+                - strong [ref=e58]: orders_src
+              - generic [ref=e59]:
+                - button "order_id PK" [ref=e60] [cursor=pointer]:
+                  - generic [ref=e61]: order_id
+                  - emphasis [ref=e62]: PK
+                - button "customer_ref BK" [ref=e63] [cursor=pointer]:
+                  - generic [ref=e64]: customer_ref
+                  - emphasis [ref=e65]: BK
+                - button "order_ts" [ref=e66] [cursor=pointer]:
+                  - generic [ref=e67]: order_ts
+                - button "channel" [ref=e68] [cursor=pointer]:
+                  - generic [ref=e69]: channel
+                - button "order_status" [ref=e70] [cursor=pointer]:
+                  - generic [ref=e71]: order_status
+              - generic "מפתחות" [ref=e72]:
+                - generic [ref=e73]:
+                  - generic [ref=e74]: PK
+                  - text: order_id
+                - generic [ref=e75]:
+                  - generic [ref=e76]: BK
+                  - text: customer_ref
+            - article [ref=e77]:
+              - button "sources TABLE order_items_src" [ref=e78] [cursor=pointer]:
+                - generic [ref=e79]:
+                  - generic [ref=e80]: sources
+                  - generic [ref=e81]: TABLE
+                - strong [ref=e82]: order_items_src
+              - generic [ref=e83]:
+                - button "order_id KEY" [ref=e84] [cursor=pointer]:
+                  - generic [ref=e85]: order_id
+                  - emphasis [ref=e86]: KEY
+                - button "line_id KEY" [ref=e87] [cursor=pointer]:
+                  - generic [ref=e88]: line_id
+                  - emphasis [ref=e89]: KEY
+                - button "product_id FK" [ref=e90] [cursor=pointer]:
+                  - generic [ref=e91]: product_id
+                  - emphasis [ref=e92]: FK
+                - button "product_name" [ref=e93] [cursor=pointer]:
+                  - generic [ref=e94]: product_name
+                - button "category" [ref=e95] [cursor=pointer]:
+                  - generic [ref=e96]: category
+                - button "quantity" [ref=e97] [cursor=pointer]:
+                  - generic [ref=e98]: quantity
+                - button "unit_price" [ref=e99] [cursor=pointer]:
+                  - generic [ref=e100]: unit_price
+                - button "discount_amount" [ref=e101] [cursor=pointer]:
+                  - generic [ref=e102]: discount_amount
+              - generic "מפתחות" [ref=e103]:
+                - generic [ref=e104]:
+                  - generic [ref=e105]: KEY
+                  - text: order_id
+                - generic [ref=e106]:
+                  - generic [ref=e107]: KEY
+                  - text: line_id
+                - generic [ref=e108]:
+                  - generic [ref=e109]: FK
+                  - text: product_id
+            - article [ref=e110]:
+              - button "sources TABLE customers_src" [ref=e111] [cursor=pointer]:
+                - generic [ref=e112]:
+                  - generic [ref=e113]: sources
+                  - generic [ref=e114]: TABLE
+                - strong [ref=e115]: customers_src
+              - generic [ref=e116]:
+                - button "customer_ref BK" [ref=e117] [cursor=pointer]:
+                  - generic [ref=e118]: customer_ref
+                  - emphasis [ref=e119]: BK
+                - button "full_name" [ref=e120] [cursor=pointer]:
+                  - generic [ref=e121]: full_name
+                - button "segment" [ref=e122] [cursor=pointer]:
+                  - generic [ref=e123]: segment
+                - button "city" [ref=e124] [cursor=pointer]:
+                  - generic [ref=e125]: city
+                - button "region" [ref=e126] [cursor=pointer]:
+                  - generic [ref=e127]: region
+              - generic "מפתחות" [ref=e128]:
+                - generic [ref=e129]:
+                  - generic [ref=e130]: BK
+                  - text: customer_ref
+            - article [ref=e131]:
+              - button "sources TABLE returns_src" [ref=e132] [cursor=pointer]:
+                - generic [ref=e133]:
+                  - generic [ref=e134]: sources
+                  - generic [ref=e135]: TABLE
+                - strong [ref=e136]: returns_src
+              - generic [ref=e137]:
+                - button "return_id PK" [ref=e138] [cursor=pointer]:
+                  - generic [ref=e139]: return_id
+                  - emphasis [ref=e140]: PK
+                - button "order_id KEY" [ref=e141] [cursor=pointer]:
+                  - generic [ref=e142]: order_id
+                  - emphasis [ref=e143]: KEY
+                - button "line_id KEY" [ref=e144] [cursor=pointer]:
+                  - generic [ref=e145]: line_id
+                  - emphasis [ref=e146]: KEY
+                - button "return_ts" [ref=e147] [cursor=pointer]:
+                  - generic [ref=e148]: return_ts
+                - button "return_amount" [ref=e149] [cursor=pointer]:
+                  - generic [ref=e150]: return_amount
+              - generic "מפתחות" [ref=e151]:
+                - generic [ref=e152]:
+                  - generic [ref=e153]: PK
+                  - text: return_id
+                - generic [ref=e154]:
+                  - generic [ref=e155]: KEY
+                  - text: order_id
+                - generic [ref=e156]:
+                  - generic [ref=e157]: KEY
+                  - text: line_id
+    - region "גרף אינטראקטיבי" [ref=e158]:
+      - generic [ref=e159]:
+        - generic [ref=e160]:
+          - button "התאמה למסך" [ref=e161] [cursor=pointer]
+          - button "איפוס בחירה" [ref=e162] [cursor=pointer]
+        - generic "נתיבי דוגמה" [ref=e163]: Trace
+        - generic [ref=e164]:
+          - checkbox "הצג שדות טכניים" [ref=e165]
+          - text: הצג שדות טכניים
+      - img "גרף שכבות ETL לפי שלבים" [ref=e166]
+      - generic "מקרא" [ref=e171]:
+        - generic [ref=e172]: sources · TABLE
+        - generic [ref=e174]: staging · TABLE
+        - generic [ref=e176]: staging · VIEW
+        - generic [ref=e178]: dwh · DIM TABLE
+        - generic [ref=e180]: dwh · FACT TABLE
+        - generic [ref=e182]: analytics · QUERY

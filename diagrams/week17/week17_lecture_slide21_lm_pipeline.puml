@@ -1,0 +1,52 @@
+@startuml
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing true
+skinparam roundcorner 12
+skinparam defaultFontName "Segoe UI, Arial, sans-serif"
+skinparam defaultFontSize 18
+skinparam defaultFontColor #1A237E
+skinparam backgroundColor transparent
+skinparam rectangle {
+  BackgroundColor #E8EAF6
+  BorderColor #3949AB
+  BorderThickness 2.5
+  FontColor #1A237E
+  FontStyle bold
+  Padding 18
+}
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #5C6BC0
+  BorderThickness 2
+  FontSize 16
+  Padding 14
+}
+skinparam database {
+  BackgroundColor #E8EAF6
+  BorderColor #3949AB
+  BorderThickness 2.5
+  FontSize 16
+  FontColor #1A237E
+}
+skinparam arrow {
+  Color #5C6BC0
+  Thickness 2
+  FontSize 14
+  FontColor #3949AB
+}
+
+database "Versioned Text Corpus" as corpus
+component "Tokenizer\nrules + vocab" as tokenizer
+component "Token IDs\nand positions" as ids
+component "Language Model\nnext-token distribution" as lm
+component "Decoder\nsampling / ranking" as decoder
+rectangle "Generated Text\n+ metrics + versions" as output
+
+corpus --> tokenizer : clean text
+tokenizer --> ids : token IDs
+ids --> lm : sequence context
+lm --> decoder : probabilities
+decoder --> output : selected tokens
+output --> tokenizer : appended context
+@enduml

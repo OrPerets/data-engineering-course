@@ -1,0 +1,74 @@
+- main [ref=e2]:
+  - generic "SQL/DWH Lineage Visualizer" [ref=e3]:
+    - generic [ref=e4]:
+      - paragraph [ref=e5]: תרגול 4 / Data Warehouse & ETL
+      - heading "SQL/DWH Lineage Visualizer" [level=1] [ref=e6]
+      - paragraph [ref=e7]: "מפה חזותית קצרה: מקורות -> Staging -> Views נקיים -> Dimensions -> Fact -> Analytics."
+    - generic "בחירת מצב צפייה" [ref=e8]:
+      - button "ETL Flow" [ref=e9] [cursor=pointer]
+      - button "ERD Star Schema" [ref=e10] [cursor=pointer]
+  - region "שכבות הנתונים" [ref=e11]:
+    - generic [ref=e12]:
+      - button "Sources" [ref=e13] [cursor=pointer]:
+        - strong [ref=e15]: Sources
+      - button "Raw Staging" [ref=e16] [cursor=pointer]:
+        - strong [ref=e18]: Raw Staging
+      - button "Cleaned Views" [ref=e19] [cursor=pointer]:
+        - strong [ref=e21]: Cleaned Views
+      - button "Dimensions" [ref=e22] [cursor=pointer]:
+        - strong [ref=e24]: Dimensions
+      - button "Fact" [ref=e25] [cursor=pointer]:
+        - strong [ref=e27]: Fact
+      - button "Analytics" [ref=e28] [cursor=pointer]:
+        - strong [ref=e30]: Analytics
+  - region "מיקוד lineage לפי שדה" [ref=e31]:
+    - generic [ref=e32]: Field lineage
+    - generic [ref=e33]:
+      - button "ID customer_ref" [ref=e34] [cursor=pointer]:
+        - generic [ref=e35]: ID
+        - text: customer_ref
+      - button "FK product_id" [ref=e36] [cursor=pointer]:
+        - generic [ref=e37]: FK
+        - text: product_id
+      - button "KEY order_id + line_id" [ref=e38] [cursor=pointer]:
+        - generic [ref=e39]: KEY
+        - text: order_id + line_id
+      - button "LATE return_amount" [ref=e40] [cursor=pointer]:
+        - generic [ref=e41]: LATE
+        - text: return_amount
+      - button "Σ net_revenue" [ref=e42] [cursor=pointer]:
+        - generic [ref=e43]: Σ
+        - text: net_revenue
+  - region "אזור ויזואליזציה" [ref=e44]:
+    - region "גרף אינטראקטיבי" [ref=e45]:
+      - generic [ref=e46]:
+        - button "התאמה למסך" [ref=e47] [cursor=pointer]
+        - button "איפוס בחירה" [ref=e48] [cursor=pointer]
+        - generic [ref=e49]:
+          - checkbox "הצג שדות טכניים" [ref=e50]
+          - text: הצג שדות טכניים
+      - img "גרף שכבות ETL ו-ERD" [ref=e51]
+      - generic "מקרא" [ref=e56]:
+        - generic [ref=e57]: Sources
+        - generic [ref=e59]: Staging
+        - generic [ref=e61]: Clean Views
+        - generic [ref=e63]: DWH
+        - generic [ref=e65]: Fact
+        - generic [ref=e67]: Analytics
+  - region "Column lineage and SQL moves" [ref=e69]:
+    - generic [ref=e70]:
+      - generic [ref=e71]:
+        - paragraph [ref=e72]: Transformation Map
+        - heading "Column lineage and SQL moves" [level=2] [ref=e73]
+      - paragraph [ref=e74]: 0 טרנספורמציות
+    - paragraph [ref=e76]: לחצו על טבלה, חץ או field-chip כדי להדגיש dependencies ולראות lineage קצר.
+    - generic "סוגי טרנספורמציות" [ref=e77]:
+      - generic [ref=e78]: COPY
+      - generic [ref=e79]: CLEAN
+      - generic [ref=e80]: DEDUP
+      - generic [ref=e81]: MAP
+      - generic [ref=e82]: JOIN
+      - generic [ref=e83]: CALC
+      - generic [ref=e84]: MERGE
+      - generic [ref=e85]: AGG
+    - paragraph [ref=e87]: בשלב המקורות אין עדיין טרנספורמציות. התחילו משלב 2 כדי לראות מיפוי שדות, metadata וחוקי ניקוי.

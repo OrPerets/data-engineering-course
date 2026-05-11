@@ -1,0 +1,85 @@
+@startuml
+!include ../_template_styles.puml
+
+title Matrix-vector multiplication: join by column, aggregate by row
+
+left to right direction
+skinparam backgroundColor #FFFFFF
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam nodesep 50
+skinparam ranksep 38
+skinparam defaultFontName "Segoe UI, Arial, sans-serif"
+skinparam defaultFontSize 15
+skinparam defaultFontColor #263238
+
+skinparam rectangle {
+  BackgroundColor #F8FAFC
+  BorderColor #90A4AE
+  BorderThickness 2
+  FontColor #263238
+  FontSize 16
+  FontStyle bold
+  Padding 16
+}
+skinparam component {
+  BorderThickness 2
+  FontSize 14
+  Padding 14
+}
+skinparam component<<Input>> {
+  BorderColor #607D8B
+  BackgroundColor #F5F7F9
+  FontColor #263238
+}
+skinparam component<<Join>> {
+  BorderColor #0288D1
+  BackgroundColor #E1F5FE
+  FontColor #01579B
+}
+skinparam component<<Partial>> {
+  BorderColor #1565C0
+  BackgroundColor #E3F2FD
+  FontColor #0D47A1
+}
+skinparam component<<Reduce>> {
+  BorderColor #2E7D32
+  BackgroundColor #E8F5E9
+  FontColor #1B5E20
+}
+skinparam arrow {
+  Color #607D8B
+  Thickness 2
+  FontSize 11
+  FontColor #455A64
+}
+
+rectangle "**INPUT LAYER**" as INPUT_LAYER {
+  component "**Sparse matrix A**\n(i,j,Aij)\n\n(1,1,2)  (1,3,1)\n(2,1,4)  (2,2,5)\n(3,3,3)" as A <<Input>>
+  component "**Vector v**\n(j,vj)\n\n(1,10)\n(2,1)\n(3,2)" as V <<Input>>
+  A -[hidden]down- V
+}
+
+rectangle "**JOB 1: COLUMN JOIN**" as JOB1 {
+  component "**Mapper emissions**\nshuffle key = j\n\nA entry -> (j,A,i,Aij)\nvector -> (j,V,vj)" as J1MAP <<Join>>
+  component "**Reducer joins column**\nmatch A entries with vj\n\nj=1: A(1,1)=2, A(2,1)=4, v1=10" as J1RED <<Join>>
+  component "**Partial products**\nemit key = row i\n\n(1,20), (2,40), (2,5), (1,2), (3,6)" as PARTIALS <<Partial>>
+  J1MAP -[hidden]down- J1RED
+  J1RED -[hidden]down- PARTIALS
+}
+
+rectangle "**JOB 2: ROW AGGREGATION**" as JOB2 {
+  component "**Shuffle by row**\nkey = i\n\n1 -> [20, 2]\n2 -> [40, 5]\n3 -> [6]" as J2GROUP <<Partial>>
+  component "**Final vector y**\nsum partials\n\ny1 = 22\ny2 = 45\ny3 = 6" as Y <<Reduce>>
+  J2GROUP -[hidden]down- Y
+}
+
+A --> J1MAP
+V --> J1MAP
+J1MAP --> J1RED
+J1RED --> PARTIALS
+PARTIALS --> J2GROUP
+J2GROUP --> Y
+
+@enduml

@@ -1,0 +1,213 @@
+- main [ref=e2]:
+  - generic "Step-by-step SQL Lineage Visualizer" [ref=e3]:
+    - generic [ref=e4]:
+      - paragraph [ref=e5]: תרגול 4 / Data Warehouse & ETL
+      - heading "Step-by-step SQL Lineage Visualizer" [level=1] [ref=e6]
+      - paragraph [ref=e7]: "התהליך מוצג כשלבים בלבד: טבלאות מקור, Staging ו-Views, Dimensions, Fact, ואז Analytics."
+  - region "שלבי התהליך" [ref=e8]:
+    - navigation "בחירת שלב" [ref=e9]:
+      - generic [ref=e10]:
+        - button "1 Sources Tables, columns, business keys" [ref=e11] [cursor=pointer]:
+          - generic [ref=e12]: "1"
+          - generic [ref=e13]:
+            - strong [ref=e14]: Sources
+            - generic [ref=e15]: Tables, columns, business keys
+        - button "2 Staging + Views Raw copy, metadata, standardization, latest-row views" [ref=e16] [cursor=pointer]:
+          - generic [ref=e17]: "2"
+          - generic [ref=e18]:
+            - strong [ref=e19]: Staging + Views
+            - generic [ref=e20]: Raw copy, metadata, standardization, latest-row views
+        - button "3 Dimensions Surrogate keys from canonical views" [ref=e21] [cursor=pointer]:
+          - generic [ref=e22]: "3"
+          - generic [ref=e23]:
+            - strong [ref=e24]: Dimensions
+            - generic [ref=e25]: Surrogate keys from canonical views
+        - button "4 Fact Join dimensions, calculate measures, MERGE by grain" [ref=e26] [cursor=pointer]:
+          - generic [ref=e27]: "4"
+          - generic [ref=e28]:
+            - strong [ref=e29]: Fact
+            - generic [ref=e30]: Join dimensions, calculate measures, MERGE by grain
+        - button "5 Analytics Consume fact and dimensions" [ref=e31] [cursor=pointer]:
+          - generic [ref=e32]: "5"
+          - generic [ref=e33]:
+            - strong [ref=e34]: Analytics
+            - generic [ref=e35]: Consume fact and dimensions
+    - 'region "Step 1: Source tables" [ref=e36]':
+      - generic [ref=e37]:
+        - generic [ref=e38]: Step 1
+        - 'heading "Step 1: Source tables" [level=2] [ref=e39]'
+        - paragraph [ref=e40]: "מתחילים מטבלאות המקור: לכל טבלה רואים עמודות, מפתחות עסקיים ועמודות שממשיכות הלאה ב-lineage."
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - term [ref=e43]: SQL
+          - definition [ref=e44]:
+            - code [ref=e45]: 00_sources.sql
+        - generic [ref=e46]:
+          - term [ref=e47]: Goal
+          - definition [ref=e48]: Tables, columns, business keys
+  - region "אזור ויזואליזציה" [ref=e49]:
+    - region "טבלאות ועמודות בשלב הנוכחי" [ref=e50]:
+      - generic [ref=e52]:
+        - generic [ref=e53]:
+          - heading "Source tables" [level=3] [ref=e54]
+          - paragraph [ref=e55]: Operational schema before cleaning
+        - generic [ref=e56]:
+          - article [ref=e57]:
+            - button "sources TABLE orders_src" [ref=e58] [cursor=pointer]:
+              - generic [ref=e59]:
+                - generic [ref=e60]: sources
+                - generic [ref=e61]: TABLE
+              - strong [ref=e62]: orders_src
+            - generic [ref=e63]:
+              - button "order_id PK" [ref=e64] [cursor=pointer]:
+                - generic [ref=e65]: order_id
+                - emphasis [ref=e66]: PK
+              - button "customer_ref BK" [ref=e67] [cursor=pointer]:
+                - generic [ref=e68]: customer_ref
+                - emphasis [ref=e69]: BK
+              - button "order_ts" [ref=e70] [cursor=pointer]:
+                - generic [ref=e71]: order_ts
+              - button "channel" [ref=e72] [cursor=pointer]:
+                - generic [ref=e73]: channel
+              - button "order_status" [ref=e74] [cursor=pointer]:
+                - generic [ref=e75]: order_status
+            - paragraph [ref=e76]:
+              - code [ref=e77]: customer_ref
+              - text: ו-
+              - code [ref=e78]: channel
+              - text: "עדיין אינם קנוניים: למשל"
+              - code [ref=e79]: orp
+              - text: ","
+              - code [ref=e80]: WEB
+              - text: ","
+              - code [ref=e81]: APP
+              - text: ","
+              - code [ref=e82]: Store
+              - text: .
+            - generic "מפתחות" [ref=e83]:
+              - generic [ref=e84]:
+                - generic [ref=e85]: PK
+                - text: order_id
+              - generic [ref=e86]:
+                - generic [ref=e87]: BK
+                - text: customer_ref
+          - article [ref=e88]:
+            - button "sources TABLE order_items_src" [ref=e89] [cursor=pointer]:
+              - generic [ref=e90]:
+                - generic [ref=e91]: sources
+                - generic [ref=e92]: TABLE
+              - strong [ref=e93]: order_items_src
+            - generic [ref=e94]:
+              - button "order_id KEY" [ref=e95] [cursor=pointer]:
+                - generic [ref=e96]: order_id
+                - emphasis [ref=e97]: KEY
+              - button "line_id KEY" [ref=e98] [cursor=pointer]:
+                - generic [ref=e99]: line_id
+                - emphasis [ref=e100]: KEY
+              - button "product_id FK" [ref=e101] [cursor=pointer]:
+                - generic [ref=e102]: product_id
+                - emphasis [ref=e103]: FK
+              - button "product_name" [ref=e104] [cursor=pointer]:
+                - generic [ref=e105]: product_name
+              - button "category" [ref=e106] [cursor=pointer]:
+                - generic [ref=e107]: category
+              - button "quantity" [ref=e108] [cursor=pointer]:
+                - generic [ref=e109]: quantity
+              - button "unit_price" [ref=e110] [cursor=pointer]:
+                - generic [ref=e111]: unit_price
+              - button "discount_amount" [ref=e112] [cursor=pointer]:
+                - generic [ref=e113]: discount_amount
+            - paragraph [ref=e114]:
+              - text: השילוב
+              - code [ref=e115]: order_id + line_id
+              - text: הופך בהמשך לגרעיניות של fact_sales; פרטי המוצר הבסיסיים מגיעים עם שורת ההזמנה.
+            - generic "מפתחות" [ref=e116]:
+              - generic [ref=e117]:
+                - generic [ref=e118]: KEY
+                - text: order_id
+              - generic [ref=e119]:
+                - generic [ref=e120]: KEY
+                - text: line_id
+              - generic [ref=e121]:
+                - generic [ref=e122]: FK
+                - text: product_id
+          - article [ref=e123]:
+            - button "sources TABLE customers_src" [ref=e124] [cursor=pointer]:
+              - generic [ref=e125]:
+                - generic [ref=e126]: sources
+                - generic [ref=e127]: TABLE
+              - strong [ref=e128]: customers_src
+            - generic [ref=e129]:
+              - button "customer_ref BK" [ref=e130] [cursor=pointer]:
+                - generic [ref=e131]: customer_ref
+                - emphasis [ref=e132]: BK
+              - button "full_name" [ref=e133] [cursor=pointer]:
+                - generic [ref=e134]: full_name
+              - button "segment" [ref=e135] [cursor=pointer]:
+                - generic [ref=e136]: segment
+              - button "city" [ref=e137] [cursor=pointer]:
+                - generic [ref=e138]: city
+              - button "region" [ref=e139] [cursor=pointer]:
+                - generic [ref=e140]: region
+            - paragraph [ref=e141]:
+              - text: אותו לקוח יכול להופיע בכמה גרסאות; למשל
+              - code [ref=e142]: user_ben_ruiz
+              - text: מופיע עם segment שונה.
+            - generic "מפתחות" [ref=e143]:
+              - generic [ref=e144]:
+                - generic [ref=e145]: BK
+                - text: customer_ref
+          - article [ref=e146]:
+            - button "sources TABLE returns_src" [ref=e147] [cursor=pointer]:
+              - generic [ref=e148]:
+                - generic [ref=e149]: sources
+                - generic [ref=e150]: TABLE
+              - strong [ref=e151]: returns_src
+            - generic [ref=e152]:
+              - button "return_id PK" [ref=e153] [cursor=pointer]:
+                - generic [ref=e154]: return_id
+                - emphasis [ref=e155]: PK
+              - button "order_id KEY" [ref=e156] [cursor=pointer]:
+                - generic [ref=e157]: order_id
+                - emphasis [ref=e158]: KEY
+              - button "line_id KEY" [ref=e159] [cursor=pointer]:
+                - generic [ref=e160]: line_id
+                - emphasis [ref=e161]: KEY
+              - button "return_ts" [ref=e162] [cursor=pointer]:
+                - generic [ref=e163]: return_ts
+              - button "return_amount" [ref=e164] [cursor=pointer]:
+                - generic [ref=e165]: return_amount
+            - paragraph [ref=e166]: החזרות יכולות להגיע מאוחר ולכן הן משפיעות על fact קיים, לא יוצרות מכירה חדשה.
+            - generic "מפתחות" [ref=e167]:
+              - generic [ref=e168]:
+                - generic [ref=e169]: PK
+                - text: return_id
+              - generic [ref=e170]:
+                - generic [ref=e171]: KEY
+                - text: order_id
+              - generic [ref=e172]:
+                - generic [ref=e173]: KEY
+                - text: line_id
+    - region "גרף אינטראקטיבי" [ref=e174]:
+      - generic [ref=e175]:
+        - button "התאמה למסך" [ref=e176] [cursor=pointer]
+        - button "איפוס בחירה" [ref=e177] [cursor=pointer]
+        - generic [ref=e178]:
+          - checkbox "הצג שדות טכניים" [ref=e179]
+          - text: הצג שדות טכניים
+      - img "גרף שכבות ETL לפי שלבים" [ref=e180]
+      - generic "מקרא" [ref=e185]:
+        - generic [ref=e186]: sources · TABLE
+        - generic [ref=e188]: staging · TABLE
+        - generic [ref=e190]: staging · VIEW
+        - generic [ref=e192]: dwh · DIM TABLE
+        - generic [ref=e194]: dwh · FACT TABLE
+        - generic [ref=e196]: analytics · QUERY
+  - region "Click a column to trace it through the current step" [ref=e198]:
+    - generic [ref=e199]:
+      - generic [ref=e200]:
+        - paragraph [ref=e201]: Lineage details
+        - heading "Click a column to trace it through the current step" [level=2] [ref=e202]
+      - paragraph [ref=e203]: 0 טרנספורמציות
+    - paragraph [ref=e205]: לחצו על עמודה בטבלת השלב כדי להדגיש lineage מלא עד השלב הנוכחי.
+    - paragraph [ref=e207]: בשלב המקורות אין עדיין טרנספורמציות. התחילו משלב 2 כדי לראות מיפוי שדות, metadata וחוקי ניקוי.

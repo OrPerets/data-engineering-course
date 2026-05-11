@@ -1,0 +1,47 @@
+@startuml
+left to right direction
+skinparam linetype ortho
+skinparam shadowing true
+skinparam roundcorner 12
+skinparam defaultFontName "Segoe UI, Arial, sans-serif"
+skinparam defaultFontSize 18
+skinparam defaultFontColor #1A237E
+skinparam backgroundColor transparent
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #5C6BC0
+  BorderThickness 2
+  FontSize 16
+  Padding 14
+}
+skinparam rectangle {
+  BackgroundColor #E8EAF6
+  BorderColor #3949AB
+  BorderThickness 2.5
+  FontColor #1A237E
+  FontStyle bold
+  Padding 18
+}
+skinparam arrow {
+  Color #5C6BC0
+  Thickness 2
+  FontSize 14
+  FontColor #3949AB
+}
+
+rectangle "Prompt Text" as prompt
+component "Tokenizer" as tok
+component "Embedding\n+ position" as emb
+component "Attention Blocks\nQ,K,V + MLP" as block
+component "Logits" as logits
+component "Decoder\nargmax / sample" as dec
+rectangle "Next Token" as next
+
+prompt --> tok
+tok --> emb
+emb --> block
+block --> logits
+logits --> dec
+dec --> next
+next --> tok : append and repeat
+@enduml

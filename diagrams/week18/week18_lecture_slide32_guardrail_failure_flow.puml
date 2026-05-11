@@ -1,0 +1,52 @@
+@startuml
+left to right direction
+skinparam linetype ortho
+skinparam shadowing true
+skinparam roundcorner 12
+skinparam defaultFontName "Segoe UI, Arial, sans-serif"
+skinparam defaultFontSize 18
+skinparam defaultFontColor #1A237E
+skinparam backgroundColor transparent
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #5C6BC0
+  BorderThickness 2
+  FontSize 16
+  Padding 14
+}
+skinparam component<<Bad>> {
+  BorderColor #D32F2F
+  BackgroundColor #FFEBEE
+  FontColor #B71C1C
+  BorderThickness 2.5
+}
+skinparam component<<Gate>> {
+  BorderColor #FF6F00
+  BackgroundColor #FFF3E0
+  FontColor #E65100
+  BorderThickness 2.5
+}
+skinparam component<<Good>> {
+  BorderColor #00897B
+  BackgroundColor #E0F2F1
+  FontColor #004D40
+  BorderThickness 2.5
+}
+skinparam arrow {
+  Color #5C6BC0
+  Thickness 2
+  FontSize 14
+  FontColor #3949AB
+}
+
+component "Forbidden request\nshow API keys" as req <<Bad>>
+component "Input guardrail\nclassifies threat" as guard <<Gate>>
+component "Tool allowlist\nblocks secret tools" as tools <<Gate>>
+component "Safe refusal\nno execution" as refusal <<Good>>
+component "Audit log\npolicy event" as audit <<Good>>
+
+req --> guard
+guard --> tools
+tools --> refusal
+refusal --> audit
+@enduml

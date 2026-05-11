@@ -1,16 +1,20 @@
 # PlantUML Diagrams Render Summary
 
-Generated on: Tue Feb 10 10:26:43 IST 2026
+Generated on: Fri May  8 15:35:38 IDT 2026
 
 ## Summary
-- Total diagrams processed: 2
-- Successfully rendered: 2
+- Total diagrams processed: 4
+- Successfully rendered: 4
 - Failed: 0
 
 ## Generated Files
-- diagrams/general/schema_on_write_vs_read.png
-- diagrams/general/example.png
+- diagrams/week18/week18_lecture_slide32_guardrail_failure_flow.png
+- diagrams/week18/week18_lecture_slide08_rag_agent_stack.png
+- diagrams/week18/week18_lecture_slide18_retrieval_flow.png
+- diagrams/week18/week18_lecture_slide26_agent_runtime_flow.png
 
 ## Source Files
-- diagrams/general/example.puml
-- diagrams/general/schema_on_write_vs_read.puml
+- diagrams/week18/week18_lecture_slide18_retrieval_flow.puml
+- diagrams/week18/week18_lecture_slide26_agent_runtime_flow.puml
+- diagrams/week18/week18_lecture_slide32_guardrail_failure_flow.puml
+- diagrams/week18/week18_lecture_slide08_rag_agent_stack.puml

@@ -1,0 +1,91 @@
+@startuml
+!include ../_template_styles.puml
+
+title Inverted index: token occurrences -> term/document postings
+
+left to right direction
+skinparam backgroundColor #FFFFFF
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam nodesep 54
+skinparam ranksep 42
+skinparam defaultFontName "Segoe UI, Arial, sans-serif"
+skinparam defaultFontSize 15
+skinparam defaultFontColor #263238
+
+skinparam rectangle {
+  BackgroundColor #F8FAFC
+  BorderColor #90A4AE
+  BorderThickness 2
+  FontColor #263238
+  FontSize 16
+  FontStyle bold
+  Padding 16
+}
+skinparam component {
+  BorderThickness 2
+  FontSize 14
+  Padding 14
+}
+skinparam component<<Input>> {
+  BorderColor #607D8B
+  BackgroundColor #F5F7F9
+  FontColor #263238
+}
+skinparam component<<Map>> {
+  BorderColor #0288D1
+  BackgroundColor #E1F5FE
+  FontColor #01579B
+}
+skinparam component<<Combiner>> {
+  BorderColor #F9A825
+  BackgroundColor #FFF8E1
+  FontColor #5D4037
+}
+skinparam component<<Shuffle>> {
+  BorderColor #1565C0
+  BackgroundColor #E3F2FD
+  FontColor #0D47A1
+}
+skinparam component<<Reduce>> {
+  BorderColor #2E7D32
+  BackgroundColor #E8F5E9
+  FontColor #1B5E20
+}
+skinparam arrow {
+  Color #607D8B
+  Thickness 2
+  FontSize 11
+  FontColor #455A64
+}
+
+rectangle "**DOCUMENT LAYER**" as DOC_LAYER {
+  component "**Document records**\n(doc_id, text)\n\n1  data eng fun\n2  data pipelines data\n4  quality data pipelines" as DOCS <<Input>>
+}
+
+rectangle "**MAP LAYER**" as MAP_LAYER {
+  component "**Tokenize + normalize**\nlowercase, whitespace split\n\neach occurrence -> ((term, doc_id), 1)" as MAP <<Map>>
+  component "**Duplicate example**\ndoc 2 keeps repeated data\n\n((data,2),1)\n((pipelines,2),1)\n((data,2),1)" as EXAMPLE <<Map>>
+  MAP -[hidden]down- EXAMPLE
+}
+
+rectangle "**COMBINER LAYER**" as COMB_LAYER {
+  component "**Local numeric sum**\nsame mapper, same key\n\n((data,2), [1,1])\n-> ((data,2), 2)" as COMB <<Combiner>>
+}
+
+rectangle "**SHUFFLE LAYER**" as SHUF_LAYER {
+  component "**Group by (term, doc_id)**\nnetwork grouping\n\n(data,1) -> [1]\n(data,2) -> [2]\n(data,4) -> [1]\n(pipelines,2) -> [1]\n(pipelines,4) -> [1]" as SHUF <<Shuffle>>
+}
+
+rectangle "**REDUCE LAYER**" as RED_LAYER {
+  component "**Posting lists**\nsum counts, then group by term\n\ndata -> 1:1, 2:2, 4:1\npipelines -> 2:1, 4:1" as RED <<Reduce>>
+}
+
+DOCS --> MAP
+MAP --> EXAMPLE
+EXAMPLE --> COMB
+COMB --> SHUF
+SHUF --> RED
+
+@enduml

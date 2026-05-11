@@ -7,7 +7,7 @@ skinparam shadowing false
 skinparam roundcorner 12
 skinparam handwritten false
 skinparam nodesep 60
-skinparam ranksep 80
+skinparam ranksep 110
 
 ' Font Settings
 skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
@@ -86,10 +86,10 @@ left to right direction
 
 '--- DATA LAKE ---
 rectangle "<size:16>**DATA LAKE**</size>\n<size:11>Schema-on-Read | Raw to Curated Zones</size>" as LAKE #F8F9FA {
-    component "<size:13>**Sources**</size>\n<size:11>Files, Logs, IoT</size>\n<size:11>Streams, Events</size>" as L_SRC <<Orchestration>>
-    database "<size:13>**Raw Zone**</size>\n<size:11>Unstructured / Semi-structured</size>\n<size:11>Object Storage (S3, ADLS)</size>" as L_RAW
-    database "<size:13>**Curated Zone**</size>\n<size:11>Cleaned, Parquet/Delta</size>\n<size:11>Optional</size>" as L_CUR
-    component "<size:13>**Consumers**</size>\n<size:11>ML, Data Science</size>\n<size:11>Exploration, Ad-hoc</size>" as L_CONS <<UI>>
+    component "<size:13>**Sources**</size>\n<size:11>Files, Logs</size>" as L_SRC <<Orchestration>>
+    database "\n<size:13>**Raw Zone**</size>\n<size:11>Unstructured / Semi-structured</size>\n" as L_RAW
+    database "\n<size:13>**Curated Zone**</size>\n<size:11>Cleaned</size>\n" as L_CUR
+    component "<size:13>**Consumers**</size>\n<size:11>ML, Data Science</size>" as L_CONS <<UI>>
     L_SRC -[hidden]right-> L_RAW
     L_RAW -[hidden]right-> L_CUR
     L_CUR -[hidden]right-> L_CONS
@@ -97,10 +97,10 @@ rectangle "<size:16>**DATA LAKE**</size>\n<size:11>Schema-on-Read | Raw to Curat
 
 '--- DATA WAREHOUSE ---
 rectangle "<size:16>**DATA WAREHOUSE**</size>\n<size:11>Schema-on-Write | Structured for BI</size>" as DWH #F8F9FA {
-    component "<size:13>**Sources**</size>\n<size:11>DBs, ERPs, APIs</size>\n<size:11>Structured Feeds</size>" as D_SRC <<Orchestration>>
-    component "<size:13>**ETL / ELT**</size>\n<size:11>Transform & Load</size>\n<size:11>Staging → Model</size>" as D_ETL <<Orchestration>>
-    database "<size:13>**Dimensional Model**</size>\n<size:11>Star/Snowflake</size>\n<size:11>Facts & Dimensions</size>" as D_DIM
-    component "<size:13>**Consumers**</size>\n<size:11>BI, Dashboards</size>\n<size:11>SQL Reports, KPIs</size>" as D_CONS <<UI>>
+    component "<size:13>**Sources**</size>\n<size:11>DBs, ERPs, APIs</size>" as D_SRC <<Orchestration>>
+    component "<size:13>**ETL / ELT**</size>\n<size:11>Transform & Load</size>" as D_ETL <<Orchestration>>
+    database "\n<size:13>**Dimensional Model**</size>\n<size:11>Facts & Dimensions</size>\n" as D_DIM
+    component "<size:13>**Consumers**</size>\n<size:11>BI, Dashboards</size>" as D_CONS <<UI>>
     D_SRC -[hidden]right-> D_ETL
     D_ETL -[hidden]right-> D_DIM
     D_DIM -[hidden]right-> D_CONS
@@ -110,16 +110,16 @@ rectangle "<size:16>**DATA WAREHOUSE**</size>\n<size:11>Schema-on-Write | Struct
 '========================
 ' FLOWS: DATA LAKE
 '========================
-L_SRC --> L_RAW : <size:10>Ingest</size>
-L_RAW --> L_CUR : <size:10>Process</size>
-L_CUR --> L_CONS : <size:10>Query</size>
+L_SRC --> L_RAW : <size:14>Ingest</size>
+L_RAW --> L_CUR : <size:14>Process</size>
+L_CUR --> L_CONS : <size:14>Query</size>
 
 '========================
 ' FLOWS: DATA WAREHOUSE
 '========================
-D_SRC --> D_ETL : <size:10>Extract</size>
-D_ETL --> D_DIM : <size:10>Load</size>
-D_DIM --> D_CONS : <size:10>Query</size>
+D_SRC --> D_ETL : <size:14>Extract</size>
+D_ETL --> D_DIM : <size:14>Load</size>
+D_DIM --> D_CONS : <size:14>Query</size>
 
 
 @enduml

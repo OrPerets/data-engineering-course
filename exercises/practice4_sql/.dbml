@@ -1,0 +1,235 @@
+Project practice4_dwh {
+  database_type: "PostgreSQL"
+  Note: '''
+    Practice 4 logical model + ETL flow mapping.
+    Flow:
+    sources.* -> staging.* -> staging.v_* transforms -> dwh.dim_* / dwh.fact_sales
+    ETL orchestration metadata in dwh.etl_run_log
+  '''
+}
+
+Table sources.orders_src {
+  order_id bigint [not null]
+  customer_ref varchar(100)
+  order_ts timestamp [not null]
+  channel varchar(50)
+  order_status varchar(50)
+  updated_at timestamp [not null]
+
+  Note: 'Operational source orders'
+}
+
+Table sources.order_items_src {
+  order_id bigint [not null]
+  line_id int [not null]
+  product_id bigint [not null]
+  product_name varchar(200)
+  category varchar(100)
+  quantity int [not null]
+  unit_price decimal(12,2) [not null]
+  discount_amount decimal(12,2)
+  updated_at timestamp [not null]
+  Note: 'Operational source order line items (no PK in source DDL)'
+}
+
+Table sources.customers_src {
+  customer_ref varchar(100) [not null]
+  full_name varchar(200)
+  segment varchar(50)
+  region varchar(100)
+  updated_at timestamp [not null]
+
+  Note: 'Operational source customers; can contain duplicate/outdated rows'
+}
+
+Table sources.returns_src {
+  return_id bigint [not null]
+  order_id bigint [not null]
+  line_id int [not null]
+  return_ts timestamp [not null]
+  return_amount decimal(12,2) [not null]
+  ingested_at timestamp [not null]
+
+  Note: 'Operational source returns (append-like)'
+}
+
+Table staging.orders_src {
+  order_id bigint [not null]
+  customer_ref varchar(100)
+  order_ts timestamp [not null]
+  channel varchar(50)
+  order_status varchar(50)
+  updated_at timestamp [not null]
+  run_id varchar(100) [not null]
+
+  Note: 'Raw landing from sources.orders_src with compact run_id'
+}
+
+Table staging.order_items_src {
+  order_id bigint [not null]
+  line_id int [not null]
+  product_id bigint [not null]
+  product_name varchar(200)
+  category varchar(100)
+  quantity int [not null]
+  unit_price decimal(12,2) [not null]
+  discount_amount decimal(12,2)
+  updated_at timestamp [not null]
+  run_id varchar(100) [not null]
+
+  Note: 'Raw landing from sources.order_items_src with compact run_id'
+}
+
+Table staging.customers_src {
+  customer_ref varchar(100) [not null]
+  full_name varchar(200)
+  segment varchar(50)
+  region varchar(100)
+  updated_at timestamp [not null]
+  run_id varchar(100) [not null]
+
+  Note: 'Raw landing from sources.customers_src with compact run_id'
+}
+
+Table staging.returns_src {
+  return_id bigint [not null]
+  order_id bigint [not null]
+  line_id int [not null]
+  return_ts timestamp [not null]
+  return_amount decimal(12,2) [not null]
+  ingested_at timestamp [not null]
+  run_id varchar(100) [not null]
+
+  Note: 'Raw landing from sources.returns_src with compact run_id'
+}
+
+Table staging.v_orders_latest {
+  order_id bigint [not null]
+  customer_ref_std varchar(100) [not null]
+  order_ts timestamp [not null]
+  channel_name varchar(50) [not null]
+  order_status varchar(50) [not null]
+  updated_at timestamp [not null]
+  run_id varchar(100) [not null]
+
+  Note: 'View: latest order row per order_id after customer/channel/status normalization'
+}
+
+Table staging.v_order_items_latest {
+  order_id bigint [not null]
+  line_id int [not null]
+  product_id bigint [not null]
+  product_name varchar(200) [not null]
+  category varchar(100) [not null]
+  quantity int [not null]
+  unit_price decimal(12,2) [not null]
+  discount_amount decimal(12,2) [not null]
+  updated_at timestamp [not null]
+  run_id varchar(100) [not null]
+
+  Note: 'View: latest order item row per (order_id, line_id) with standardized category and defaulted discount'
+}
+
+Table staging.v_customers_latest {
+  customer_ref varchar(100) [not null]
+  full_name varchar(200)
+  segment varchar(50) [not null]
+  region varchar(100) [not null]
+  run_id varchar(100) [not null]
+
+  Note: 'View: latest customer row per canonical customer_ref after segment/region normalization'
+}
+
+Table staging.v_returns_agg {
+  order_id bigint [not null]
+  line_id int [not null]
+  return_amount decimal(12,2) [not null]
+
+  Note: 'View: aggregated returns by (order_id, line_id)'
+}
+
+Table dwh.dim_date {
+  date_key int [pk, not null]
+  calendar_date date [not null, unique]
+  year_month char(7) [not null]
+  week_start date [not null]
+}
+
+Table dwh.dim_channel {
+  channel_key bigint [pk, not null, increment]
+  channel_name varchar(50) [not null, unique]
+}
+
+Table dwh.dim_product {
+  product_key bigint [pk, not null, increment]
+  product_id bigint [not null, unique]
+  product_name varchar(200) [not null]
+  category varchar(100) [not null]
+}
+
+Table dwh.dim_customer {
+  customer_key bigint [pk, not null, increment]
+  customer_ref varchar(100) [not null, unique]
+  full_name varchar(200) [not null]
+  segment varchar(50) [not null]
+  region varchar(100) [not null]
+
+  Note: 'Current canonical customer dimension after standardization and latest-row dedup'
+}
+
+Table dwh.fact_sales {
+  date_key int [not null]
+  product_key bigint [not null]
+  customer_key bigint [not null]
+  channel_key bigint [not null]
+  order_id bigint [not null]
+  line_id int [not null]
+  order_status varchar(50) [not null]
+  quantity int [not null]
+  gross_revenue decimal(14,2) [not null]
+  discount_amount decimal(14,2) [not null]
+  return_amount decimal(14,2) [not null]
+  net_revenue decimal(14,2) [not null]
+
+  indexes {
+    (order_id, line_id) [pk]
+    date_key
+    product_key
+    customer_key
+    channel_key
+  }
+
+  Note: 'Includes check constraint in SQL: net_revenue = gross_revenue - discount_amount - return_amount'
+}
+
+Table dwh.etl_run_log {
+  run_id varchar(100) [pk, not null]
+  job_name varchar(100) [not null]
+  status varchar(30) [not null]
+  started_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  finished_at timestamp
+  rows_read bigint [not null, default: 0]
+  rows_loaded bigint [not null, default: 0]
+  rows_rejected bigint [not null, default: 0]
+  notes text
+
+  Note: 'ETL execution audit log'
+}
+
+// DWH star-schema references (physical FK relationships)
+Ref: dwh.fact_sales.date_key > dwh.dim_date.date_key
+Ref: dwh.fact_sales.product_key > dwh.dim_product.product_key
+Ref: dwh.fact_sales.customer_key > dwh.dim_customer.customer_key
+Ref: dwh.fact_sales.channel_key > dwh.dim_channel.channel_key
+
+// Source -> Staging lineage (logical flow references)
+Ref: staging.orders_src.order_id > sources.orders_src.order_id
+Ref: staging.order_items_src.(order_id, line_id) > sources.order_items_src.(order_id, line_id)
+Ref: staging.customers_src.customer_ref > sources.customers_src.customer_ref
+Ref: staging.returns_src.return_id > sources.returns_src.return_id
+
+// Staging -> DWH lineage (logical flow references)
+Ref: dwh.dim_product.product_id > staging.order_items_src.product_id
+Ref: dwh.dim_customer.customer_ref > staging.customers_src.customer_ref
+Ref: dwh.fact_sales.(order_id, line_id) > staging.v_order_items_latest.(order_id, line_id)
+Ref: dwh.fact_sales.order_id > staging.v_orders_latest.order_id

@@ -1,0 +1,172 @@
+@startuml
+'========================
+' SETUP & STYLING
+'========================
+top to bottom direction
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam handwritten false
+skinparam nodesep 120
+skinparam ranksep 30
+
+' Font Settings
+skinparam defaultFontName "Segoe UI", "Helvetica", sans-serif
+skinparam defaultFontSize 14
+skinparam defaultFontColor #2C3E50
+
+' Package (Layer) Styling
+skinparam rectangle {
+    BackgroundColor #F8F9FA
+    BorderColor #90A4AE
+    BorderThickness 2.5
+    FontColor #263238
+    FontSize 16
+    FontStyle bold
+    Padding 20
+}
+
+' Component Styling
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #78909C
+    BorderThickness 2
+    FontSize 13
+    Padding 20
+}
+
+' Database Styling
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #546E7A
+    BorderThickness 2
+    FontSize 13
+}
+
+' Arrow Styling
+skinparam arrow {
+    Color #607D8B
+    Thickness 2
+    FontSize 10
+    FontColor #546E7A
+}
+
+'========================
+' CUSTOM STEREOTYPES
+'========================
+
+skinparam component<<Orchestration>> {
+    BorderColor #0288D1
+    BackgroundColor #E1F5FE
+    FontColor #01579B
+}
+
+skinparam component<<UI>> {
+    BorderColor #8E24AA
+    BackgroundColor #F3E5F5
+    FontColor #4A148C
+}
+
+skinparam database {
+    BorderColor #546E7A
+    BackgroundColor #ECEFF1
+    FontColor #263238
+}
+
+skinparam component<<Gov>> {
+    BorderColor #D32F2F
+    BackgroundColor #FFEBEE
+    FontColor #B71C1C
+}
+
+'========================
+' LAYER DEFINITIONS
+'========================
+
+'--- LAYER 1: EXPERIENCE LAYER ---
+rectangle "**USER LAYER**" as L1 #F8F9FA {
+    component "**Chat Interfaces**\n<size:11>Client | Internal | External</size>" as UI <<UI>>
+    component "**Ops Dashboard**\n<size:11>Escalations Inbox</size>" as UI_INT <<UI>>
+    
+    ' Layout
+    UI -[hidden]right- UI_INT
+}
+
+'--- LAYER 2: ORCHESTRATION LAYER ---
+rectangle "**ORCHESTRATION LAYER**" as L2 #F8F9FA {
+    
+    ' Core orchestration flow (left to right)
+    component "**Conversation Orchestrator**\n<size:11>Core Engine</size>" as ORCH <<Orchestration>>
+    
+    component "**Policy Engine**\n<size:11>Access Control</size>" as POLICY <<Orchestration>>
+    
+    component "**Prompt & Rules Registry**\n<size:11>Templates</size>" as REG <<Orchestration>>
+    
+    component "**Escalation Router**\n<size:11>Queue / Notify</size>" as ESC <<Orchestration>>
+    
+    ' Horizontal flow layout
+    ORCH -[hidden]right- POLICY
+    REG -[hidden]right- ESC
+
+
+}
+
+'--- LAYER 3: AI & KNOWLEDGE LAYER ---
+rectangle "**AI & KNOWLEDGE LAYER**" as L3 #F8F9FA {
+    component "**Knowledge Base**\n<size:11>RAG-Enabled Context</size>" as KB <<Orchestration>>
+}
+
+'--- LAYER 4: DATA LAYER ---
+rectangle "**DATA LAYER**" as L4 #F8F9FA {
+
+    database "\n**Benchmark Views**\n<size:11>Anonymous Aggregates</size>\n" as BENCH
+    database "\n**Curated Data**\n<size:11>Cleaned & Validated</size>\n" as CUR
+    
+    database "\n**Semantic Views**\n<size:11>Business Metrics</size>\n" as SEM
+    
+    ' Horizontal layout
+    BENCH -[hidden]up- SEM
+}
+
+'--- LAYER 5: GOVERNANCE LAYER ---
+rectangle "**GOVERNANCE LAYER**" as L5 #F8F9FA {
+    component "**Audit & Monitoring**\n<size:11>Logging & Attribution</size>" as GOV <<Gov>>
+    
+    component "**Notifications**\n<size:11>Alerts & Webhooks</size>" as NOTIFY <<Gov>>
+    
+    ' Layout
+    GOV -[hidden]right- NOTIFY
+}
+
+'========================
+' INTER-LAYER CONNECTIONS
+'========================
+
+'--- PRIMARY USER FLOW ---
+UI -down-> ORCH 
+ORCH -up-> UI 
+
+'--- ORCHESTRATION FLOWS ---
+ORCH --> POLICY 
+POLICY .> REG
+REG --> ESC
+
+'--- POLICY TO ESCALATION ---
+POLICY -> ESC 
+
+'--- KNOWLEDGE BASE INTEGRATION ---
+L2 <-up-> KB 
+
+'--- DATA ACCESS ---
+POLICY --right-> SEM : <size:10>Query Allowed</size>
+POLICY --right-> BENCH : <size:10>Query Allowed</size>
+CUR -right-> SEM 
+
+'--- ESCALATION NOTIFICATIONS ---
+ESC ..> UI_INT : <size:10>         Notify</size>
+ESC -down-> NOTIFY
+
+'--- GOVERNANCE (AUDIT TRAILS) ---
+ORCH .down.> L5
+
+@enduml

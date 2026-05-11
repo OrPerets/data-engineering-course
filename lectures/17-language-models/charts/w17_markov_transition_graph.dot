@@ -1,0 +1,24 @@
+digraph G {
+  graph [bgcolor="#F7F9FC", rankdir=LR, pad=0.35, nodesep=0.7, ranksep=1.0, size="16,9!", ratio=fill, labelloc=t, label="Bigram Markov transition graph", fontname="Arial", fontsize=34, fontcolor="#172033"];
+  node [shape=box, style="rounded,filled", fillcolor="#FFFFFF", color="#2F5BEA", penwidth=2.5, fontname="Arial", fontsize=22, fontcolor="#172033"];
+  edge [color="#637083", penwidth=2.4, fontname="Arial", fontsize=18, fontcolor="#172033"];
+  start [label="<s>", fillcolor="#E8F0FF"];
+  vpn [label="vpn"];
+  printer [label="printer"];
+  not [label="not", fillcolor="#E9FBF8", color="#00A7A5"];
+  working [label="working"];
+  responding [label="responding"];
+  now [label="now"];
+  end [label="</s>", fillcolor="#F7EDFF", color="#7C3AED"];
+  start -> vpn [label="3/4"];
+  start -> printer [label="1/4"];
+  vpn -> not [label="2/3"];
+  vpn -> working [label="1/3"];
+  printer -> not [label="1"];
+  not -> working [label="1/3"];
+  not -> responding [label="2/3"];
+  working -> now [label="1/2"];
+  working -> end [label="1/2"];
+  responding -> end [label="1"];
+  now -> end [label="1"];
+}
